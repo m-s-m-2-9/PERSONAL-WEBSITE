@@ -14,8 +14,19 @@ collections:
         file: "data.json"
         format: json
         fields:
+
+          - {label: "Hero Name", name: "heroName", widget: "string"}
           - {label: "Hero Tagline", name: "tagline", widget: "string"}
           - {label: "About Text", name: "aboutText", widget: "text"}
+
+          - label: "Social Links"
+            name: "socialLinks"
+            widget: "object"
+            fields:
+              - {label: "Instagram", name: "instagram", widget: "string"}
+              - {label: "LinkedIn", name: "linkedin", widget: "string"}
+              - {label: "Resume", name: "resume", widget: "string"}
+
           - label: "Journey Years"
             name: "journeyYears"
             widget: "list"
@@ -23,3 +34,32 @@ collections:
               - {label: "Year", name: "year", widget: "number"}
               - {label: "Title", name: "title", widget: "string"}
               - {label: "Body", name: "body", widget: "text"}
+
+          - label: "Projects"
+            name: "projects"
+            widget: "list"
+            fields:
+              - {label: "Project Title", name: "title", widget: "string"}
+              - {label: "Description", name: "description", widget: "text"}
+
+          - label: "Testimonials"
+            name: "testimonials"
+            widget: "list"
+            fields:
+              - {label: "Name", name: "name", widget: "string"}
+              - {label: "Role", name: "role", widget: "string"}
+              - {label: "Text", name: "text", widget: "text"}
+
+          - label: "Passwords"
+            name: "passwords"
+            widget: "object"
+            fields:
+              - {label: "Games Password", name: "games", widget: "string"}
+              - {label: "Secret Password", name: "secret", widget: "string"}
+
+          - label: "Music"
+            name: "music"
+            widget: "list"
+            fields:
+              - {label: "Song Name", name: "song", widget: "string"}
+              - {label: "Audio URL", name: "url", widget: "string"}
