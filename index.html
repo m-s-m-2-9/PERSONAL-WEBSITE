@@ -4402,13 +4402,34 @@ if (data.heroName) {
 
   const allNames = [name1, name2, name3];
 
-  // remove previous highlight + visibility
+  // remove old highlight + visible
   allNames.forEach(el => {
     if (el) {
       el.classList.remove("highlight");
       el.classList.remove("visible");
     }
   });
+
+  // random highlight
+  const randomIndex = Math.floor(Math.random() * allNames.length);
+
+  if (allNames[randomIndex]) {
+    allNames[randomIndex].classList.add("highlight");
+  }
+
+  // trigger animation EVERY time
+  setTimeout(() => {
+    if (name1) name1.classList.add("visible");
+
+    setTimeout(() => {
+      if (name2) name2.classList.add("visible");
+    }, 200);
+
+    setTimeout(() => {
+      if (name3) name3.classList.add("visible");
+    }, 400);
+  }, 100);
+}
 
   // random highlight
   const randomIndex = Math.floor(Math.random() * allNames.length);
