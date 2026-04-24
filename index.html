@@ -4373,35 +4373,35 @@ fetch("data.json")
   .then(response => response.json())
   .then(data => {
 
-    // Tagline
-    const taglineEl = document.getElementById("hero-tagline");
-    if (taglineEl) {
-      taglineEl.textContent = data.tagline;
-    }
+// Tagline
+const taglineEl = document.getElementById("hero-tagline");
+if (taglineEl) {
+  taglineEl.textContent = data.tagline;
+}
 
 
+// Hero Name
 const name1 = document.getElementById("name-part-1");
 const name2 = document.getElementById("name-part-2");
 const name3 = document.getElementById("name-part-3");
 
 if (data.heroName) {
-  const parts = data.heroName.split(" ");
+  const parts = data.heroName.trim().split(" ");
 
-  if (name1) name1.textContent = parts[0] || "";
-  if (name2) name2.textContent = parts[1] || "";
-  if (name3) name3.textContent = parts[2] || "";
+  if (name1) name1.innerText = parts[0] || "";
+  if (name2) name2.innerText = parts[1] || "";
+  if (name3) name3.innerText = parts[2] || "";
 
-  // Remove old highlight classes
-  [name1, name2, name3].forEach(el => {
+  const allNames = [name1, name2, name3];
+
+  allNames.forEach(el => {
     if (el) el.classList.remove("highlight");
   });
 
-  // Random highlight
-  const randomIndex = Math.floor(Math.random() * 3);
-  const nameParts = [name1, name2, name3];
+  const randomIndex = Math.floor(Math.random() * allNames.length);
 
-  if (nameParts[randomIndex]) {
-    nameParts[randomIndex].classList.add("highlight");
+  if (allNames[randomIndex]) {
+    allNames[randomIndex].classList.add("highlight");
   }
 }
 
