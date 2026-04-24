@@ -4413,10 +4413,13 @@ if (data.heroName) {
   });
 
   // random highlighted word
-  const randomIndex = Math.floor(Math.random() * allNames.length);
-  if (allNames[randomIndex]) {
-    allNames[randomIndex].classList.add("highlight");
-  }
+ const validNames = allNames.filter(el => el);
+
+const randomIndex = Math.floor(Math.random() * validNames.length);
+
+console.log("Highlighted:", validNames[randomIndex]);
+
+validNames[randomIndex].classList.add("highlight");
 
   // animate upward every refresh
   setTimeout(() => {
