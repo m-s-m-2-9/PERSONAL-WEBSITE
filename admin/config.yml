@@ -1,0 +1,26 @@
+backend:
+  name: github
+  repo: your-username/your-username.github.io
+  branch: main
+
+media_folder: "photos"
+public_folder: "/photos"
+
+collections:
+  - name: "site_content"
+    label: "Site Content"
+    files:
+      - name: "data"
+        label: "All Website Content"
+        file: "data.json"
+        format: json
+        fields:
+          - {label: "Hero Tagline", name: "tagline", widget: "string"}
+          - {label: "About Text", name: "aboutText", widget: "text"}
+          - label: "Journey Years"
+            name: "journeyYears"
+            widget: "list"
+            fields:
+              - {label: "Year", name: "year", widget: "number"}
+              - {label: "Title", name: "title", widget: "string"}
+              - {label: "Body", name: "body", widget: "text"}
