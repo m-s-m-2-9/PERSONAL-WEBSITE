@@ -2344,10 +2344,8 @@
 
       <!-- NAME — each word clips in -->
       <h1 class="hero-name" id="hero-name" onclick="nameclickHandler()">
-        <span class="word"><span id="w1">Manomay</span></span>
-        <span class="word"><span id="w2" class="highlight">Shailendra</span></span>
-        <span class="word"><span id="w3">Misra</span></span>
-      </h1>
+  <span id="hero-full-name">Manomay Shailendra Misra</span>
+</h1>
 
       <!-- Hidden click counter hint (easter egg 2) -->
       <div class="name-click-hint" id="name-click-hint"></div>
@@ -4379,6 +4377,14 @@ fetch("data.json")
       taglineEl.textContent = data.tagline;
     }
 
+
+const heroName = document.getElementById("hero-full-name");
+
+if (heroName) {
+  heroName.textContent = data.heroName;
+}
+
+    
     // About section
     const about1 = document.getElementById("about-text-1");
     const about2 = document.getElementById("about-text-2");
