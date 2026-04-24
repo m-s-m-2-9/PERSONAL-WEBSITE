@@ -4415,11 +4415,16 @@ if (data.heroName) {
   // random highlighted word
  const validNames = allNames.filter(el => el);
 
-const randomIndex = Math.floor(Math.random() * validNames.length);
+// wait until text is visible, then apply highlight
+setTimeout(() => {
+  validNames.forEach(el => el.classList.remove("highlight"));
 
-console.log("Highlighted:", validNames[randomIndex]);
+  const randomIndex = Math.floor(Math.random() * validNames.length);
 
-validNames[randomIndex].classList.add("highlight");
+  validNames[randomIndex].classList.add("highlight");
+
+  console.log("Highlighted:", validNames[randomIndex].innerText);
+}, 700);
 
   // animate upward every refresh
   setTimeout(() => {
