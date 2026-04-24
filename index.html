@@ -2345,15 +2345,15 @@
       <!-- NAME — each word clips in -->
    <h1 class="hero-name" id="hero-name" onclick="nameclickHandler()">
   <span class="word">
-    <span id="name-part-1"></span>
+    <span id="w1">Manomay</span>
   </span>
 
   <span class="word">
-    <span id="name-part-2"></span>
+    <span id="w2">Shailendra</span>
   </span>
 
   <span class="word">
-    <span id="name-part-3"></span>
+    <span id="w3">Misra</span>
   </span>
 </h1>
       
@@ -4389,6 +4389,8 @@ if (taglineEl) {
 
 
 // Hero Name
+
+    // Hero Name
 const name1 = document.getElementById("name-part-1");
 const name2 = document.getElementById("name-part-2");
 const name3 = document.getElementById("name-part-3");
@@ -4402,6 +4404,7 @@ if (data.heroName) {
 
   const allNames = [name1, name2, name3];
 
+  // reset classes
   allNames.forEach(el => {
     if (el) {
       el.classList.remove("highlight");
@@ -4409,12 +4412,13 @@ if (data.heroName) {
     }
   });
 
+  // random highlighted word
   const randomIndex = Math.floor(Math.random() * allNames.length);
-
   if (allNames[randomIndex]) {
     allNames[randomIndex].classList.add("highlight");
   }
 
+  // animate upward every refresh
   setTimeout(() => {
     if (name1) name1.classList.add("visible");
 
@@ -4425,45 +4429,11 @@ if (data.heroName) {
     setTimeout(() => {
       if (name3) name3.classList.add("visible");
     }, 400);
+
   }, 100);
 }
-  // random highlight
-  const randomIndex = Math.floor(Math.random() * allNames.length);
+    
 
-  if (allNames[randomIndex]) {
-    allNames[randomIndex].classList.add("highlight");
-  }
-
-  // trigger animation EVERY time
-  setTimeout(() => {
-    if (name1) name1.classList.add("visible");
-
-    setTimeout(() => {
-      if (name2) name2.classList.add("visible");
-    }, 200);
-
-    setTimeout(() => {
-      if (name3) name3.classList.add("visible");
-    }, 400);
-  }, 100);
-}
-
-  // random highlight
-  const randomIndex = Math.floor(Math.random() * allNames.length);
-
-  if (allNames[randomIndex]) {
-    allNames[randomIndex].classList.add("highlight");
-  }
-
-  // animate all words in
-  setTimeout(() => {
-    allNames.forEach(el => {
-      if (el) {
-        el.classList.add("visible");
-      }
-    });
-  }, 300);
-}
     
     // About section
     const about1 = document.getElementById("about-text-1");
