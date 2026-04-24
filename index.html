@@ -2344,7 +2344,9 @@
 
       <!-- NAME — each word clips in -->
       <h1 class="hero-name" id="hero-name" onclick="nameclickHandler()">
-  <span id="hero-full-name">Manomay Shailendra Misra</span>
+  <span class="word"><span id="name-part-1"></span></span>
+  <span class="word"><span id="name-part-2"></span></span>
+  <span class="word"><span id="name-part-3"></span></span>
 </h1>
 
       <!-- Hidden click counter hint (easter egg 2) -->
@@ -4378,10 +4380,29 @@ fetch("data.json")
     }
 
 
-const heroName = document.getElementById("hero-full-name");
+const name1 = document.getElementById("name-part-1");
+const name2 = document.getElementById("name-part-2");
+const name3 = document.getElementById("name-part-3");
 
-if (heroName) {
-  heroName.textContent = data.heroName;
+if (data.heroName) {
+  const parts = data.heroName.split(" ");
+
+  if (name1) name1.textContent = parts[0] || "";
+  if (name2) name2.textContent = parts[1] || "";
+  if (name3) name3.textContent = parts[2] || "";
+
+  // Remove old highlight classes
+  [name1, name2, name3].forEach(el => {
+    if (el) el.classList.remove("highlight");
+  });
+
+  // Random highlight
+  const randomIndex = Math.floor(Math.random() * 3);
+  const nameParts = [name1, name2, name3];
+
+  if (nameParts[randomIndex]) {
+    nameParts[randomIndex].classList.add("highlight");
+  }
 }
 
     
