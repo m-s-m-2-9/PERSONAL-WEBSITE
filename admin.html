@@ -2,37 +2,69 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Visual OS Editor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual OS Editor | Admin</title>
     <style>
-        body { margin: 0; font-family: sans-serif; background: #111; color: white; }
-        #toolbar {
-            position: fixed; top: 0; left: 0; right: 0; height: 50px;
-            background: #222; border-bottom: 2px solid #444;
-            display: flex; align-items: center; padding: 0 20px; z-index: 9999;
+        /* The Admin Toolbar - Forced to the top */
+        #admin-toolbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: #1a1a1a;
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 9999999 !important; /* Higher than any site element */
+            border-bottom: 2px solid #333;
+            font-family: sans-serif;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        .btn {
-            background: #2563eb; color: white; border: none; padding: 8px 15px;
-            border-radius: 5px; cursor: pointer; margin-right: 10px; font-weight: bold;
+
+        .admin-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 12px;
+            font-weight: bold;
+            font-size: 14px;
         }
-        .btn-save { background: #16a34a; }
-        #editor-container { margin-top: 50px; width: 100vw; height: calc(100vh - 50px); overflow: auto; }
+
+        .admin-btn-save { background: #16a34a; }
         
-        /* Visual cues for editing */
-        .editing-active [contenteditable="true"]:hover {
-            outline: 2px dashed #2563eb;
-            background: rgba(37, 99, 235, 0.1);
+        #edit-status {
+            margin-left: auto;
+            font-size: 14px;
+            color: #888;
+        }
+
+        /* Container for your 4k lines */
+        #editable-area {
+            margin-top: 60px; /* Space for the toolbar */
+            position: relative;
+        }
+
+        /* Visual cue for editable text */
+        .edit-mode-on [contenteditable="true"] {
+            outline: 2px dashed #2563eb !important;
+            background: rgba(37, 99, 235, 0.05) !important;
+            cursor: text !important;
         }
     </style>
 </head>
 <body>
 
-<div id="toolbar">
-    <button class="btn" onclick="toggleEditMode()">Toggle Edit Mode</button>
-    <button class="btn btn-save" onclick="exportCode()">Get Updated Code</button>
-    <span id="status" style="margin-left: 20px; color: #aaa;">Mode: View</span>
-</div>
+    <div id="admin-toolbar">
+        <button class="admin-btn" onclick="toggleEdit()">Toggle Edit Mode</button>
+        <button class="admin-btn admin-btn-save" onclick="exportUpdatedCode()">Export New index.html</button>
+        <div id="edit-status">Status: View Mode</div>
+    </div>
 
-<div id="editor-container" id="site-wrapper">
     <div id="<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -4396,58 +4428,76 @@ window.addEventListener('load', () => {
 </script>
 </body>
 </html>">
-        <p style="padding: 20px;">Loading editor... If this doesn't change, paste your 4k lines of code inside the 'editable-area' div in this file.</p>
-    </div>
-</div>
+        </div>
 
-<script>
-    // 1. Toggle ContentEditable on all text elements
-    function toggleEditMode() {
-        const area = document.getElementById('editable-area');
-        const isEditing = area.classList.toggle('editing-active');
-        const textElements = area.querySelectorAll('p, h1, h2, h3, h4, span, div, a, button');
-        
-        textElements.forEach(el => {
-            if (el.children.length === 0 || (el.tagName !== 'DIV' && el.tagName !== 'A')) {
-                el.contentEditable = isEditing;
-            }
-        });
+    <script>
+        let isEditing = false;
 
-        // Handle Images
-        const images = area.querySelectorAll('img');
-        images.forEach(img => {
-            img.style.cursor = isEditing ? 'pointer' : 'default';
-            img.onclick = isEditing ? () => changeImage(img) : null;
-        });
+        function toggleEdit() {
+            isEditing = !isEditing;
+            const area = document.getElementById('editable-area');
+            const status = document.getElementById('edit-status');
+            
+            // Toggle class for visual styling
+            area.classList.toggle('edit-mode-on', isEditing);
+            
+            // Targets all text elements
+            const elements = area.querySelectorAll('h1, h2, h3, h4, p, span, a, li, button, div');
+            
+            elements.forEach(el => {
+                // Only make it editable if it contains direct text nodes
+                if (el.childNodes.length > 0) {
+                    el.contentEditable = isEditing;
+                }
+            });
 
-        document.getElementById('status').innerText = isEditing ? "Mode: EDITING (Click text to type)" : "Mode: View";
-    }
+            // Handle Images
+            const imgs = area.querySelectorAll('img');
+            imgs.forEach(img => {
+                img.style.border = isEditing ? "3px solid #2563eb" : "none";
+                img.onclick = isEditing ? (e) => {
+                    e.preventDefault();
+                    const newSrc = prompt("Enter new Image URL:", img.src);
+                    if (newSrc) img.src = newSrc;
+                } : null;
+            });
 
-    // 2. Simple Image Upload Simulator
-    function changeImage(imgElement) {
-        const newUrl = prompt("Enter the new Image URL:", imgElement.src);
-        if (newUrl) imgElement.src = newUrl;
-    }
+            status.innerText = isEditing ? "Status: EDITING (Click any text)" : "Status: View Mode";
+            status.style.color = isEditing ? "#4ade80" : "#888";
+        }
 
-    // 3. Export the modified 4k lines
-    function exportCode() {
-        // Clean up editor attributes before exporting
-        const area = document.getElementById('editable-area').cloneNode(true);
-        const textElements = area.querySelectorAll('[contenteditable]');
-        textElements.forEach(el => el.removeAttribute('contenteditable'));
-        
-        const fullCode = area.innerHTML;
-        
-        // Create a download link for the new index.html
-        const blob = new Blob([fullCode], { type: 'text/html' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'updated_index.html';
-        a.click();
-        
-        alert("Downloaded! Now replace your GitHub index.html code with this file.");
-    }
-</script>
+        function exportUpdatedCode() {
+            // Clone the area to clean it up without affecting the live view
+            const clone = document.getElementById('editable-area').cloneNode(true);
+            
+            // Remove all admin-specific attributes
+            const allEditable = clone.querySelectorAll('[contenteditable]');
+            allEditable.forEach(el => {
+                el.removeAttribute('contenteditable');
+                el.style.outline = "";
+                el.style.background = "";
+            });
 
+            const allImgs = clone.querySelectorAll('img');
+            allImgs.forEach(img => {
+                img.style.border = "";
+            });
+
+            // Get the cleaned HTML string
+            const finalCode = clone.innerHTML;
+
+            // Trigger download
+            const blob = new Blob([finalCode], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            alert("Success! Your updated index.html has been downloaded. Replace your old file with this one.");
+        }
+    </script>
 </body>
 </html>
