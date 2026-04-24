@@ -4372,6 +4372,25 @@ if (window.netlifyIdentity) {
   });
 }
 </script>
+
+
+
+<script>
+fetch("data.json")
+  .then(response => response.json())
+  .then(data => {
+    const taglineEl = document.getElementById("hero-tagline");
+
+    if(taglineEl){
+      taglineEl.textContent = data.tagline;
+    }
+  })
+  .catch(error => console.log(error));
+</script>
+
+
+
+
   
 </body>
 </html>
