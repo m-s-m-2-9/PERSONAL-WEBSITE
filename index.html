@@ -2343,17 +2343,17 @@
       </div>
 
       <!-- NAME — each word clips in -->
-    <h1 class="hero-name" id="hero-name" onclick="nameclickHandler()">
+   <h1 class="hero-name" id="hero-name" onclick="nameclickHandler()">
   <span class="word">
-    <span id="name-part-1">Manomay</span>
+    <span id="name-part-1"></span>
   </span>
 
   <span class="word">
-    <span id="name-part-2">Shailendra</span>
+    <span id="name-part-2"></span>
   </span>
 
   <span class="word">
-    <span id="name-part-3">Misra</span>
+    <span id="name-part-3"></span>
   </span>
 </h1>
       
@@ -4402,7 +4402,6 @@ if (data.heroName) {
 
   const allNames = [name1, name2, name3];
 
-  // remove old highlight + visible
   allNames.forEach(el => {
     if (el) {
       el.classList.remove("highlight");
@@ -4410,6 +4409,24 @@ if (data.heroName) {
     }
   });
 
+  const randomIndex = Math.floor(Math.random() * allNames.length);
+
+  if (allNames[randomIndex]) {
+    allNames[randomIndex].classList.add("highlight");
+  }
+
+  setTimeout(() => {
+    if (name1) name1.classList.add("visible");
+
+    setTimeout(() => {
+      if (name2) name2.classList.add("visible");
+    }, 200);
+
+    setTimeout(() => {
+      if (name3) name3.classList.add("visible");
+    }, 400);
+  }, 100);
+}
   // random highlight
   const randomIndex = Math.floor(Math.random() * allNames.length);
 
