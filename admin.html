@@ -2,67 +2,66 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visual OS Editor | Admin</title>
     <style>
-        /* The Admin Toolbar - Forced to the top */
+        /* FORCE the toolbar to be clickable above everything */
         #admin-toolbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: #1a1a1a;
-            color: white;
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
-            z-index: 9999999 !important; /* Higher than any site element */
-            border-bottom: 2px solid #333;
-            font-family: sans-serif;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: 70px !important;
+            background: #111 !important;
+            color: white !important;
+            display: flex !important;
+            align-items: center !important;
+            padding: 0 30px !important;
+            z-index: 2147483647 !important; /* Maximum possible z-index */
+            border-bottom: 3px solid #444 !important;
+            pointer-events: auto !important; /* ENSURES CLICKS WORK */
         }
 
         .admin-btn {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-right: 12px;
-            font-weight: bold;
-            font-size: 14px;
+            background: #2563eb !important;
+            color: white !important;
+            border: none !important;
+            padding: 12px 20px !important;
+            border-radius: 8px !important;
+            cursor: pointer !important;
+            margin-right: 15px !important;
+            font-weight: bold !important;
+            font-family: sans-serif !important;
+            pointer-events: auto !important;
+            display: inline-block !important;
         }
 
-        .admin-btn-save { background: #16a34a; }
-        
+        .admin-btn:hover { background: #1d4ed8 !important; }
+        .admin-btn-save { background: #16a34a !important; }
+
         #edit-status {
-            margin-left: auto;
-            font-size: 14px;
-            color: #888;
+            margin-left: auto !important;
+            font-family: monospace !important;
+            color: #4ade80 !important;
         }
 
-        /* Container for your 4k lines */
         #editable-area {
-            margin-top: 60px; /* Space for the toolbar */
-            position: relative;
+            margin-top: 75px !important;
+            position: relative !important;
         }
 
         /* Visual cue for editable text */
         .edit-mode-on [contenteditable="true"] {
             outline: 2px dashed #2563eb !important;
-            background: rgba(37, 99, 235, 0.05) !important;
-            cursor: text !important;
+            background: rgba(37, 99, 235, 0.1) !important;
         }
     </style>
 </head>
 <body>
 
     <div id="admin-toolbar">
-        <button class="admin-btn" onclick="toggleEdit()">Toggle Edit Mode</button>
-        <button class="admin-btn admin-btn-save" onclick="exportUpdatedCode()">Export New index.html</button>
-        <div id="edit-status">Status: View Mode</div>
+        <button id="toggleBtn" class="admin-btn">TOGGLE EDIT MODE</button>
+        <button id="exportBtn" class="admin-btn admin-btn-save">GET UPDATED CODE</button>
+        <div id="edit-status">MODE: VIEW</div>
     </div>
 
     <div id="<!DOCTYPE html>
@@ -4433,70 +4432,51 @@ window.addEventListener('load', () => {
     <script>
         let isEditing = false;
 
+        // Using direct Event Listeners which are more robust
+        document.getElementById('toggleBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleEdit();
+        });
+
+        document.getElementById('exportBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            exportUpdatedCode();
+        });
+
         function toggleEdit() {
             isEditing = !isEditing;
             const area = document.getElementById('editable-area');
             const status = document.getElementById('edit-status');
             
-            // Toggle class for visual styling
             area.classList.toggle('edit-mode-on', isEditing);
             
-            // Targets all text elements
+            // This targets all text-containing elements
             const elements = area.querySelectorAll('h1, h2, h3, h4, p, span, a, li, button, div');
             
             elements.forEach(el => {
-                // Only make it editable if it contains direct text nodes
-                if (el.childNodes.length > 0) {
+                // If it's a small element with text, make it editable
+                if (el.innerText && el.children.length < 5) {
                     el.contentEditable = isEditing;
                 }
             });
 
-            // Handle Images
-            const imgs = area.querySelectorAll('img');
-            imgs.forEach(img => {
-                img.style.border = isEditing ? "3px solid #2563eb" : "none";
-                img.onclick = isEditing ? (e) => {
-                    e.preventDefault();
-                    const newSrc = prompt("Enter new Image URL:", img.src);
-                    if (newSrc) img.src = newSrc;
-                } : null;
-            });
-
-            status.innerText = isEditing ? "Status: EDITING (Click any text)" : "Status: View Mode";
-            status.style.color = isEditing ? "#4ade80" : "#888";
+            status.innerText = isEditing ? "MODE: EDITING" : "MODE: VIEW";
+            status.style.color = isEditing ? "#ef4444" : "#4ade80";
+            console.log("Edit mode is now: " + isEditing);
         }
 
         function exportUpdatedCode() {
-            // Clone the area to clean it up without affecting the live view
-            const clone = document.getElementById('editable-area').cloneNode(true);
+            const area = document.getElementById('editable-area');
+            const cleanHtml = area.innerHTML.replace(/contenteditable="true"/g, '');
             
-            // Remove all admin-specific attributes
-            const allEditable = clone.querySelectorAll('[contenteditable]');
-            allEditable.forEach(el => {
-                el.removeAttribute('contenteditable');
-                el.style.outline = "";
-                el.style.background = "";
-            });
-
-            const allImgs = clone.querySelectorAll('img');
-            allImgs.forEach(img => {
-                img.style.border = "";
-            });
-
-            // Get the cleaned HTML string
-            const finalCode = clone.innerHTML;
-
-            // Trigger download
-            const blob = new Blob([finalCode], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
+            const blob = new Blob([cleanHtml], { type: 'text/html' });
             const a = document.createElement('a');
-            a.href = url;
+            a.href = URL.createObjectURL(blob);
             a.download = 'index.html';
-            document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
-            
-            alert("Success! Your updated index.html has been downloaded. Replace your old file with this one.");
+            alert("Updated index.html downloaded!");
         }
     </script>
 </body>
