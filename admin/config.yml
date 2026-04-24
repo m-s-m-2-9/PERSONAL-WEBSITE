@@ -1,65 +1,354 @@
+## ═══════════════════════════════════════════════════════════
+## DECAP CMS CONFIG — Manomay Shailendra Misra Website
+## This file controls what fields appear in the CMS admin panel.
+## Every field here maps to a key in data.json.
+## When you save in the CMS, it updates data.json in your GitHub repo.
+## Your website reads data.json on load and applies all the content.
+## ═══════════════════════════════════════════════════════════
+
 backend:
   name: git-gateway
   branch: main
 
+## Where uploaded images/files get stored in your repo
 media_folder: "photos"
 public_folder: "/photos"
 
+## ─────────────────────────────────────────────────────────
+## COLLECTIONS — each one is a section in the CMS sidebar
+## ─────────────────────────────────────────────────────────
 collections:
-  - name: "site_content"
-    label: "Site Content"
+
+  ## ══════════════════════════
+  ## 1. SITE-WIDE SETTINGS
+  ## ══════════════════════════
+  - name: "site_settings"
+    label: "Site Settings"
     files:
-      - name: "data"
-        label: "All Website Content"
+
+      - name: "global"
+        label: "Global & Config"
         file: "data.json"
         format: json
         fields:
 
-          - {label: "Hero Name", name: "heroName", widget: "string"}
-          - {label: "Hero Tagline", name: "tagline", widget: "string"}
-          - {label: "About Text", name: "aboutText", widget: "text"}
-
-          - label: "Social Links"
-            name: "socialLinks"
+          ## ── SITE ──
+          - label: "Site"
+            name: "site"
             widget: "object"
+            summary: "Title, tagline, footer, photos"
             fields:
-              - {label: "Instagram", name: "instagram", widget: "string"}
-              - {label: "LinkedIn", name: "linkedin", widget: "string"}
-              - {label: "Resume", name: "resume", widget: "string"}
+              - { label: "Site Title (browser tab)", name: "title", widget: "string", hint: "Shown in browser tab. e.g. Manomay Shailendra Misra" }
+              - { label: "Hero Tagline (below name)", name: "tagline", widget: "string", hint: "The small text shown below your name on the home page. e.g. Born 2008 · Mumbai · Making something of it all" }
+              - { label: "Nav Hint Text", name: "nav_hint", widget: "string", hint: "The small text below the tagline telling people some sections are password protected." }
+              - { label: "Footer Left Text", name: "footer_left", widget: "string", hint: "e.g. © 2026 Manomay Shailendra Misra" }
+              - { label: "Footer Right Text", name: "footer_right", widget: "string", hint: "e.g. Built with intention, not a template." }
+              - { label: "Hero Photo URL", name: "hero_photo_url", widget: "image", required: false, hint: "Upload your circular hero photo here. Shown on the home page." }
+              - { label: "About Page Photo URL", name: "about_photo_url", widget: "image", required: false, hint: "Upload your about page photo here. Shown on the Identity page." }
+              - { label: "About Photo Caption", name: "about_photo_label", widget: "string", hint: "Small label on your about photo. e.g. Manomay — 2024" }
 
-          - label: "Journey Years"
-            name: "journeyYears"
-            widget: "list"
-            fields:
-              - {label: "Year", name: "year", widget: "number"}
-              - {label: "Title", name: "title", widget: "string"}
-              - {label: "Body", name: "body", widget: "text"}
-
-          - label: "Projects"
-            name: "projects"
-            widget: "list"
-            fields:
-              - {label: "Project Title", name: "title", widget: "string"}
-              - {label: "Description", name: "description", widget: "text"}
-
-          - label: "Testimonials"
-            name: "testimonials"
-            widget: "list"
-            fields:
-              - {label: "Name", name: "name", widget: "string"}
-              - {label: "Role", name: "role", widget: "string"}
-              - {label: "Text", name: "text", widget: "text"}
-
+          ## ── PASSWORDS ──
           - label: "Passwords"
             name: "passwords"
             widget: "object"
+            summary: "Master password for locked sections"
             fields:
-              - {label: "Games Password", name: "games", widget: "string"}
-              - {label: "Secret Password", name: "secret", widget: "string"}
+              - { label: "Master Password", name: "master", widget: "string", hint: "This ONE password unlocks: Games, Private Photos, Private Journey, Secret About, Birth Details, Lists. Change this to something only you know." }
 
-          - label: "Music"
-            name: "music"
-            widget: "list"
+          ## ── EMAILJS ──
+          - label: "EmailJS (Contact Form)"
+            name: "emailjs"
+            widget: "object"
+            summary: "EmailJS keys for the contact form"
             fields:
-              - {label: "Song Name", name: "song", widget: "string"}
-              - {label: "Audio URL", name: "url", widget: "string"}
+              - { label: "Public Key", name: "public_key", widget: "string", hint: "From emailjs.com → Account → API Keys" }
+              - { label: "Service ID", name: "service_id", widget: "string", hint: "From emailjs.com → Email Services" }
+              - { label: "Template ID", name: "template_id", widget: "string", hint: "From emailjs.com → Email Templates" }
+
+          ## ── HOME LINKS ──
+          - label: "Home Quick-Access Links"
+            name: "home_links"
+            widget: "object"
+            summary: "Labels for the 6 links below the hero"
+            fields:
+              - { label: "Link 1 Label", name: "link1", widget: "string", default: "Identity" }
+              - { label: "Link 2 Label", name: "link2", widget: "string", default: "Journey 2008–2026" }
+              - { label: "Link 3 Label", name: "link3", widget: "string", default: "CV / Résumé" }
+              - { label: "Link 4 Label", name: "link4", widget: "string", default: "Thoughts" }
+              - { label: "Link 5 Label", name: "link5", widget: "string", default: "Photos" }
+              - { label: "Link 6 Label", name: "link6", widget: "string", default: "Get in touch" }
+
+          ## ── ABOUT ──
+          - label: "About / Identity Page"
+            name: "about"
+            widget: "object"
+            fields:
+              - { label: "Opening Quote (large italic text)", name: "intro_quote", widget: "string", hint: "The big italic quote at the top of your about page. One sentence." }
+              - { label: "Paragraph 1 (80–100 words)", name: "paragraph_1", widget: "text", hint: "First paragraph of your about me. About 80–100 words." }
+              - { label: "Paragraph 2 (50–60 words)", name: "paragraph_2", widget: "text", hint: "Second paragraph. About 50–60 words." }
+              - { label: "Secret About Text (password protected)", name: "secret_text", widget: "text", hint: "This text is hidden behind the master password. Write the real, private version of your story here." }
+
+          ## ── RESUME ──
+          - label: "CV / Resume"
+            name: "resume"
+            widget: "object"
+            fields:
+              - { label: "Professional Headline / Title", name: "headline", widget: "string", hint: "e.g. Creative Director · Entrepreneur · Student" }
+              - { label: "Professional Summary (40–60 words)", name: "summary", widget: "text" }
+              - label: "Jobs / Experience"
+                name: "jobs"
+                widget: "list"
+                summary: "{{fields.title}} at {{fields.org}}"
+                fields:
+                  - { label: "Job Title", name: "title", widget: "string" }
+                  - { label: "Company / Organisation", name: "org", widget: "string" }
+                  - { label: "Date Range", name: "date", widget: "string", hint: "e.g. 2025 – Present" }
+                  - { label: "Description", name: "desc", widget: "text" }
+              - label: "Education"
+                name: "education"
+                widget: "list"
+                summary: "{{fields.title}}"
+                fields:
+                  - { label: "School / College", name: "title", widget: "string" }
+                  - { label: "Stream / Board", name: "org", widget: "string" }
+                  - { label: "Years", name: "date", widget: "string", hint: "e.g. 2008 – Present" }
+              - label: "Skills (for CV tags)"
+                name: "skills"
+                widget: "list"
+                field: { label: "Skill", name: "skill", widget: "string" }
+                hint: "Each item becomes one skill tag on your CV."
+
+          ## ── PROFILES ──
+          - label: "Social Profiles"
+            name: "profiles"
+            widget: "list"
+            summary: "{{fields.platform}}"
+            hint: "Add platforms in order of importance. Shown on the Profiles page."
+            fields:
+              - { label: "Platform Name", name: "platform", widget: "string", hint: "e.g. Spotify, LinkedIn, Instagram" }
+              - { label: "Icon Text (2 letters)", name: "icon", widget: "string", hint: "Short text shown in the icon box. e.g. Sp, Li, Ig, Wa, Fb" }
+              - { label: "Handle / Number", name: "handle", widget: "string", hint: "e.g. @yourhandle or +91 XXXXXXXXXX" }
+              - { label: "Full URL", name: "url", widget: "string", hint: "e.g. https://instagram.com/yourhandle" }
+
+          ## ── JOURNEY ──
+          - label: "Year Journey (2008–2026)"
+            name: "journey"
+            widget: "object"
+            fields:
+              - label: "Years (click each to edit)"
+                name: "years"
+                widget: "list"
+                summary: "{{fields.year}} — {{fields.title}}"
+                fields:
+                  - { label: "Year", name: "year", widget: "number" }
+                  - { label: "Chapter Title", name: "title", widget: "string", hint: "e.g. The Beginning, The Turn, Clarity, Present" }
+                  - { label: "Year Summary (public)", name: "body", widget: "text", hint: "What happened this year? Key events, growth, changes. This is public." }
+              - { label: "Private Journey Text (password protected)", name: "secret_text", widget: "text", hint: "Your private thoughts and reflections. Hidden behind master password." }
+
+          ## ── PHOTOS ──
+          - label: "Photos & Albums"
+            name: "photos"
+            widget: "object"
+            fields:
+              - label: "Public Albums"
+                name: "public_albums"
+                widget: "list"
+                summary: "{{fields.title}}"
+                fields:
+                  - { label: "Album ID (no spaces, lowercase)", name: "id", widget: "string", hint: "e.g. album1, mumbai-trip, school-days. Must be unique." }
+                  - { label: "Album Title", name: "title", widget: "string" }
+                  - { label: "Description", name: "desc", widget: "string" }
+                  - { label: "Count Label", name: "count", widget: "string", hint: "e.g. 12 photos" }
+                  - { label: "Thumbnail Image", name: "thumb_url", widget: "image", required: false }
+                  - label: "Photos in this album"
+                    name: "photos"
+                    widget: "list"
+                    summary: "{{fields.title}}"
+                    fields:
+                      - { label: "Photo URL", name: "src", widget: "image", hint: "Upload photo here" }
+                      - { label: "Photo Title", name: "title", widget: "string" }
+                      - { label: "Photo Description", name: "desc", widget: "string" }
+              - label: "Private Albums (password protected)"
+                name: "private_albums"
+                widget: "list"
+                summary: "{{fields.title}}"
+                fields:
+                  - { label: "Album ID", name: "id", widget: "string" }
+                  - { label: "Album Title", name: "title", widget: "string" }
+                  - { label: "Description", name: "desc", widget: "string" }
+                  - { label: "Count Label", name: "count", widget: "string" }
+                  - { label: "Thumbnail Image", name: "thumb_url", widget: "image", required: false }
+                  - label: "Photos"
+                    name: "photos"
+                    widget: "list"
+                    summary: "{{fields.title}}"
+                    fields:
+                      - { label: "Photo URL", name: "src", widget: "image" }
+                      - { label: "Title", name: "title", widget: "string" }
+                      - { label: "Description", name: "desc", widget: "string" }
+
+          ## ── THOUGHTS ──
+          - label: "Thoughts & Beliefs"
+            name: "thoughts"
+            widget: "object"
+            fields:
+              - label: "Politics Posts"
+                name: "politics"
+                widget: "list"
+                summary: "{{fields.date}} — {{fields.title}}"
+                fields:
+                  - { label: "Date", name: "date", widget: "string", hint: "e.g. April 2026" }
+                  - { label: "Post Title", name: "title", widget: "string" }
+                  - { label: "Post Body", name: "body", widget: "text" }
+              - label: "God & Faith Posts"
+                name: "god"
+                widget: "list"
+                summary: "{{fields.date}} — {{fields.title}}"
+                fields:
+                  - { label: "Date", name: "date", widget: "string" }
+                  - { label: "Post Title", name: "title", widget: "string" }
+                  - { label: "Post Body", name: "body", widget: "text" }
+              - label: "Science Posts"
+                name: "science"
+                widget: "list"
+                summary: "{{fields.date}} — {{fields.title}}"
+                fields:
+                  - { label: "Date", name: "date", widget: "string" }
+                  - { label: "Post Title", name: "title", widget: "string" }
+                  - { label: "Post Body", name: "body", widget: "text" }
+              - label: "Life & Philosophy Posts"
+                name: "life"
+                widget: "list"
+                summary: "{{fields.date}} — {{fields.title}}"
+                fields:
+                  - { label: "Date", name: "date", widget: "string" }
+                  - { label: "Post Title", name: "title", widget: "string" }
+                  - { label: "Post Body", name: "body", widget: "text" }
+              - label: "Society & Culture Posts"
+                name: "society"
+                widget: "list"
+                summary: "{{fields.date}} — {{fields.title}}"
+                fields:
+                  - { label: "Date", name: "date", widget: "string" }
+                  - { label: "Post Title", name: "title", widget: "string" }
+                  - { label: "Post Body", name: "body", widget: "text" }
+              - label: "Technology Posts"
+                name: "tech"
+                widget: "list"
+                summary: "{{fields.date}} — {{fields.title}}"
+                fields:
+                  - { label: "Date", name: "date", widget: "string" }
+                  - { label: "Post Title", name: "title", widget: "string" }
+                  - { label: "Post Body", name: "body", widget: "text" }
+
+          ## ── CONTACT ──
+          - label: "Contact Page"
+            name: "contact"
+            widget: "object"
+            fields:
+              - { label: "Intro Text (italic paragraph)", name: "intro", widget: "text", hint: "The italic paragraph below the heading on the contact page." }
+
+          ## ── LISTS ──
+          - label: "Lists (Series, Books, Places, Movies)"
+            name: "lists"
+            widget: "object"
+            fields:
+              - label: "Web Series"
+                name: "series"
+                widget: "list"
+                summary: "{{fields.title}}"
+                fields:
+                  - { label: "Title", name: "title", widget: "string" }
+                  - { label: "Meta (Genre · Year)", name: "meta", widget: "string" }
+                  - label: "Status"
+                    name: "status"
+                    widget: "select"
+                    options:
+                      - { label: "Watched", value: "seen" }
+                      - { label: "Want to watch", value: "want" }
+                      - { label: "Watching", value: "reading" }
+              - label: "Books"
+                name: "books"
+                widget: "list"
+                summary: "{{fields.title}}"
+                fields:
+                  - { label: "Title", name: "title", widget: "string" }
+                  - { label: "Meta (Author · Year)", name: "meta", widget: "string" }
+                  - label: "Status"
+                    name: "status"
+                    widget: "select"
+                    options:
+                      - { label: "Read", value: "seen" }
+                      - { label: "Want to read", value: "want" }
+                      - { label: "Currently Reading", value: "reading" }
+              - label: "Places"
+                name: "places"
+                widget: "list"
+                summary: "{{fields.title}}"
+                fields:
+                  - { label: "Place", name: "title", widget: "string" }
+                  - { label: "Meta (Region · Country)", name: "meta", widget: "string" }
+                  - label: "Status"
+                    name: "status"
+                    widget: "select"
+                    options:
+                      - { label: "Visited", value: "seen" }
+                      - { label: "Bucket list", value: "want" }
+              - label: "Movies"
+                name: "movies"
+                widget: "list"
+                summary: "{{fields.title}}"
+                fields:
+                  - { label: "Title", name: "title", widget: "string" }
+                  - { label: "Meta (Director · Year)", name: "meta", widget: "string" }
+                  - label: "Status"
+                    name: "status"
+                    widget: "select"
+                    options:
+                      - { label: "Watched", value: "seen" }
+                      - { label: "Want to watch", value: "want" }
+
+          ## ── SKILLS ──
+          - label: "Skills & Hobbies (Traits Page)"
+            name: "skills"
+            widget: "object"
+            fields:
+              - { label: "Opening Quote on Traits Page", name: "quote", widget: "string", hint: "The large italic quote at the top of the Traits page." }
+              - label: "Skills with Progress Bars"
+                name: "skills_list"
+                widget: "list"
+                summary: "{{fields.name}} — {{fields.percent}}%"
+                fields:
+                  - { label: "Skill Name", name: "name", widget: "string" }
+                  - { label: "Level (0–100)", name: "percent", widget: "number", value_type: "int", min: 0, max: 100 }
+              - label: "Hobbies & Interests"
+                name: "hobbies"
+                widget: "list"
+                field: { label: "Hobby / Interest", name: "hobby", widget: "string" }
+
+          ## ── SOCIAL PROOF ──
+          - label: "Social Proof Wall"
+            name: "social_proof"
+            widget: "object"
+            fields:
+              - label: "Companies / Brands (logo wall)"
+                name: "companies"
+                widget: "list"
+                field: { label: "Company Name", name: "company", widget: "string" }
+              - label: "Testimonials"
+                name: "testimonials"
+                widget: "list"
+                summary: "{{fields.name}} — {{fields.role}}"
+                fields:
+                  - { label: "Person Name", name: "name", widget: "string" }
+                  - { label: "Role & Company", name: "role", widget: "string", hint: "e.g. CEO @ CompanyName" }
+                  - { label: "Testimonial Text", name: "text", widget: "text" }
+
+          ## ── BIRTHDAY ──
+          - label: "Birthday Timer Details (password protected)"
+            name: "birthday"
+            widget: "object"
+            fields:
+              - { label: "Date of Birth (display text)", name: "dob_display", widget: "string", hint: "e.g. 29 August 2008" }
+              - { label: "Time of Birth (display text)", name: "time_display", widget: "string", hint: "e.g. Approximately 1:00 – 1:30 PM IST" }
+              - { label: "Place of Birth", name: "place_display", widget: "string", hint: "e.g. Andheri, Maharashtra, India" }
