@@ -4367,16 +4367,19 @@ if (window.netlifyIdentity) {
 </script>
 
 
+  
 <script>
 fetch("data.json")
   .then(response => response.json())
   .then(data => {
 
+    // Tagline
     const taglineEl = document.getElementById("hero-tagline");
     if (taglineEl) {
       taglineEl.textContent = data.tagline;
     }
 
+    // About section
     const about1 = document.getElementById("about-text-1");
     const about2 = document.getElementById("about-text-2");
 
@@ -4386,6 +4389,24 @@ fetch("data.json")
       if (about1) about1.innerText = parts[0] || "";
       if (about2) about2.innerText = parts[1] || "";
     }
+
+    // Social links
+    const linkedin = document.getElementById("linkedin-link");
+    const instagram = document.getElementById("instagram-link");
+    const resume = document.getElementById("resume-link");
+
+    if (linkedin) {
+      linkedin.href = "https://linkedin.com/in/" + data.socialLinks.linkedin;
+    }
+
+    if (instagram) {
+      instagram.href = "https://instagram.com/" + data.socialLinks.instagram;
+    }
+
+    if (resume) {
+      resume.href = data.socialLinks.resume;
+    }
+
   })
   .catch(error => console.log(error));
 </script>
