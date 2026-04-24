@@ -1,14 +1,62 @@
 {
+  "contact": {
+    "intro": "HI HI HI"
+  },
+  "journey": {
+    "secret_text": "ADKUAUD"
+  },
+  "skills": {
+    "quote": "DDDIUAW"
+  },
   "heroName": "Manomay Shailendra Misra",
-  "tagline": "Born 2008 · Mumbai · Making something of it all",
-  "aboutText": "I have always been drawn toward rooms where voices matter.\n\nWhether speaking before a crowd or leading a team through uncertainty, I realized early that I enjoy influence—not as empty attention, but as real presence. I am fascinated by the architecture of leadership and the quiet power of management. My interest doesn't lie in the garage-startup cliché; it lies in the complex ecosystems of business, human resource management, and how powerful institutions are built through people.\n\nAmbition is only one half of my story. The other belongs to quieter things..\n\nMy life is a constant intersection of boardrooms and poetry. I am deeply connected to vintage aesthetics, retro culture, and the timelessness of a handwritten letter. I want financial freedom at a scale that creates a legacy, yet I crave a life slow enough to enjoy tea and music from another era. I seek influence without losing softness, and abundance without losing peace.",
+  "emailjs": {
+    "public_key": "9864982649824",
+    "service_id": "242",
+    "template_id": "214"
+  },
+  "site": {
+    "hero_photo_url": "/photos/whatsapp-image-2026-02-12-at-1.38.25-pm.jpeg",
+    "about_photo_url": "/photos/whatsapp-image-2026-04-21-at-6.27.56-pm.jpeg",
+    "title": "Manomay Shailendra Misra",
+    "tagline": "Born 2008 · Mumbai · Making something of it all",
+    "nav_hint": "Navigate using the tabs above. Some sections are protected — contact Manomay Shailendra Misra for the password.",
+    "footer_left": "© 2026 Manomay Shailendra Misra",
+    "footer_right": "Built with intention, not a template.",
+    "about_photo_label": "Hi! Its Me!"
+  },
   "socialLinks": {
     "instagram": "m-s-m-2-9",
     "linkedin": "manomay-shailendra-misra",
     "resume": "???"
   },
+  "resume": {
+    "headline": "YEAH HI",
+    "summary": "OH OH?"
+  },
+  "about": {
+    "paragraph_1": "xyz xyz",
+    "intro_quote": "WOAHHHH",
+    "paragraph_2": "YE YE YE YE",
+    "secret_text": "SECRET"
+  },
+  "tagline": "Born 2008 · Mumbai · Making something of it all",
   "passwords": {
     "games": "manomay2026",
-    "secret": "manomay2026"
+    "secret": "manomay2026",
+    "master": "manomay2026"
+  },
+  "home_links": {
+    "link1": "home",
+    "link2": "identity",
+    "link3": "photos",
+    "link4": "cv",
+    "link5": "profiles",
+    "link6": "journey and more"
+  },
+  "aboutText": "I have always been drawn toward rooms where voices matter.\n\nWhether speaking before a crowd or leading a team through uncertainty, I realized early that I enjoy influence—not as empty attention, but as real presence. I am fascinated by the architecture of leadership and the quiet power of management. My interest doesn't lie in the garage-startup cliché; it lies in the complex ecosystems of business, human resource management, and how powerful institutions are built through people.\n\nAmbition is only one half of my story. The other belongs to quieter things..\n\nMy life is a constant intersection of boardrooms and poetry. I am deeply connected to vintage aesthetics, retro culture, and the timelessness of a handwritten letter. I want financial freedom at a scale that creates a legacy, yet I crave a life slow enough to enjoy tea and music from another era. I seek influence without losing softness, and abundance without losing peace.",
+  "birthday": {
+    "dob_display": "29 August 2008",
+    "time_display": "01:30",
+    "place_display": "Andheri, Maharashtra, India"
   }
 }
