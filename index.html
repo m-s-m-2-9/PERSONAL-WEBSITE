@@ -4402,17 +4402,30 @@ if (data.heroName) {
 
   const allNames = [name1, name2, name3];
 
+  // remove previous highlight + visibility
   allNames.forEach(el => {
-    if (el) el.classList.remove("highlight");
+    if (el) {
+      el.classList.remove("highlight");
+      el.classList.remove("visible");
+    }
   });
 
+  // random highlight
   const randomIndex = Math.floor(Math.random() * allNames.length);
 
   if (allNames[randomIndex]) {
     allNames[randomIndex].classList.add("highlight");
   }
-}
 
+  // animate all words in
+  setTimeout(() => {
+    allNames.forEach(el => {
+      if (el) {
+        el.classList.add("visible");
+      }
+    });
+  }, 300);
+}
     
     // About section
     const about1 = document.getElementById("about-text-1");
