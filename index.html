@@ -2409,13 +2409,15 @@
     <div class="container section">
       <div class="section-label reveal">01 — Identity</div>
       <div class="about-grid">
+
         <!-- Left: sticky photo -->
         <div class="about-photo-col reveal">
           <div class="about-photo-wrap">
-            <!-- REPLACE with real photo -->
             <!-- <img src="about-photo.jpg" class="about-photo"> -->
             <div class="about-photo-placeholder">
-              <span style="font-family:var(--ff-display);font-size:0.8rem;color:var(--text3);">Your photo here</span>
+              <span style="font-family:var(--ff-display);font-size:0.8rem;color:var(--text3);">
+                Your photo here
+              </span>
             </div>
             <div class="about-photo-label">Manomay — 2024</div>
           </div>
@@ -2423,19 +2425,14 @@
 
         <!-- Right: text -->
         <div class="about-text-col">
+
           <p class="about-intro reveal reveal-d1">
-            "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz."
-            <!-- REPLACE: your opening quote or one-liner -->
+            "Building legacy without losing softness."
           </p>
 
-          <p class="about-body reveal reveal-d2">
-            xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz.
-            <!-- REPLACE: paragraph about you ~80–100 words -->
-          </p>
-
-          <p class="about-body reveal reveal-d3">
-            xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz.
-            <!-- REPLACE: second paragraph ~50–60 words -->
+          <!-- THIS becomes dynamic from CMS -->
+          <p class="about-body reveal reveal-d2" id="about-text">
+            Loading about section...
           </p>
 
           <!-- Word limit indicator -->
@@ -2443,30 +2440,41 @@
             📝 &nbsp; Recommended: 150–200 words total for this section
           </div>
 
-          <!-- Secret about section (password locked) -->
+          <!-- Secret section stays separate -->
           <div class="secret-section reveal reveal-d5">
             <div class="secret-label">⬡ More · Private</div>
+
             <p style="font-size:0.8rem;color:var(--text3);margin-bottom:1rem;">
               There's a hidden layer here. Enter the password to read the real story.
             </p>
+
             <div class="inline-password-form">
-              <input type="password" id="about-pw" placeholder="password" autocomplete="off"
-                onkeydown="if(event.key==='Enter')unlockSection('about-pw','secret-about-content')" />
-              <button onclick="unlockSection('about-pw','secret-about-content')">Unlock</button>
+              <input 
+                type="password" 
+                id="about-pw" 
+                placeholder="password" 
+                autocomplete="off"
+                onkeydown="if(event.key==='Enter')unlockSection('about-pw','secret-about-content')"
+              />
+
+              <button onclick="unlockSection('about-pw','secret-about-content')">
+                Unlock
+              </button>
             </div>
+
             <div class="secret-content" id="secret-about-content">
               <p class="about-body" style="margin-top:1.5rem;">
-                xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz.
-                <!-- REPLACE: your private about-me content -->
+                Your private story goes here.
               </p>
             </div>
           </div>
+
         </div>
       </div>
     </div>
   </div>
 </section>
-
+  
 <!-- ─── PAGE: PHOTOS ─── -->
 <section id="page-photos" class="page">
   <div class="page-inner">
@@ -4374,23 +4382,31 @@ if (window.netlifyIdentity) {
 </script>
 
 
-
 <script>
 fetch("data.json")
   .then(response => response.json())
   .then(data => {
-    const taglineEl = document.getElementById("hero-tagline");
 
-    if(taglineEl){
+    const taglineEl = document.getElementById("hero-tagline");
+    if (taglineEl) {
       taglineEl.textContent = data.tagline;
+    }
+
+    const about1 = document.getElementById("about-text-1");
+    const about2 = document.getElementById("about-text-2");
+
+    if (data.aboutText) {
+      const parts = data.aboutText.split("\n\n");
+
+      if (about1) about1.innerText = parts[0] || "";
+      if (about2) about2.innerText = parts[1] || "";
     }
   })
   .catch(error => console.log(error));
 </script>
 
 
-
-
+  
   
 </body>
 </html>
