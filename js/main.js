@@ -316,7 +316,7 @@ updateBirthdayTimer();
    YEAR JOURNEY TIMELINE
 ═══════════════════════════════════════════════════════════ */
 const yearData = {
-  2008: { title: "The Beginning",   body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. Born 29 August, Andheri, Maharashtra. Everything starts here. — REPLACE with your memories/context." },
+  2008: { title: "The Beginning",   body: "The story begins in the humid, electric atmosphere of Mumbai. Born in Andheri West, Maharashtra, my entry into the world was marked by a setting defined by contrast—where the old soul of India meets the relentless ambition of its financial heart. From the very first day, my life was positioned at the intersection of diverse cultures and high expectations. Even though these early months are a blur of sensory memories, they established the "Nomadic" blueprint of my life. I was born into a family that valued education and presence, setting the stage for a boy who would eventually grow to command rooms and lead institutions." },
   2009: { title: "Year One",        body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
   2010: { title: "Growing Up",      body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
   2011: { title: "Discovery",       body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
