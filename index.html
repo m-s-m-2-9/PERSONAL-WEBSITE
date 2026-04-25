@@ -4554,7 +4554,54 @@ if (data.heroName) {
     }
 
   })
-  .catch(error => console.log(error));
+.catch(error => console.log(error));
+
+/* MUSIC SYSTEM */
+const bgMusic = document.getElementById("bg-music");
+const musicToggle = document.getElementById("music-toggle");
+const vinylPlayer = document.getElementById("vinyl-player");
+
+let musicPlaying = false;
+
+// default = paused state
+musicToggle.classList.add("muted");
+
+if (vinylPlayer) {
+  vinylPlayer.classList.add("paused");
+}
+
+function toggleMusic() {
+  if (!bgMusic) return;
+
+  if (musicPlaying) {
+    bgMusic.pause();
+    musicPlaying = false;
+
+    musicToggle.classList.add("muted");
+
+    if (vinylPlayer) {
+      vinylPlayer.classList.add("paused");
+    }
+
+  } else {
+    bgMusic.play().catch(err => console.log(err));
+    musicPlaying = true;
+
+    musicToggle.classList.remove("muted");
+
+    if (vinylPlayer) {
+      vinylPlayer.classList.remove("paused");
+    }
+  }
+}
+
+if (musicToggle) {
+  musicToggle.addEventListener("click", toggleMusic);
+}
+
+if (vinylPlayer) {
+  vinylPlayer.addEventListener("click", toggleMusic);
+}
 </script>
 
 
@@ -4563,9 +4610,15 @@ if (data.heroName) {
 </audio>
 
 
-<audio id="bg-music" autoplay loop>
+<audio id="bg-music" loop>
   <source src="songs/SONG1.mp3" type="audio/mpeg">
 </audio>
+
+
+<!-- Vinyl Record -->
+<div class="vinyl-player paused" id="vinyl-player">
+  <div class="vinyl-disc"></div>
+</div>
   
   
 </body>
