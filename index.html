@@ -2315,6 +2315,15 @@
 ═══════════════════════════════════════════════════════════ -->
 <div id="transition-overlay"></div>
 
+<!-- MUSIC TOGGLE -->
+<button class="music-toggle muted" id="music-toggle">
+  <div class="sound-bars">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</button>
+
 <!-- ═══════════════════════════════════════════════════════════
      PASSWORD GATE — shared overlay for all locked sections
 ═══════════════════════════════════════════════════════════ -->
@@ -4621,6 +4630,22 @@ if (vinylPlayer) {
   <div class="vinyl-disc"></div>
 </div>
   
+  
+<script>
+const music = document.getElementById("bg-music");
+const musicToggle = document.getElementById("music-toggle");
+
+musicToggle.addEventListener("click", async () => {
+    if (music.paused) {
+        await music.play();
+        musicToggle.classList.remove("muted");
+    } else {
+        music.pause();
+        musicToggle.classList.add("muted");
+    }
+});
+</script>
+
   
 </body>
 </html>
