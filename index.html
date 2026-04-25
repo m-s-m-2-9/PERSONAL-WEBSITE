@@ -4300,21 +4300,30 @@ const nameClickMessages = [
   "", "", "", "", "",
   "5 clicks... curious.",
   "6 clicks... you're definitely onto something.",
-  "🎉 7 clicks! You found the easter egg. Hello, persistent human.",
+  "7 clicks! You found the easter egg. Hello, persistent human. Here is your reward lean back and calm down.",
 ];
 
 function nameclickHandler() {
   nameClicks++;
+
   const hint = document.getElementById('name-click-hint');
+  const song = document.getElementById('rain-song');
+
   if (nameClicks >= 5) {
     hint.textContent = nameClickMessages[Math.min(nameClicks, 7)];
     hint.classList.add('show');
   }
+
   if (nameClicks >= 7) {
-    // Play a visual burst effect
-    const name = document.getElementById('hero-name');
-    name.style.color = 'var(--accent)';
-    setTimeout(() => { name.style.color = ''; nameClicks = 0; hint.classList.remove('show'); }, 2000);
+    if (song) {
+      song.currentTime = 0;
+      song.play();
+    }
+
+    setTimeout(() => {
+      nameClicks = 0;
+      hint.classList.remove('show');
+    }, 4000);
   }
 }
 
@@ -4473,6 +4482,10 @@ if (data.heroName) {
   .catch(error => console.log(error));
 </script>
 
+
+<audio id="rain-song">
+  <source src="songs/rimjhim.mp3" type="audio/mpeg">
+</audio>
 
   
   
