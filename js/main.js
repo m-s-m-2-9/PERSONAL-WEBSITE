@@ -983,5 +983,9 @@ function startMusic() {
 window.addEventListener('load', () => {
   updateNavActive('home');
   setTimeout(() => triggerPageReveals('home'), 2000);
-   startMusic();
+   music.play().then(() => {
+  document.getElementById('vinyl-player')?.classList.remove('paused');
+      music.pause();
+document.getElementById('vinyl-player')?.classList.add('paused');
+});
 });
