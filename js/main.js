@@ -6,6 +6,8 @@
            games, easter eggs
 ═══════════════════════════════════════════════════════════ */
 
+let music = null;
+
 /* ─── CONFIGURATION ─── */
 const CONFIG = {
   MASTER_PASSWORD: "manomay2026",         // REPLACE
@@ -958,7 +960,7 @@ function nameclickHandler() {
 ═══════════════════════════════════════════════════════════ */
 
 function startMusic() {
-  const music = document.getElementById('bg-music');
+  music = document.getElementById('bg-music'); // 🔥 GLOBAL NOW
   if (!music) return;
 
   music.volume = 0.4;
@@ -978,13 +980,28 @@ function startMusic() {
 
 
 /* ═══════════════════════════════════════════════════════════
+   VINYL CLICK CONTROL
+═══════════════════════════════════════════════════════════ */
+
+document.getElementById('vinyl-player')?.addEventListener('click', () => {
+  if (!music) return;
+
+  if (music.paused) {
+    music.play();
+    document.getElementById('vinyl-player').classList.remove('paused');
+  } else {
+    music.pause();
+    document.getElementById('vinyl-player').classList.add('paused');
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════════════════ */
 window.addEventListener('load', () => {
   updateNavActive('home');
   setTimeout(() => triggerPageReveals('home'), 2000);
-   music.play().then(() => {
-  document.getElementById('vinyl-player')?.classList.remove('paused');
+   startMusic();
 
       
 });
