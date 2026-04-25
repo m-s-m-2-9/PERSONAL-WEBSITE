@@ -959,51 +959,39 @@ function nameclickHandler() {
    AUDIO SYSTEM
 ═══════════════════════════════════════════════════════════ */
 
-let music = null;
-let isPlaying = false;
-
 function startMusic() {
-  music = document.getElementById('bg-music');
-  const vinyl = document.getElementById('vinyl-player');
-
+  music = document.getElementById('bg-music'); // 🔥 GLOBAL NOW
   if (!music) return;
 
   music.volume = 0.4;
 
-  music.play()
-    .then(() => {
-      isPlaying = true;
-      vinyl?.classList.remove('paused');
-    })
-    .catch(() => {
+  const playPromise = music.play();
+
+  if (playPromise !== undefined) {
+    playPromise.catch(() => {
       const resume = () => {
         music.play();
-        isPlaying = true;
-        vinyl?.classList.remove('paused');
         document.removeEventListener('click', resume);
       };
       document.addEventListener('click', resume, { once: true });
     });
+  }
 }
+
 
 /* ═══════════════════════════════════════════════════════════
    VINYL CLICK CONTROL
 ═══════════════════════════════════════════════════════════ */
 
 document.getElementById('vinyl-player')?.addEventListener('click', () => {
-  const vinyl = document.getElementById('vinyl-player');
-  const audio = document.getElementById('bg-music');
+  if (!music) return;
 
-  if (!audio) return;
-
-  if (audio.paused) {
-    audio.play();
-    isPlaying = true;
-    vinyl?.classList.remove('paused');
+  if (music.paused) {
+    music.play();
+    document.getElementById('vinyl-player').classList.remove('paused');
   } else {
-    audio.pause();
-    isPlaying = false;
-    vinyl?.classList.add('paused');
+    music.pause();
+    document.getElementById('vinyl-player').classList.add('paused');
   }
 });
 
@@ -1013,6 +1001,7 @@ document.getElementById('vinyl-player')?.addEventListener('click', () => {
 window.addEventListener('load', () => {
   updateNavActive('home');
   setTimeout(() => triggerPageReveals('home'), 2000);
+   startMusic();
 
-  startMusic();
+      
 });
