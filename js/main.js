@@ -952,10 +952,36 @@ function nameclickHandler() {
   });
 })();
 
+
+/* ═══════════════════════════════════════════════════════════
+   AUDIO SYSTEM
+═══════════════════════════════════════════════════════════ */
+
+function startMusic() {
+  const music = document.getElementById('bg-music');
+  if (!music) return;
+
+  music.volume = 0.4;
+
+  const playPromise = music.play();
+
+  if (playPromise !== undefined) {
+    playPromise.catch(() => {
+      const resume = () => {
+        music.play();
+        document.removeEventListener('click', resume);
+      };
+      document.addEventListener('click', resume, { once: true });
+    });
+  }
+}
+
+
 /* ═══════════════════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════════════════ */
 window.addEventListener('load', () => {
   updateNavActive('home');
   setTimeout(() => triggerPageReveals('home'), 2000);
+   startMusic();
 });
