@@ -958,26 +958,7 @@
   <source src="songs/SONG1.mp3" type="audio/mpeg">
 </audio>
 
-<script>
-  window.addEventListener('load', () => {
-    const music = document.getElementById('bg-music');
-    const vinyl = document.getElementById('vinyl-player');
 
-    if (!music || !vinyl) return;
-
-    music.volume = 0.4;
-
-    const tryPlay = () => {
-      music.play()
-        .then(() => vinyl.classList.remove('paused'))
-        .catch(() => {});
-    };
-
-    tryPlay();
-
-    document.addEventListener('click', tryPlay, { once: true });
-  });
-</script>
   
 <!-- Vinyl Record -->
 <div class="vinyl-player paused" id="vinyl-player">
