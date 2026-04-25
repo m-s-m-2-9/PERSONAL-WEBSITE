@@ -985,7 +985,6 @@ window.addEventListener('load', () => {
   setTimeout(() => triggerPageReveals('home'), 2000);
    music.play().then(() => {
   document.getElementById('vinyl-player')?.classList.remove('paused');
-      music.pause();
-document.getElementById('vinyl-player')?.classList.add('paused');
-});
+
+      
 });
