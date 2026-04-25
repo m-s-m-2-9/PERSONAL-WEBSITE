@@ -2319,7 +2319,7 @@
      PASSWORD GATE — shared overlay for all locked sections
 ═══════════════════════════════════════════════════════════ -->
 <div id="password-gate" class="password-gate">
-  <div class="gate-icon">🔒</div>
+  <div class="gate-icon"></div>
   <div class="gate-title">Restricted</div>
   <div class="gate-subtitle">Enter password to continue</div>
   <div class="gate-input-wrap">
@@ -2356,18 +2356,19 @@
     <li><a href="#" onclick="navigateTo('social'); return false;">Social</a></li>
   </ul>
 
-  <div class="nav-right">
+ <div class="nav-right">
 
-<button id="music-toggle" class="music-toggle">
-      <span class="sound-bars">
-        <span></span>
-        <span></span>
-        <span></span>
-      </span>
-    </button>
+  <!-- Music Toggle Button -->
+  <button class="music-toggle muted" id="music-toggle">
+    <div class="sound-bars">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </button>
 
+  <div class="theme-switcher">
     
-    <div class="theme-switcher">
       <div class="theme-dot active" data-t="dark" title="Noir" onclick="setTheme('dark')"></div>
       <div class="theme-dot" data-t="light" title="Ivory" onclick="setTheme('light')"></div>
       <div class="theme-dot" data-t="slate" title="Slate" onclick="setTheme('slate')"></div>
