@@ -6,11 +6,6 @@
            games, easter eggs
 ═══════════════════════════════════════════════════════════ */
 
-let bgMusic;
-let easterMusic;
-let isEasterUnlocked = false;
-let clickCount = 0;
-
 /* ─── CONFIGURATION ─── */
 const CONFIG = {
   MASTER_PASSWORD: "manomay2026",         // REPLACE
@@ -957,54 +952,10 @@ function nameclickHandler() {
   });
 })();
 
-
-/* ═══════════════════════════════════════════════════════════
-   AUDIO SYSTEM
-═══════════════════════════════════════════════════════════ */
-
-function startMusic() {
-  music = document.getElementById('bg-music'); // 🔥 GLOBAL NOW
-  if (!music) return;
-
-  music.volume = 0.4;
-
-  const playPromise = music.play();
-
-  if (playPromise !== undefined) {
-    playPromise.catch(() => {
-      const resume = () => {
-        music.play();
-        document.removeEventListener('click', resume);
-      };
-      document.addEventListener('click', resume, { once: true });
-    });
-  }
-}
-
-
-/* ═══════════════════════════════════════════════════════════
-   VINYL CLICK CONTROL
-═══════════════════════════════════════════════════════════ */
-
-document.getElementById('vinyl-player')?.addEventListener('click', () => {
-  if (!music) return;
-
-  if (music.paused) {
-    music.play();
-    document.getElementById('vinyl-player').classList.remove('paused');
-  } else {
-    music.pause();
-    document.getElementById('vinyl-player').classList.add('paused');
-  }
-});
-
 /* ═══════════════════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════════════════ */
 window.addEventListener('load', () => {
   updateNavActive('home');
   setTimeout(() => triggerPageReveals('home'), 2000);
-   startMusic();
-
-      
 });
