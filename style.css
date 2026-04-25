@@ -676,3 +676,65 @@ canvas { display: block; }
 #mobile-nav.open { opacity: 1; pointer-events: all; }
 #mobile-nav a { font-family: var(--ff-display); font-size: 2rem; font-weight: 300; color: var(--text2); text-decoration: none; transition: color 0.2s; }
 #mobile-nav a:hover { color: var(--accent); }
+
+
+.music-toggle {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    border: 1px solid var(--border2);
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    z-index: 9999;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sound-bars {
+    display: flex;
+    align-items: end;
+    gap: 4px;
+    height: 20px;
+}
+
+.sound-bars span {
+    width: 4px;
+    background: var(--accent);
+    border-radius: 10px;
+    animation: musicBounce 0.8s infinite ease-in-out;
+}
+
+.sound-bars span:nth-child(1) {
+    height: 8px;
+    animation-delay: 0s;
+}
+
+.sound-bars span:nth-child(2) {
+    height: 16px;
+    animation-delay: 0.2s;
+}
+
+.sound-bars span:nth-child(3) {
+    height: 12px;
+    animation-delay: 0.4s;
+}
+
+.music-toggle.muted .sound-bars span {
+    animation: none;
+    height: 8px;
+}
+
+@keyframes musicBounce {
+    0%,100% {
+        transform: scaleY(0.5);
+    }
+    50% {
+        transform: scaleY(1.4);
+    }
+}
