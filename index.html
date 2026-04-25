@@ -4391,6 +4391,7 @@ if (taglineEl) {
 // Hero Name
 
     // Hero Name
+// Hero Name
 const name1 = document.getElementById("name-part-1");
 const name2 = document.getElementById("name-part-2");
 const name3 = document.getElementById("name-part-3");
@@ -4404,23 +4405,35 @@ if (data.heroName) {
 
   const allNames = [name1, name2, name3];
 
-  // reset classes
+  // Reset animation + highlight
   allNames.forEach(el => {
     if (el) {
-      el.classList.remove("highlight");
       el.classList.remove("visible");
+      el.classList.remove("highlight");
     }
   });
 
-  // random highlighted word
-const validNames = allNames.filter(el => el);
+  // ---------------------------
+  // ROTATING highlight logic
+  // ---------------------------
+  let currentHighlight = localStorage.getItem("nameHighlightIndex");
 
-validNames.forEach(el => el.classList.remove("highlight"));
+  if (currentHighlight === null) {
+    currentHighlight = 0;
+  } else {
+    currentHighlight = parseInt(currentHighlight);
+    currentHighlight = (currentHighlight + 1) % allNames.length;
+  }
 
-const randomIndex = Math.floor(Math.random() * validNames.length);
-validNames[randomIndex].classList.add("highlight");
+  localStorage.setItem("nameHighlightIndex", currentHighlight);
 
-  // animate upward every refresh
+  if (allNames[currentHighlight]) {
+    allNames[currentHighlight].classList.add("highlight");
+  }
+
+  // ---------------------------
+  // Down → Up animation
+  // ---------------------------
   setTimeout(() => {
     if (name1) name1.classList.add("visible");
 
@@ -4431,7 +4444,6 @@ validNames[randomIndex].classList.add("highlight");
     setTimeout(() => {
       if (name3) name3.classList.add("visible");
     }, 400);
-
   }, 100);
 }
     
