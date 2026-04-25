@@ -948,21 +948,23 @@
 ═══════════════════════════════════════════════════════════ -->
 <div id="konami-egg">🎮 You found it! Konami code unlocked. You're clearly one of us.</div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     AUDIO
-═══════════════════════════════════════════════════════════ -->
-<audio id="rain-song">
-  <source src="songs/rimjhim.mp3" type="audio/mpeg">
-</audio>
+<!-- AUDIO -->
 <audio id="bg-music" loop preload="auto">
   <source src="songs/SONG1.mp3" type="audio/mpeg">
 </audio>
 
+<audio id="easter-music" loop preload="auto">
+  <source src="songs/rimjhim.mp3" type="audio/mpeg">
+</audio>
 
-  
-<!-- Vinyl Record -->
-<div class="vinyl-player paused" id="vinyl-player">
+<!-- VINYL (ONLY EASTER EGG VISUAL) -->
+<div class="vinyl-player paused hidden" id="vinyl-player">
   <div class="vinyl-disc"></div>
+</div>
+
+<!-- SONG BAR BUTTON (YOU ALREADY HAVE ONE — MOVE/STYLE IT LATER) -->
+<div id="song-bar" class="song-bar">
+  ⏸
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
