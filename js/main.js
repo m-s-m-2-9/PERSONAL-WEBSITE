@@ -6,7 +6,10 @@
            games, easter eggs
 ═══════════════════════════════════════════════════════════ */
 
-let music = null;
+let bgMusic;
+let easterMusic;
+let isEasterUnlocked = false;
+let clickCount = 0;
 
 /* ─── CONFIGURATION ─── */
 const CONFIG = {
