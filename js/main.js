@@ -920,24 +920,7 @@ const nameClickMessages = [
   "7 clicks! You found the easter egg. Hello, persistent human. Here is your reward lean back and calm down.",
 ];
 
-function nameclickHandler() {
-  nameClicks++;
-  const hint = document.getElementById('name-click-hint');
-  const song = document.getElementById('rain-song');
 
-  if (nameClicks >= 5) {
-    hint.textContent = nameClickMessages[Math.min(nameClicks, 7)];
-    hint.classList.add('show');
-  }
-
-  if (nameClicks >= 7) {
-    if (song) { song.currentTime = 0; song.play(); }
-    setTimeout(() => {
-      nameClicks = 0;
-      hint.classList.remove('show');
-    }, 4000);
-  }
-}
 
 /* 3. Type "manomay" anywhere */
 (function() {
@@ -959,3 +942,173 @@ window.addEventListener('load', () => {
   updateNavActive('home');
   setTimeout(() => triggerPageReveals('home'), 2000);
 });
+
+
+/* ═══════════════════════════════════════════════════════════
+   MUSIC SYSTEM
+═══════════════════════════════════════════════════════════ */
+
+const bgMusic = document.getElementById("bg-music");
+const rainSong = document.getElementById("rain-song");
+
+const songBar = document.getElementById("song-bar");
+const vinylPlayer = document.getElementById("vinyl-player");
+
+let easterUnlocked = false;
+let musicStarted = false;
+
+/* ---------- play default song ---------- */
+function playDefaultSong() {
+  if (!bgMusic) return;
+
+  rainSong.pause();
+  rainSong.currentTime = 0;
+
+  bgMusic.play()
+    .then(() => {
+      musicStarted = true;
+      updateMusicUI();
+    })
+    .catch(() => {
+      console.log("Autoplay blocked by browser");
+
+      // fallback → first mouse move starts music
+      document.addEventListener(
+        "mousemove",
+        () => {
+          if (!musicStarted) {
+            bgMusic.play().then(() => {
+              musicStarted = true;
+              updateMusicUI();
+            });
+          }
+        },
+        { once: true }
+      );
+    });
+}
+
+/* ---------- stop all songs ---------- */
+function stopAllMusic() {
+  if (bgMusic) {
+    bgMusic.pause();
+    bgMusic.currentTime = 0;
+  }
+
+  if (rainSong) {
+    rainSong.pause();
+    rainSong.currentTime = 0;
+  }
+
+  updateMusicUI();
+}
+
+/* ---------- update vinyl + song bar ---------- */
+function updateMusicUI() {
+  const isPlaying =
+    (!bgMusic.paused && !bgMusic.ended) ||
+    (!rainSong.paused && !rainSong.ended);
+
+  if (isPlaying) {
+    songBar.classList.add("playing");
+    songBar.innerHTML = "▌▌▌";
+  } else {
+    songBar.classList.remove("playing");
+    songBar.innerHTML = "▶";
+  }
+
+  if (easterUnlocked) {
+    vinylPlayer.classList.remove("hidden");
+
+    if (isPlaying) {
+      vinylPlayer.classList.remove("paused");
+    } else {
+      vinylPlayer.classList.add("paused");
+    }
+  } else {
+    vinylPlayer.classList.add("hidden");
+  }
+}
+
+/* ---------- song bar click = stop music ---------- */
+songBar.addEventListener("click", () => {
+  stopAllMusic();
+});
+
+/* ---------- vinyl click = open mini playlist ---------- */
+vinylPlayer.addEventListener("click", () => {
+  let menu = document.getElementById("playlist-menu");
+
+  if (!menu) {
+    menu = document.createElement("div");
+    menu.id = "playlist-menu";
+
+    menu.innerHTML = `
+      <button data-song="default">Default Song</button>
+      <button data-song="rain">Rimjhim</button>
+    `;
+
+    document.body.appendChild(menu);
+
+    menu.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const type = btn.dataset.song;
+
+        stopAllMusic();
+
+        if (type === "default") {
+          bgMusic.play();
+        }
+
+        if (type === "rain") {
+          rainSong.play();
+        }
+
+        updateMusicUI();
+      });
+    });
+  }
+
+  menu.classList.toggle("show");
+});
+
+/* ---------- autoplay on page load ---------- */
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    playDefaultSong();
+  }, 1000);
+});
+
+/* ---------- keep UI synced ---------- */
+bgMusic.addEventListener("play", updateMusicUI);
+bgMusic.addEventListener("pause", updateMusicUI);
+
+rainSong.addEventListener("play", updateMusicUI);
+rainSong.addEventListener("pause", updateMusicUI);
+
+
+/* ---------- modify your existing easter egg ---------- */
+function nameclickHandler() {
+  nameClicks++;
+
+  const hint = document.getElementById("name-click-hint");
+
+  if (nameClicks >= 5) {
+    hint.textContent = nameClickMessages[Math.min(nameClicks, 7)];
+    hint.classList.add("show");
+  }
+
+  if (nameClicks >= 7) {
+    easterUnlocked = true;
+
+    stopAllMusic();
+
+    rainSong.play();
+    updateMusicUI();
+
+    setTimeout(() => {
+      nameClicks = 0;
+      hint.classList.remove("show");
+    }, 4000);
+  }
+}
