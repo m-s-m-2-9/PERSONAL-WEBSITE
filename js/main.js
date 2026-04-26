@@ -316,11 +316,11 @@ updateBirthdayTimer();
    YEAR JOURNEY TIMELINE
 ═══════════════════════════════════════════════════════════ */
 const yearData = {
-  2008: { title: "The Beginning",   body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. Born 29 August, Andheri, Maharashtra. Everything starts here. — REPLACE with your memories/context." },
-  2009: { title: "Year One",        body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2010: { title: "Growing Up",      body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2011: { title: "Discovery",       body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2012: { title: "Early Years",     body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
+  2008: { title: "The Beginning",   body: "The story begins in the humid, electric atmosphere of Maharashtra, my entry into the world was marked by a setting defined by contrast—where the old soul of India meets the relentless ambition of its financial heart. From the very first day, my life was positioned at the intersection of diverse cultures and high expectations. Even though these early months are a blur of sensory memories, they established the -Nomadic- blueprint of my life. I was born into a family that valued education and presence, setting the stage for a boy who would eventually grow to command rooms and lead institutions." },
+  2009: { title: "Year One",        body: "Before the constant moves and the changing cities, 2009 was a year of profound, silent growth. This was the period where my internal world began to synthesize the environment around me. Living in the wake of the vibrant energy of Mumbai and Lucknow, I was a child developing an early sense of observation—the -Old Soul- beginning to peak through. While most children at this age are simply reacting to stimuli, I was absorbing the rhythms of a household that valued structure and discipline. This year was the silent foundation; it was the quiet before the journey of moving across India began. I was learning the nuances of human interaction before I could even speak, watching the leadership styles of the adults around me. It was a year of -Poetry- before the -Boardrooms- took over, filled with the vintage simplicity of a life that hadn't yet been complicated by the responsibilities I would later carry. It remains a placeholder for the peace I still chase today—a mind that feels calm amidst a world of noise." },
+  2010: { title: "Growing Up",      body: "In 2010, the nomadic cycle that would define my childhood truly began with a significant move to Jaipur, the Pink City. This was my first major geographical shift, triggered by my father's transfer, and it marked the beginning of my deep connection with the regal aesthetics of Rajasthan. Joining Star Kids Pre-school in the playgroup section was my first introduction to a social ecosystem outside of my family. Jaipur, with its symmetrical architecture and history of royalty, likely influenced my early appreciation for luxury and structure. I remember the transition from the familiar comfort of home to the structured chaos of a classroom. It was here that I first learned the art of real presence. I wasn't just another face in the playgroup; I was a child who teachers and peers naturally noticed. I began to navigate group dynamics for the first time, an early prototype of the student leader who would one day win elections through memorable speeches and strategic campaigning." },
+  2011: { title: "Discovery",       body: "2011 was the year I proved that the -Standard Path- was never meant for me. Entering Junior KG, I quickly realized that I was processing information and navigating social hierarchies at a different velocity than those around me. My teachers at the time recognized a rare combination of discipline, high IQ, and a raw, intrinsic motivation to excel that was far beyond my years. This led to a double promotion—an academic leap that saw me move from LKG to UKG in a mere six months. This wasn't just about finishing school faster; it was a psychological milestone. It taught me at the age of three that if you demonstrate mastery and maintain a -Boardroom- level of focus, the system will adapt to you. I began to view education as a game of strategy where excellence is the only currency that matters. While others were learning to follow rules, I was learning how to master them so I could eventually rewrite them." },
+  2012: { title: "Early Years",     body: "By 2012, I had solidified my position as the -Gold Standard- of my peer group. Completing my half-promotion into UKG, I secured the 1st Rank for outstanding academic and behavioral performance. However, the true significance of this year—the event that truly fits the -Luxury and Legacy- theme of my life—was my father being honored with the -Best Father Award- by the entire school community. This was a moment of immense pride, reinforcing the idea that my name was attached to impact and excellence. It taught me that real power is not just about individual success, but about the respect you command from your community. My life felt perfectly balanced during this period: I was the top student, my family was being recognized for its values, and the future felt like a straight line toward greatness. This year represents the peak of stability before the nomadic shifts became more frequent, serving as the benchmark for the -extraordinary life- I am currently building." },
   2013: { title: "Shifting",        body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
   2014: { title: "New Ground",      body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
   2015: { title: "The Turn",        body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
@@ -920,24 +920,7 @@ const nameClickMessages = [
   "7 clicks! You found the easter egg. Hello, persistent human. Here is your reward lean back and calm down.",
 ];
 
-function nameclickHandler() {
-  nameClicks++;
-  const hint = document.getElementById('name-click-hint');
-  const song = document.getElementById('rain-song');
 
-  if (nameClicks >= 5) {
-    hint.textContent = nameClickMessages[Math.min(nameClicks, 7)];
-    hint.classList.add('show');
-  }
-
-  if (nameClicks >= 7) {
-    if (song) { song.currentTime = 0; song.play(); }
-    setTimeout(() => {
-      nameClicks = 0;
-      hint.classList.remove('show');
-    }, 4000);
-  }
-}
 
 /* 3. Type "manomay" anywhere */
 (function() {
@@ -959,3 +942,187 @@ window.addEventListener('load', () => {
   updateNavActive('home');
   setTimeout(() => triggerPageReveals('home'), 2000);
 });
+
+
+/* ═══════════════════════════════════════════════════════════
+   MUSIC SYSTEM
+═══════════════════════════════════════════════════════════ */
+
+const bgMusic = document.getElementById("bg-music");
+const rainSong = document.getElementById("rain-song");
+
+const songBar = document.getElementById("music-toggle");
+const vinylPlayer = document.getElementById("vinyl-player");
+
+let easterUnlocked = false;
+let musicStarted = false;
+
+/* ---------- play default song ---------- */
+function playDefaultSong() {
+  if (!bgMusic) return;
+
+  rainSong.pause();
+  rainSong.currentTime = 0;
+
+  bgMusic.play()
+    .then(() => {
+      musicStarted = true;
+      updateMusicUI();
+    })
+    .catch(() => {
+      console.log("Autoplay blocked by browser");
+
+      // fallback → first mouse move starts music
+      document.addEventListener(
+        "mousemove",
+        () => {
+          if (!musicStarted) {
+            bgMusic.play().then(() => {
+              musicStarted = true;
+              updateMusicUI();
+            });
+          }
+        },
+        { once: true }
+      );
+    });
+}
+
+/* ---------- stop all songs ---------- */
+function stopAllMusic() {
+  if (bgMusic) {
+    bgMusic.pause();
+    bgMusic.currentTime = 0;
+  }
+
+  if (rainSong) {
+    rainSong.pause();
+    rainSong.currentTime = 0;
+  }
+
+  updateMusicUI();
+}
+
+/* ---------- update vinyl + song bar ---------- */
+function updateMusicUI() {
+  const isPlaying =
+    (!bgMusic.paused && !bgMusic.ended) ||
+    (!rainSong.paused && !rainSong.ended);
+
+  if (isPlaying) {
+    songBar.classList.add("playing");
+    songBar.innerHTML = "▌▌▌";
+  } else {
+    songBar.classList.remove("playing");
+    songBar.innerHTML = "▶";
+  }
+
+  if (easterUnlocked) {
+    vinylPlayer.classList.remove("hidden");
+
+    if (isPlaying) {
+      vinylPlayer.classList.remove("paused");
+    } else {
+      vinylPlayer.classList.add("paused");
+    }
+  } else {
+    vinylPlayer.classList.add("hidden");
+  }
+}
+
+/* ---------- song bar click = stop music ---------- */
+songBar.addEventListener("click", () => {
+  stopAllMusic();
+});
+
+/* ---------- vinyl click = open mini playlist ---------- */
+vinylPlayer.addEventListener("click", () => {
+  let menu = document.getElementById("playlist-menu");
+
+  if (!menu) {
+    menu = document.createElement("div");
+    menu.id = "playlist-menu";
+
+    menu.innerHTML = `
+      <button data-song="default">Default Song</button>
+      <button data-song="rain">Rimjhim</button>
+    `;
+
+    document.body.appendChild(menu);
+
+    menu.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const type = btn.dataset.song;
+
+        stopAllMusic();
+
+        if (type === "default") {
+          bgMusic.play();
+        }
+
+        if (type === "rain") {
+          rainSong.play();
+        }
+
+        updateMusicUI();
+      });
+    });
+  }
+
+  menu.classList.toggle("show");
+});
+
+/* ---------- autoplay on page load ---------- */
+document.addEventListener(
+  "mousemove",
+  () => {
+    if (!musicStarted) {
+      playDefaultSong();
+    }
+  },
+  { once: true }
+);
+
+document.addEventListener(
+  "click",
+  () => {
+    if (!musicStarted) {
+      playDefaultSong();
+    }
+  },
+  { once: true }
+);
+
+/* ---------- keep UI synced ---------- */
+bgMusic.addEventListener("play", updateMusicUI);
+bgMusic.addEventListener("pause", updateMusicUI);
+
+rainSong.addEventListener("play", updateMusicUI);
+rainSong.addEventListener("pause", updateMusicUI);
+
+
+/* ---------- modify your existing easter egg ---------- */
+function nameclickHandler() {
+  nameClicks++;
+
+  const hint = document.getElementById("name-click-hint");
+
+  if (nameClicks >= 5) {
+    hint.textContent = nameClickMessages[Math.min(nameClicks, 7)];
+    hint.classList.add("show");
+  }
+
+  if (nameClicks >= 7) {
+    easterUnlocked = true;
+
+    stopAllMusic();
+
+    rainSong.play();
+    updateMusicUI();
+
+    setTimeout(() => {
+      nameClicks = 0;
+      hint.classList.remove("show");
+    }, 4000);
+  }
+}
