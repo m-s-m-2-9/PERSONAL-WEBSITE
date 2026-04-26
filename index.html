@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manomay Shailendra Misra</title>
 
-  
   <!-- ═══════════════════════════════════════════════════════════
        FONTS
   ══════════════════════════════════════════════════════════════ -->
@@ -23,7 +22,6 @@
   <link rel="stylesheet" href="css/layout.css" />
   <link rel="stylesheet" href="css/pages.css" />
   <link rel="stylesheet" href="css/vinyl.css" />
-  <link rel="icon" href="assets/icons/favicon.png">
 </head>
 <body>
 
@@ -91,28 +89,28 @@
   </ul>
 
   <div class="nav-right">
-      <!-- Single music toggle — this is the real one with id="music-toggle" -->
-      <button class="music-toggle muted" id="music-toggle">
-        <div class="sound-bars">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-      </button>
-  
-      <div class="theme-switcher">
-        <div class="theme-dot active" data-t="dark"   title="Noir"   onclick="setTheme('dark')"></div>
-        <div class="theme-dot"        data-t="light"  title="Ivory"  onclick="setTheme('light')"></div>
-        <div class="theme-dot"        data-t="slate"  title="Slate"  onclick="setTheme('slate')"></div>
-        <div class="theme-dot"        data-t="forest" title="Forest" onclick="setTheme('forest')"></div>
-      </div>
-      <div class="hamburger" id="hamburger" onclick="toggleMobileNav()">
+    <!-- Single music toggle — this is the real one with id="music-toggle" -->
+    <button class="music-toggle muted" id="music-toggle">
+      <div class="sound-bars">
         <span></span>
         <span></span>
         <span></span>
       </div>
+    </button>
+
+    <div class="theme-switcher">
+      <div class="theme-dot active" data-t="dark"   title="Noir"   onclick="setTheme('dark')"></div>
+      <div class="theme-dot"        data-t="light"  title="Ivory"  onclick="setTheme('light')"></div>
+      <div class="theme-dot"        data-t="slate"  title="Slate"  onclick="setTheme('slate')"></div>
+      <div class="theme-dot"        data-t="forest" title="Forest" onclick="setTheme('forest')"></div>
     </div>
-  </nav>
+    <div class="hamburger" id="hamburger" onclick="toggleMobileNav()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </div>
+</nav>
 
 <!-- Mobile Nav Menu -->
 <div id="mobile-nav">
@@ -142,7 +140,7 @@
       <div class="hero-grid"></div>
 
       <div class="hero-photo-wrap">
-        <img src="assets/photos/profilepic.jpeg" alt="Manomay" class="hero-photo">
+        <img src="photos/whatsapp-image-2026-02-12-at-1.38.25-pm.jpeg" alt="Manomay" class="hero-photo">
         <div class="hero-photo-ring"></div>
       </div>
 
@@ -213,7 +211,7 @@
 
         <div class="about-photo-col reveal">
           <div class="about-photo-wrap">
-            <img src="assets/photos/stagepic.jpeg" alt="Manomay" class="about-photo">
+            <img src="photos/whatsapp-image-2026-04-21-at-6.27.56-pm.jpeg" alt="Manomay" class="about-photo">
             <div class="about-photo-label">Manomay — 2024</div>
           </div>
         </div>
@@ -948,24 +946,22 @@
 <!-- ═══════════════════════════════════════════════════════════
      EASTER EGGS
 ═══════════════════════════════════════════════════════════ -->
-<div id="konami-egg"> You found it! Konami code unlocked. You're clearly one of us.</div>
+<div id="konami-egg">🎮 You found it! Konami code unlocked. You're clearly one of us.</div>
 
-<!-- AUDIO -->
+<!-- ═══════════════════════════════════════════════════════════
+     AUDIO
+═══════════════════════════════════════════════════════════ -->
 <audio id="rain-song">
-  <source src="assets/songs/rimjhim.mp3" type="audio/mpeg">
+  <source src="songs/rimjhim.mp3" type="audio/mpeg">
 </audio>
-
 <audio id="bg-music" loop>
-  <source src="assets/songs/SONG1.mp3" type="audio/mpeg">
+  <source src="songs/SONG1.mp3" type="audio/mpeg">
 </audio>
 
-<!-- VINYL (ONLY EASTER EGG VISUAL) -->
-<div class="vinyl-player paused hidden" id="vinyl-player">
+<!-- Vinyl Record -->
+<div class="vinyl-player paused" id="vinyl-player">
   <div class="vinyl-disc"></div>
 </div>
-
-<!-- SONG BAR BUTTON IN NAVIGATION (YOU ALREADY HAVE ONE — MOVE/STYLE IT LATER) -->
-
 
 <!-- ═══════════════════════════════════════════════════════════
      SCRIPTS
@@ -973,7 +969,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 <script src="js/main.js"></script>
-
+<script src="js/data.js"></script>
+<script src="js/music.js"></script>
 
 </body>
 </html>
