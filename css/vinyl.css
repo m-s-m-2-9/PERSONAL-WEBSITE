@@ -1,61 +1,166 @@
 /* ═══════════════════════════════════════════════════════════
-   vinyl.css — Vinyl record player widget
-   (Referenced in HTML but was never in style.css —
-    add your actual vinyl styles here)
+   VINYL + MUSIC SYSTEM
 ═══════════════════════════════════════════════════════════ */
 
+/* hidden until easter egg unlocks */
+.hidden {
+  display: none !important;
+}
+
+/* =========================
+   VINYL PLAYER
+========================= */
 .vinyl-player {
   position: fixed;
-  bottom: 90px;           /* sits above the music toggle button */
-  right: 28px;
-  width: 60px;
-  height: 60px;
+  bottom: 25px;
+  left: 25px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   cursor: pointer;
   z-index: 9998;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: all 0.3s ease;
+}
+
+.vinyl-player:hover {
+  transform: scale(1.08);
 }
 
 .vinyl-disc {
+  position: relative;
   width: 100%;
   height: 100%;
   border-radius: 50%;
   background: repeating-radial-gradient(
     circle at center,
-    #1a1a1a 0px,
-    #1a1a1a 4px,
-    #2a2a2a 5px,
-    #2a2a2a 6px
+    #111 0px,
+    #111 4px,
+    #222 5px,
+    #222 7px
   );
-  border: 1px solid var(--border2);
+  border: 2px solid rgba(255,255,255,0.1);
+
   animation: vinylSpin 4s linear infinite;
   animation-play-state: paused;
 }
 
-/* Spinning when music plays */
+/* center dot */
+.vinyl-disc::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* spin when song playing */
 .vinyl-player:not(.paused) .vinyl-disc {
   animation-play-state: running;
 }
 
-/* Label dot in center */
-.vinyl-disc::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-
 @keyframes vinylSpin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-/* Snake game canvas */
+
+/* =========================
+   SONG BAR BUTTON
+========================= */
+
+.song-bar {
+  position: fixed;
+  top: 22px;
+  right: 105px; /* left of theme dots */
+  width: 40px;
+  height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 9999;
+  font-size: 18px;
+}
+
+/* paused state */
+.song-bar:not(.playing)::before {
+  content: "⏸";
+  opacity: 0.8;
+}
+
+/* playing animation */
+.song-bar.playing::before {
+  content: "▂▅▇▃";
+  animation: barDance 0.8s infinite;
+}
+
+@keyframes barDance {
+  0% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.3);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+
+/* =========================
+   MINI MUSIC MENU
+========================= */
+
+.music-panel {
+  position: fixed;
+  bottom: 110px;
+  left: 25px;
+  width: 220px;
+  background: rgba(15,15,15,0.95);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 15px;
+  z-index: 9999;
+  backdrop-filter: blur(10px);
+}
+
+.music-panel.hidden {
+  display: none;
+}
+
+.music-panel h3 {
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+.music-option {
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: var(--bg2);
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.music-option:hover {
+  background: var(--accent);
+  color: black;
+}
+
+
+/* =========================
+   SNAKE GAME (keep existing)
+========================= */
+
 #snake-canvas {
   border: 1px solid var(--border2);
   background: var(--bg2);
