@@ -951,7 +951,7 @@ window.addEventListener('load', () => {
 const bgMusic = document.getElementById("bg-music");
 const rainSong = document.getElementById("rain-song");
 
-const songBar = document.getElementById("song-bar");
+const songBar = document.getElementById("music-toggle");
 const vinylPlayer = document.getElementById("vinyl-player");
 
 let easterUnlocked = false;
@@ -1073,11 +1073,25 @@ vinylPlayer.addEventListener("click", () => {
 });
 
 /* ---------- autoplay on page load ---------- */
-window.addEventListener("load", () => {
-  setTimeout(() => {
-    playDefaultSong();
-  }, 1000);
-});
+document.addEventListener(
+  "mousemove",
+  () => {
+    if (!musicStarted) {
+      playDefaultSong();
+    }
+  },
+  { once: true }
+);
+
+document.addEventListener(
+  "click",
+  () => {
+    if (!musicStarted) {
+      playDefaultSong();
+    }
+  },
+  { once: true }
+);
 
 /* ---------- keep UI synced ---------- */
 bgMusic.addEventListener("play", updateMusicUI);
