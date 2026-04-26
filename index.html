@@ -91,28 +91,28 @@
   </ul>
 
   <div class="nav-right">
-    <!-- Single music toggle — this is the real one with id="music-toggle" -->
-    <button class="music-toggle muted" id="music-toggle">
-      <div class="sound-bars">
+      <!-- Single music toggle — this is the real one with id="music-toggle" -->
+      <button class="music-toggle muted" id="music-toggle">
+        <div class="sound-bars">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </button>
+  
+      <div class="theme-switcher">
+        <div class="theme-dot active" data-t="dark"   title="Noir"   onclick="setTheme('dark')"></div>
+        <div class="theme-dot"        data-t="light"  title="Ivory"  onclick="setTheme('light')"></div>
+        <div class="theme-dot"        data-t="slate"  title="Slate"  onclick="setTheme('slate')"></div>
+        <div class="theme-dot"        data-t="forest" title="Forest" onclick="setTheme('forest')"></div>
+      </div>
+      <div class="hamburger" id="hamburger" onclick="toggleMobileNav()">
         <span></span>
         <span></span>
         <span></span>
       </div>
-    </button>
-
-    <div class="theme-switcher">
-      <div class="theme-dot active" data-t="dark"   title="Noir"   onclick="setTheme('dark')"></div>
-      <div class="theme-dot"        data-t="light"  title="Ivory"  onclick="setTheme('light')"></div>
-      <div class="theme-dot"        data-t="slate"  title="Slate"  onclick="setTheme('slate')"></div>
-      <div class="theme-dot"        data-t="forest" title="Forest" onclick="setTheme('forest')"></div>
     </div>
-    <div class="hamburger" id="hamburger" onclick="toggleMobileNav()">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-  </div>
-</nav>
+  </nav>
 
 <!-- Mobile Nav Menu -->
 <div id="mobile-nav">
@@ -964,10 +964,8 @@
   <div class="vinyl-disc"></div>
 </div>
 
-<!-- SONG BAR BUTTON (YOU ALREADY HAVE ONE — MOVE/STYLE IT LATER) -->
-<div id="song-bar" class="song-bar">
-  ⏸
-</div>
+<!-- SONG BAR BUTTON IN NAVIGATION (YOU ALREADY HAVE ONE — MOVE/STYLE IT LATER) -->
+
 
 <!-- ═══════════════════════════════════════════════════════════
      SCRIPTS
