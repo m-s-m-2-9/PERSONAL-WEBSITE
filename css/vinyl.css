@@ -172,64 +172,53 @@
 
 
 
-/* =========================
-   SONG BAR
-========================= */
-.song-bar {
+/* MUSIC TOGGLE BUTTON */
+.music-toggle {
   position: fixed;
   bottom: 30px;
-  left: 30px; /* left side near theme dots */
-  width: 40px;
-  height: 20px;
+  left: 30px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border2);
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 4px;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   z-index: 9999;
 }
 
-/* create fake equalizer bars */
-.song-bar::before,
-.song-bar::after {
-  content: '';
-  width: 6px;
-  height: 100%;
+/* bars */
+.sound-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 20px;
+}
+
+.sound-bars span {
+  width: 4px;
+  height: 10px;
   background: var(--accent);
   border-radius: 2px;
 }
 
-.song-bar span {
-  width: 6px;
-  height: 100%;
-  background: var(--accent);
-  border-radius: 2px;
-  display: block;
+/* animate when playing */
+.music-toggle.playing .sound-bars span {
+  animation: soundWave 0.8s infinite ease-in-out;
 }
 
-/* animation when music playing */
-.song-bar.playing::before,
-.song-bar.playing::after,
-.song-bar.playing span {
-  animation: pulseBars 0.8s infinite ease-in-out;
-}
-
-.song-bar.playing::after {
+.music-toggle.playing .sound-bars span:nth-child(2) {
   animation-delay: 0.2s;
 }
 
-.song-bar.playing span {
+.music-toggle.playing .sound-bars span:nth-child(3) {
   animation-delay: 0.4s;
 }
 
-@keyframes pulseBars {
-  0% {
-    transform: scaleY(0.5);
-  }
-  50% {
-    transform: scaleY(1.4);
-  }
-  100% {
-    transform: scaleY(0.5);
-  }
+@keyframes soundWave {
+  0% { transform: scaleY(0.5); }
+  50% { transform: scaleY(1.5); }
+  100% { transform: scaleY(0.5); }
 }
