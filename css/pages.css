@@ -56,7 +56,7 @@
 .hero-name .word span.visible { transform: translateY(0); opacity: 1; }
 .hero-name .highlight {
   color: var(--accent);
-  font-style: italic;
+  font-size: 1.08em;
 }
 
 .hero-tagline {
