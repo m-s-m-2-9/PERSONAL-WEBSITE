@@ -1,123 +1,218 @@
 /* ═══════════════════════════════════════════════════════════
-   components.css — Cursor, music toggle, loading screen,
-                    password gate, page system, overlay
+   components.css
 ═══════════════════════════════════════════════════════════ */
 
-/* ─── CUSTOM CURSOR ─── */
+/* ─── CUSTOM CURSOR FIX ───
+   On fine-pointer (mouse) devices: force cursor:none on ALL elements
+   so cursor:pointer on buttons/links doesn't override body{cursor:none}.
+   This is what makes the custom cursor actually show everywhere.
+   On coarse-pointer (touch) devices: this rule doesn't apply at all,
+   so native cursor/touch behavior is preserved.
+═══════════════════════════════════════════════════════════ */
+@media (hover: hover) and (pointer: fine) {
+  * { cursor: none !important; }
+}
+
+/* ─── CUSTOM CURSOR ELEMENTS ─── */
 #cursor-dot {
-  position: fixed; width: 6px; height: 6px;
-  background: var(--accent); border-radius: 50%;
-  pointer-events: none; z-index: 99999;
+  position: fixed;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99999;
   transform: translate(-50%, -50%);
   transition: width 0.3s ease, height 0.3s ease, background 0.3s ease;
   mix-blend-mode: difference;
 }
+
 #cursor-ring {
-  position: fixed; width: 36px; height: 36px;
-  border: 1px solid var(--accent); border-radius: 50%;
-  pointer-events: none; z-index: 99998;
+  position: fixed;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99998;
   transform: translate(-50%, -50%);
   transition: width 0.4s ease, height 0.4s ease, opacity 0.3s ease, background 0.3s ease;
   opacity: 0.6;
 }
-body.cursor-hover #cursor-ring { width: 56px; height: 56px; opacity: 0.3; background: var(--accent-glow); border-color: var(--accent2); }
-body.cursor-text #cursor-dot   { width: 2px; height: 22px; border-radius: 1px; }
 
-/* ─── MUSIC TOGGLE ─── */
+body.cursor-hover #cursor-ring {
+  width: 56px;
+  height: 56px;
+  opacity: 0.3;
+  background: var(--accent-glow);
+  border-color: var(--accent2);
+}
+
+body.cursor-text #cursor-dot {
+  width: 2px;
+  height: 22px;
+  border-radius: 1px;
+}
+
+/* ─── MUSIC TOGGLE — inline nav button, NOT position:fixed ───
+   Lives inside .nav-right flex container.
+   Size is small to fit between theme dots and hamburger.
+═══════════════════════════════════════════════════════════ */
 .music-toggle {
-  position: fixed;
-  bottom: 25px;
-  right: 25px;
-  width: 55px;
-  height: 55px;
+  /* Inline — no position:fixed, no bottom, no right/left */
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   border: 1px solid var(--border2);
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(10px);
-  cursor: pointer;
-  z-index: 9999;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease, transform 0.2s ease;
+  flex-shrink: 0;
 }
+
 .music-toggle:hover {
-  transform: scale(1.08);
   border-color: var(--accent);
+  transform: scale(1.1);
 }
 
 .sound-bars {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
-  height: 20px;
+  gap: 2px;
+  height: 14px;
 }
+
 .sound-bars span {
-  width: 4px;
+  width: 3px;
   background: var(--accent);
-  border-radius: 10px;
+  border-radius: 2px;
+  /* Animated when NOT muted */
   animation: musicBounce 0.8s infinite ease-in-out;
 }
-.sound-bars span:nth-child(1) { height: 8px;  animation-delay: 0s; }
-.sound-bars span:nth-child(2) { height: 16px; animation-delay: 0.2s; }
-.sound-bars span:nth-child(3) { height: 12px; animation-delay: 0.4s; }
 
+.sound-bars span:nth-child(1) { height: 6px;  animation-delay: 0s; }
+.sound-bars span:nth-child(2) { height: 12px; animation-delay: 0.2s; }
+.sound-bars span:nth-child(3) { height: 8px;  animation-delay: 0.4s; }
+
+/* When muted — bars freeze and shrink */
 .music-toggle.muted .sound-bars span {
   animation: none;
-  height: 8px;
+  height: 3px;
+  opacity: 0.4;
 }
 
 /* ─── PAGE SYSTEM ─── */
 .page {
-  position: fixed; inset: 0; overflow-y: auto; overflow-x: hidden;
-  opacity: 0; pointer-events: none; transform: translateY(40px);
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(40px);
   transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1);
   will-change: transform, opacity;
 }
+
 .page.active { opacity: 1; pointer-events: all; transform: translateY(0); }
 .page-inner  { min-height: 100vh; padding: 64px 0 0; }
 
 /* ─── TRANSITION OVERLAY ─── */
 #transition-overlay {
-  position: fixed; inset: 0; z-index: 9999;
-  background: var(--accent); transform: scaleY(0); transform-origin: bottom; pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--accent);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  pointer-events: none;
 }
 
 /* ─── PASSWORD GATE ─── */
 .password-gate {
-  position: fixed; inset: 0; z-index: 8000; background: var(--bg);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+  position: fixed;
+  inset: 0;
+  z-index: 8000;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
 }
+
 .password-gate.visible { opacity: 1; pointer-events: all; }
 
 .gate-lock-wrap {
-  width: 48px; height: 48px; border: 1px solid var(--border2); border-radius: 50%;
-  display: flex; align-items: center; justify-content: center; margin-bottom: 2rem;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--border2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
 }
+
 .gate-lock-icon {
-  width: 16px; height: 14px; border: 1.5px solid var(--accent); border-radius: 2px; position: relative;
+  width: 16px;
+  height: 14px;
+  border: 1.5px solid var(--accent);
+  border-radius: 2px;
+  position: relative;
 }
+
 .gate-lock-icon::before {
-  content: ''; position: absolute; top: -9px; left: 1px; right: 1px; height: 9px;
-  border: 1.5px solid var(--accent); border-bottom: none; border-radius: 6px 6px 0 0;
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 1px;
+  right: 1px;
+  height: 9px;
+  border: 1.5px solid var(--accent);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
 }
+
 .gate-title    { font-family: var(--ff-display); font-size: 2rem; font-weight: 300; margin-bottom: 0.5rem; color: var(--text); }
 .gate-subtitle { font-size: 0.85rem; color: var(--text2); margin-bottom: 2.5rem; letter-spacing: 0.05em; }
 
 .gate-input-wrap { position: relative; width: 280px; }
+
 .gate-input {
-  width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
-  padding: 0.9rem 3rem 0.9rem 1.2rem; border-radius: 4px; font-family: var(--ff-mono);
-  font-size: 0.85rem; letter-spacing: 0.15em; outline: none; transition: border-color 0.3s ease; text-align: center;
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 0.9rem 3rem 0.9rem 1.2rem;
+  border-radius: 4px;
+  font-family: var(--ff-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  outline: none;
+  transition: border-color 0.3s ease;
+  text-align: center;
 }
+
 .gate-input:focus { border-color: var(--accent); }
 .gate-input.error { border-color: #ff4444; animation: shake 0.4s ease; }
 
 .gate-submit {
-  position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
-  background: none; border: none; color: var(--accent); cursor: pointer; font-size: 1.1rem; padding: 0.25rem;
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 1.1rem;
+  padding: 0.25rem;
 }
+
 .gate-error { color: #ff4444; font-size: 0.75rem; margin-top: 0.75rem; opacity: 0; transition: opacity 0.3s; }
 .gate-error.show { opacity: 1; }
 .gate-hint   { margin-top: 2rem; font-size: 0.75rem; color: var(--text3); text-align: center; }
@@ -125,31 +220,63 @@ body.cursor-text #cursor-dot   { width: 2px; height: 22px; border-radius: 1px; }
 
 /* ─── LOADING SCREEN ─── */
 #loading-screen {
-  position: fixed; inset: 0; z-index: 99998; background: var(--bg);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem;
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
   transition: opacity 0.8s ease, transform 0.8s ease;
 }
+
 #loading-screen.done { opacity: 0; pointer-events: none; transform: translateY(-100%); }
-.loading-name    { font-family: var(--ff-display); font-size: 1.5rem; font-weight: 300; color: var(--text); letter-spacing: 0.15em; }
+.loading-name     { font-family: var(--ff-display); font-size: 1.5rem; font-weight: 300; color: var(--text); letter-spacing: 0.15em; }
 .loading-bar-wrap { width: 200px; height: 1px; background: var(--border2); }
-.loading-bar     { height: 100%; background: var(--accent); width: 0; transition: width 1.5s cubic-bezier(0.16,1,0.3,1); }
-.loading-pct     { font-family: var(--ff-mono); font-size: 0.65rem; color: var(--text3); letter-spacing: 0.15em; }
+.loading-bar      { height: 100%; background: var(--accent); width: 0; transition: width 1.5s cubic-bezier(0.16,1,0.3,1); }
+.loading-pct      { font-family: var(--ff-mono); font-size: 0.65rem; color: var(--text3); letter-spacing: 0.15em; }
 
 /* ─── EASTER EGGS ─── */
 #konami-egg {
-  position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px);
-  background: var(--accent); color: var(--bg); padding: 1rem 2rem; border-radius: 4px;
-  font-family: var(--ff-mono); font-size: 0.75rem; z-index: 99999;
-  transition: transform 0.5s cubic-bezier(0.16,1,0.3,1); pointer-events: none;
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--accent);
+  color: var(--bg);
+  padding: 1rem 2rem;
+  border-radius: 4px;
+  font-family: var(--ff-mono);
+  font-size: 0.75rem;
+  z-index: 99999;
+  transition: transform 0.5s cubic-bezier(0.16,1,0.3,1);
+  pointer-events: none;
 }
+
 #konami-egg.show { transform: translateX(-50%) translateY(0); }
 
-.name-click-hint { font-family: var(--ff-mono); font-size: 0.65rem; color: var(--text3); margin-top: 0.5rem; opacity: 0; transition: opacity 0.5s ease; }
+.name-click-hint {
+  font-family: var(--ff-mono);
+  font-size: 0.65rem;
+  color: var(--text3);
+  margin-top: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
 .name-click-hint.show { opacity: 1; }
 
 /* ─── FOOTER ─── */
 .footer {
-  padding: 3rem; border-top: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-  color: var(--text3); font-family: var(--ff-mono); font-size: 0.65rem; letter-spacing: 0.1em;
+  padding: 3rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text3);
+  font-family: var(--ff-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
 }
