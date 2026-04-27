@@ -1,17 +1,25 @@
 /* ═══════════════════════════════════════════════════════════
    main.js — Core site logic
-   Covers: config, loading, cursor, theme, nav, page system,
-           reveals, passwords, mobile nav, birthday timer,
-           timeline, beliefs, contact form, lists, photo viewer,
-           games, easter eggs
+   Based on original. Changes made:
+   1. Cursor disabled on touch/mobile
+   2. games removed from lockedPages
+   3. submitGate bug fixed (target saved before closeGate)
+   4. toggleMobileNav uses classList (CSS handles X animation)
+   5. Per-game password gate (snake free, others locked)
+   6. updateMusicUI — no innerHTML replace, just toggles .muted
+   7. Music toggle click — proper pause/resume (not stop+reset)
+   8. rainSong.ended → auto-resume bgMusic if user didn't manually pause
+   9. Vinyl — shows only on easter egg, click opens panel, hideVinyl()
+   10. nameclickHandler — plays rain, stops bg, shows vinyl
+   11. Year data 2008-2012 preserved from original
 ═══════════════════════════════════════════════════════════ */
 
 /* ─── CONFIGURATION ─── */
 const CONFIG = {
-  MASTER_PASSWORD: "manomay2026",         // REPLACE
-  EMAILJS_PUBLIC_KEY:  "YOUR_PUBLIC_KEY", // REPLACE
-  EMAILJS_SERVICE_ID:  "YOUR_SERVICE_ID", // REPLACE
-  EMAILJS_TEMPLATE_ID: "YOUR_TEMPLATE_ID",// REPLACE
+  MASTER_PASSWORD: "manomay2026",          // REPLACE
+  EMAILJS_PUBLIC_KEY:  "YOUR_PUBLIC_KEY",  // REPLACE
+  EMAILJS_SERVICE_ID:  "YOUR_SERVICE_ID",  // REPLACE
+  EMAILJS_TEMPLATE_ID: "YOUR_TEMPLATE_ID", // REPLACE
 };
 
 /* ─── EMAILJS INIT ─── */
@@ -68,37 +76,49 @@ function startHeroAnimations() {
 
 /* ═══════════════════════════════════════════════════════════
    CUSTOM CURSOR
+   FIX #1 — disabled on touch/mobile so it doesn't get stuck
 ═══════════════════════════════════════════════════════════ */
 const dot  = document.getElementById('cursor-dot');
 const ring = document.getElementById('cursor-ring');
-let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
 
-document.addEventListener('mousemove', (e) => {
-  mouseX = e.clientX;
-  mouseY = e.clientY;
-  dot.style.left = mouseX + 'px';
-  dot.style.top  = mouseY + 'px';
-});
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
-(function animateRing() {
-  ringX += (mouseX - ringX) * 0.12;
-  ringY += (mouseY - ringY) * 0.12;
-  ring.style.left = ringX + 'px';
-  ring.style.top  = ringY + 'px';
-  requestAnimationFrame(animateRing);
-})();
+if (isTouchDevice) {
+  /* Mobile: restore native cursor, hide custom elements */
+  document.body.style.cursor = 'auto';
+  if (dot)  dot.style.display  = 'none';
+  if (ring) ring.style.display = 'none';
+} else {
+  /* Desktop only */
+  let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
 
-document.querySelectorAll('a, button, .game-card, .album-card, .belief-card, .year-node, .profile-item')
-  .forEach(el => {
-    el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
-    el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    dot.style.left = mouseX + 'px';
+    dot.style.top  = mouseY + 'px';
   });
 
-document.querySelectorAll('input, textarea')
-  .forEach(el => {
-    el.addEventListener('mouseenter', () => document.body.classList.add('cursor-text'));
-    el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-text'));
-  });
+  (function animateRing() {
+    ringX += (mouseX - ringX) * 0.12;
+    ringY += (mouseY - ringY) * 0.12;
+    ring.style.left = ringX + 'px';
+    ring.style.top  = ringY + 'px';
+    requestAnimationFrame(animateRing);
+  })();
+
+  document.querySelectorAll('a, button, .game-card, .album-card, .belief-card, .year-node, .profile-item')
+    .forEach(el => {
+      el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+      el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+    });
+
+  document.querySelectorAll('input, textarea')
+    .forEach(el => {
+      el.addEventListener('mouseenter', () => document.body.classList.add('cursor-text'));
+      el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-text'));
+    });
+}
 
 /* ═══════════════════════════════════════════════════════════
    THEME SWITCHER
@@ -127,13 +147,15 @@ document.querySelectorAll('.page').forEach(page => {
 
 /* ═══════════════════════════════════════════════════════════
    PAGE NAVIGATION
+   FIX #2 — games removed from lockedPages (per-game lock instead)
 ═══════════════════════════════════════════════════════════ */
 let currentPage = 'home';
 const overlay   = document.getElementById('transition-overlay');
 
 function navigateTo(pageId) {
   if (pageId === currentPage) return;
-  const lockedPages = ['games'];
+  /* No nav-level locks — games and social both open freely */
+  const lockedPages = [];
   if (lockedPages.includes(pageId)) {
     tryLockedPage(pageId);
     return;
@@ -207,6 +229,7 @@ setTimeout(() => triggerPageReveals('home'), 1500);
 
 /* ═══════════════════════════════════════════════════════════
    PASSWORD SYSTEM
+   FIX #3 — submitGate saves target BEFORE closeGate() nullifies it
 ═══════════════════════════════════════════════════════════ */
 let gateTargetPage = null;
 
@@ -245,10 +268,11 @@ function closeGate() {
 }
 
 function submitGate() {
-  const input = document.getElementById('gate-input');
+  const input  = document.getElementById('gate-input');
+  const target = gateTargetPage; /* FIX: save BEFORE closeGate sets it to null */
   if (input.value === CONFIG.MASTER_PASSWORD) {
     closeGate();
-    if (gateTargetPage) doTransition(gateTargetPage);
+    if (target) doTransition(target);
   } else {
     input.classList.add('error');
     document.getElementById('gate-error').classList.add('show');
@@ -263,21 +287,13 @@ document.getElementById('gate-input').addEventListener('keydown', (e) => {
 
 /* ═══════════════════════════════════════════════════════════
    MOBILE NAV
+   FIX #4 — hamburger uses classList so CSS handles X animation
 ═══════════════════════════════════════════════════════════ */
 let mobileNavOpen = false;
 function toggleMobileNav() {
   mobileNavOpen = !mobileNavOpen;
   document.getElementById('mobile-nav').classList.toggle('open', mobileNavOpen);
-  const spans = document.querySelectorAll('.hamburger span');
-  if (mobileNavOpen) {
-    spans[0].style.transform = 'rotate(45deg) translate(4px, 4px)';
-    spans[1].style.opacity   = '0';
-    spans[2].style.transform = 'rotate(-45deg) translate(4px, -4px)';
-  } else {
-    spans[0].style.transform = '';
-    spans[1].style.opacity   = '';
-    spans[2].style.transform = '';
-  }
+  document.getElementById('hamburger').classList.toggle('open', mobileNavOpen);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -314,27 +330,28 @@ updateBirthdayTimer();
 
 /* ═══════════════════════════════════════════════════════════
    YEAR JOURNEY TIMELINE
+   (Real text 2008–2012 preserved from original)
 ═══════════════════════════════════════════════════════════ */
 const yearData = {
-  2008: { title: "The Beginning",   body: "The story begins in the humid, electric atmosphere of Maharashtra, my entry into the world was marked by a setting defined by contrast—where the old soul of India meets the relentless ambition of its financial heart. From the very first day, my life was positioned at the intersection of diverse cultures and high expectations. Even though these early months are a blur of sensory memories, they established the -Nomadic- blueprint of my life. I was born into a family that valued education and presence, setting the stage for a boy who would eventually grow to command rooms and lead institutions." },
-  2009: { title: "Year One",        body: "Before the constant moves and the changing cities, 2009 was a year of profound, silent growth. This was the period where my internal world began to synthesize the environment around me. Living in the wake of the vibrant energy of Mumbai and Lucknow, I was a child developing an early sense of observation—the -Old Soul- beginning to peak through. While most children at this age are simply reacting to stimuli, I was absorbing the rhythms of a household that valued structure and discipline. This year was the silent foundation; it was the quiet before the journey of moving across India began. I was learning the nuances of human interaction before I could even speak, watching the leadership styles of the adults around me. It was a year of -Poetry- before the -Boardrooms- took over, filled with the vintage simplicity of a life that hadn't yet been complicated by the responsibilities I would later carry. It remains a placeholder for the peace I still chase today—a mind that feels calm amidst a world of noise." },
-  2010: { title: "Growing Up",      body: "In 2010, the nomadic cycle that would define my childhood truly began with a significant move to Jaipur, the Pink City. This was my first major geographical shift, triggered by my father's transfer, and it marked the beginning of my deep connection with the regal aesthetics of Rajasthan. Joining Star Kids Pre-school in the playgroup section was my first introduction to a social ecosystem outside of my family. Jaipur, with its symmetrical architecture and history of royalty, likely influenced my early appreciation for luxury and structure. I remember the transition from the familiar comfort of home to the structured chaos of a classroom. It was here that I first learned the art of real presence. I wasn't just another face in the playgroup; I was a child who teachers and peers naturally noticed. I began to navigate group dynamics for the first time, an early prototype of the student leader who would one day win elections through memorable speeches and strategic campaigning." },
-  2011: { title: "Discovery",       body: "2011 was the year I proved that the -Standard Path- was never meant for me. Entering Junior KG, I quickly realized that I was processing information and navigating social hierarchies at a different velocity than those around me. My teachers at the time recognized a rare combination of discipline, high IQ, and a raw, intrinsic motivation to excel that was far beyond my years. This led to a double promotion—an academic leap that saw me move from LKG to UKG in a mere six months. This wasn't just about finishing school faster; it was a psychological milestone. It taught me at the age of three that if you demonstrate mastery and maintain a -Boardroom- level of focus, the system will adapt to you. I began to view education as a game of strategy where excellence is the only currency that matters. While others were learning to follow rules, I was learning how to master them so I could eventually rewrite them." },
-  2012: { title: "Early Years",     body: "By 2012, I had solidified my position as the -Gold Standard- of my peer group. Completing my half-promotion into UKG, I secured the 1st Rank for outstanding academic and behavioral performance. However, the true significance of this year—the event that truly fits the -Luxury and Legacy- theme of my life—was my father being honored with the -Best Father Award- by the entire school community. This was a moment of immense pride, reinforcing the idea that my name was attached to impact and excellence. It taught me that real power is not just about individual success, but about the respect you command from your community. My life felt perfectly balanced during this period: I was the top student, my family was being recognized for its values, and the future felt like a straight line toward greatness. This year represents the peak of stability before the nomadic shifts became more frequent, serving as the benchmark for the -extraordinary life- I am currently building." },
-  2013: { title: "Shifting",        body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2014: { title: "New Ground",      body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2015: { title: "The Turn",        body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2016: { title: "Momentum",        body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2017: { title: "Building",        body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2018: { title: "Defining",        body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2019: { title: "Expanding",       body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2020: { title: "The Pause",       body: "The world stopped. Pandemic year. But something changed internally too. xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2021: { title: "Rebuilding",      body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2022: { title: "Acceleration",    body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2023: { title: "Clarity",         body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2024: { title: "Intention",       body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2025: { title: "Transformation",  body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
-  2026: { title: "Present",         body: "Now. Right here. This website exists. That means something. xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
+  2008: { title: "The Beginning", body: "The story begins in the humid, electric atmosphere of Maharashtra, my entry into the world was marked by a setting defined by contrast—where the old soul of India meets the relentless ambition of its financial heart. From the very first day, my life was positioned at the intersection of diverse cultures and high expectations. Even though these early months are a blur of sensory memories, they established the -Nomadic- blueprint of my life. I was born into a family that valued education and presence, setting the stage for a boy who would eventually grow to command rooms and lead institutions." },
+  2009: { title: "Year One", body: "Before the constant moves and the changing cities, 2009 was a year of profound, silent growth. This was the period where my internal world began to synthesize the environment around me. Living in the wake of the vibrant energy of Mumbai and Lucknow, I was a child developing an early sense of observation—the -Old Soul- beginning to peak through. While most children at this age are simply reacting to stimuli, I was absorbing the rhythms of a household that valued structure and discipline. This year was the silent foundation; it was the quiet before the journey of moving across India began. I was learning the nuances of human interaction before I could even speak, watching the leadership styles of the adults around me. It was a year of -Poetry- before the -Boardrooms- took over, filled with the vintage simplicity of a life that hadn't yet been complicated by the responsibilities I would later carry. It remains a placeholder for the peace I still chase today—a mind that feels calm amidst a world of noise." },
+  2010: { title: "Growing Up", body: "In 2010, the nomadic cycle that would define my childhood truly began with a significant move to Jaipur, the Pink City. This was my first major geographical shift, triggered by my father's transfer, and it marked the beginning of my deep connection with the regal aesthetics of Rajasthan. Joining Star Kids Pre-school in the playgroup section was my first introduction to a social ecosystem outside of my family. Jaipur, with its symmetrical architecture and history of royalty, likely influenced my early appreciation for luxury and structure. I remember the transition from the familiar comfort of home to the structured chaos of a classroom. It was here that I first learned the art of real presence. I wasn't just another face in the playgroup; I was a child who teachers and peers naturally noticed. I began to navigate group dynamics for the first time, an early prototype of the student leader who would one day win elections through memorable speeches and strategic campaigning." },
+  2011: { title: "Discovery", body: "2011 was the year I proved that the -Standard Path- was never meant for me. Entering Junior KG, I quickly realized that I was processing information and navigating social hierarchies at a different velocity than those around me. My teachers at the time recognized a rare combination of discipline, high IQ, and a raw, intrinsic motivation to excel that was far beyond my years. This led to a double promotion—an academic leap that saw me move from LKG to UKG in a mere six months. This wasn't just about finishing school faster; it was a psychological milestone. It taught me at the age of three that if you demonstrate mastery and maintain a -Boardroom- level of focus, the system will adapt to you. I began to view education as a game of strategy where excellence is the only currency that matters. While others were learning to follow rules, I was learning how to master them so I could eventually rewrite them." },
+  2012: { title: "Early Years", body: "By 2012, I had solidified my position as the -Gold Standard- of my peer group. Completing my half-promotion into UKG, I secured the 1st Rank for outstanding academic and behavioral performance. However, the true significance of this year—the event that truly fits the -Luxury and Legacy- theme of my life—was my father being honored with the -Best Father Award- by the entire school community. This was a moment of immense pride, reinforcing the idea that my name was attached to impact and excellence. It taught me that real power is not just about individual success, but about the respect you command from your community. My life felt perfectly balanced during this period: I was the top student, my family was being recognized for its values, and the future felt like a straight line toward greatness. This year represents the peak of stability before the nomadic shifts became more frequent, serving as the benchmark for the -extraordinary life- I am currently building." },
+  2013: { title: "Shifting",       body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
+  2014: { title: "New Ground",     body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
+  2015: { title: "The Turn",       body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
+  2016: { title: "Momentum",       body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
+  2017: { title: "Building",       body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
+  2018: { title: "Defining",       body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
+  2019: { title: "Expanding",      body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
+  2020: { title: "The Pause",      body: "The world stopped. Pandemic year. But something changed internally too. xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
+  2021: { title: "Rebuilding",     body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
+  2022: { title: "Acceleration",   body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
+  2023: { title: "Clarity",        body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
+  2024: { title: "Intention",      body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
+  2025: { title: "Transformation", body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
+  2026: { title: "Present",        body: "Now. Right here. This website exists. That means something. xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
 };
 
 (function buildTimeline() {
@@ -506,13 +523,69 @@ document.addEventListener('keydown', e => {
 
 /* ═══════════════════════════════════════════════════════════
    GAMES
+   FIX #5 — snake is free, other 4 require password (per-game)
 ═══════════════════════════════════════════════════════════ */
+/* Games that need a password. Once unlocked this session, remembered. */
+const LOCKED_GAMES  = new Set(['memory', '2048', 'reaction', 'word']);
+const unlockedGames = new Set(['snake']); /* snake always unlocked */
+
 let activeGame = null;
 
 function openGame(gameId) {
   activeGame = gameId;
   document.getElementById('game-modal').classList.add('open');
+
+  /* If locked and not yet unlocked this session → show in-modal gate */
+  if (LOCKED_GAMES.has(gameId) && !unlockedGames.has(gameId)) {
+    renderGameGate(gameId);
+    return;
+  }
   renderGame(gameId);
+}
+
+/* In-modal password gate for individual games */
+function renderGameGate(gameId) {
+  const names = { memory: 'Memory Match', '2048': '2048', reaction: 'Reaction Time', word: 'Word Scramble' };
+  const container = document.getElementById('game-container');
+  container.innerHTML = `
+    <div style="text-align:center;padding:2rem;max-width:320px;margin:0 auto;">
+      <div style="font-size:2.5rem;margin-bottom:1rem;">🔒</div>
+      <h3 style="font-family:var(--ff-display);font-size:1.6rem;font-weight:300;color:var(--text);margin-bottom:0.5rem;">${names[gameId] || gameId}</h3>
+      <p style="font-size:0.8rem;color:var(--text3);margin-bottom:1.5rem;line-height:1.6;">
+        This game requires a password.<br>
+        <a href="#" onclick="navigateTo('contact'); closeGame(); return false;" style="color:var(--accent);text-decoration:none;">Contact Manomay to get access →</a>
+      </p>
+      <div style="display:flex;gap:0;max-width:240px;margin:0 auto 0.75rem;">
+        <input id="game-gate-input" type="password" placeholder="Enter password"
+          style="flex:1;background:var(--bg3);border:1px solid var(--border2);color:var(--text);
+                 padding:0.75rem 1rem;font-family:var(--ff-mono);font-size:0.85rem;outline:none;
+                 border-right:none;border-radius:2px 0 0 2px;letter-spacing:0.1em;"
+          onkeydown="if(event.key==='Enter')submitGameGate('${gameId}')" />
+        <button onclick="submitGameGate('${gameId}')"
+          style="background:var(--accent);border:1px solid var(--accent);color:var(--bg);
+                 padding:0.75rem 1rem;cursor:pointer;font-family:var(--ff-mono);font-size:0.9rem;
+                 border-radius:0 2px 2px 0;">→</button>
+      </div>
+      <div id="game-gate-error" style="color:#ff4444;font-size:0.75rem;min-height:1.4rem;font-family:var(--ff-mono);"></div>
+    </div>
+  `;
+  setTimeout(() => document.getElementById('game-gate-input')?.focus(), 100);
+}
+
+function submitGameGate(gameId) {
+  const input = document.getElementById('game-gate-input');
+  if (!input) return;
+  if (input.value === CONFIG.MASTER_PASSWORD) {
+    unlockedGames.add(gameId); /* remember for this session */
+    renderGame(gameId);
+  } else {
+    input.value = '';
+    const err = document.getElementById('game-gate-error');
+    if (err) {
+      err.textContent = 'Wrong password. Try again.';
+      setTimeout(() => { if (err) err.textContent = ''; }, 2000);
+    }
+  }
 }
 
 function closeGame() {
@@ -599,11 +672,7 @@ function renderSnake(container) {
     draw();
   }
 
-  function endGame() {
-    gameOver = true;
-    clearInterval(interval);
-    draw();
-  }
+  function endGame() { gameOver = true; clearInterval(interval); draw(); }
 
   function startGame() {
     snake = [{x:10,y:10}];
@@ -911,16 +980,14 @@ function renderWordScramble(container) {
   });
 })();
 
-/* 2. Click the name 7 times */
+/* 2. Name click — counter + messages (handler defined below in music section) */
 let nameClicks = 0;
 const nameClickMessages = [
   "", "", "", "", "",
   "5 clicks... curious.",
   "6 clicks... you're definitely onto something.",
-  "7 clicks! You found the easter egg. Hello, persistent human. Here is your reward lean back and calm down.",
+  "7 clicks! You found the easter egg. Hello, persistent human. Here is your reward — lean back and calm down.",
 ];
-
-
 
 /* 3. Type "manomay" anywhere */
 (function() {
@@ -943,165 +1010,193 @@ window.addEventListener('load', () => {
   setTimeout(() => triggerPageReveals('home'), 2000);
 });
 
-
 /* ═══════════════════════════════════════════════════════════
    MUSIC SYSTEM
+   FIX #6  — updateMusicUI: toggle .muted class, never touch innerHTML
+   FIX #7  — music toggle click: proper pause/resume (no hard stop/reset)
+   FIX #8  — rainSong.ended: auto-resume bgMusic if user didn't manually pause
+   FIX #9  — vinyl: only shows on easter egg, click opens panel, hideVinyl()
+   FIX #10 — nameclickHandler: plays rain, pauses bg, shows vinyl
 ═══════════════════════════════════════════════════════════ */
 
-const bgMusic = document.getElementById("bg-music");
-const rainSong = document.getElementById("rain-song");
+const bgMusic    = document.getElementById("bg-music");
+const rainSong   = document.getElementById("rain-song");
+const songBar    = document.getElementById("music-toggle");  /* the button in nav */
+const vinylEl    = document.getElementById("vinyl-player");
+const musicPanel = document.getElementById("music-panel");
 
-const songBar = document.getElementById("music-toggle");
-const vinylPlayer = document.getElementById("vinyl-player");
-
+/* State */
 let easterUnlocked = false;
-let musicStarted = false;
+let musicStarted   = false;
+let userPaused     = false;   /* true when user manually clicked toggle to stop */
+let currentSongId  = 'bg';   /* 'bg' | 'easter' — tracks which song is "active" */
 
-/* ---------- play default song ---------- */
-function playDefaultSong() {
-  if (!bgMusic) return;
+/* ─── updateMusicUI ───
+   FIX: only toggle .muted class on songBar — NEVER set innerHTML.
+   The sound-bars spans and their CSS animation depend on the DOM staying intact. */
+function updateMusicUI() {
+  const isPlaying = (bgMusic && !bgMusic.paused && !bgMusic.ended) ||
+                    (rainSong && !rainSong.paused && !rainSong.ended);
 
-  rainSong.pause();
-  rainSong.currentTime = 0;
+  /* Toggle muted class — CSS animates bars when NOT muted */
+  if (isPlaying) {
+    songBar.classList.remove("muted");
+  } else {
+    songBar.classList.add("muted");
+  }
 
+  /* Vinyl spin — only if vinyl is visible (easter egg active) */
+  if (vinylEl) {
+    if (isPlaying) {
+      vinylEl.classList.remove("paused");
+    } else {
+      vinylEl.classList.add("paused");
+    }
+  }
+
+  /* Update panel "now playing" text */
+  updateMusicPanelState();
+}
+
+/* ─── Update which song is highlighted in the panel ─── */
+function updateMusicPanelState() {
+  const nowEl = document.getElementById('music-panel-now');
+  if (!nowEl) return;
+
+  document.querySelectorAll('.music-option').forEach(o => o.classList.remove('active'));
+  const isPlaying = (bgMusic && !bgMusic.paused) || (rainSong && !rainSong.paused);
+
+  if (!isPlaying) {
+    nowEl.textContent = '— paused —';
+  } else if (currentSongId === 'easter') {
+    nowEl.textContent = 'Rimjhim Gire Sawan';
+    document.querySelector('.music-option[data-song="easter"]')?.classList.add('active');
+  } else {
+    nowEl.textContent = 'Background Ambience';
+    document.querySelector('.music-option[data-song="bg"]')?.classList.add('active');
+  }
+}
+
+/* ─── Music toggle click: proper pause/resume ───
+   FIX: old code called stopAllMusic() which reset currentTime = 0.
+   This means resume after pause would restart from beginning, not continue.
+   New: just .pause() to keep position, .play() to resume. */
+songBar.addEventListener("click", () => {
+  const isPlaying = (bgMusic && !bgMusic.paused && !bgMusic.ended) ||
+                    (rainSong && !rainSong.paused && !rainSong.ended);
+
+  if (isPlaying) {
+    /* Pause without resetting — user can resume */
+    bgMusic.pause();
+    rainSong.pause();
+    userPaused = true;
+  } else {
+    /* Resume correct song */
+    userPaused = false;
+    if (currentSongId === 'easter' && rainSong.currentTime > 0 && !rainSong.ended) {
+      rainSong.play().catch(() => {});
+    } else {
+      bgMusic.play().catch(() => {});
+      currentSongId = 'bg';
+    }
+  }
+  updateMusicUI();
+});
+
+/* ─── Rain song ended: auto-resume bgMusic ───
+   FIX: original had no "ended" listener so bg music never resumed after rain. */
+rainSong.addEventListener("ended", () => {
+  currentSongId = 'bg';
+  if (!userPaused) {
+    bgMusic.currentTime = 0;
+    bgMusic.play().catch(() => {});
+  }
+  updateMusicUI();
+});
+
+/* ─── Keep UI synced when browser changes audio state ─── */
+bgMusic.addEventListener("play",  updateMusicUI);
+bgMusic.addEventListener("pause", updateMusicUI);
+rainSong.addEventListener("play",  updateMusicUI);
+rainSong.addEventListener("pause", updateMusicUI);
+
+/* ─── Autoplay bgMusic on first user interaction ─── */
+function tryStartBgMusic() {
+  if (musicStarted || userPaused) return;
   bgMusic.play()
     .then(() => {
-      musicStarted = true;
+      musicStarted  = true;
+      currentSongId = 'bg';
       updateMusicUI();
     })
     .catch(() => {
-      console.log("Autoplay blocked by browser");
-
-      // fallback → first mouse move starts music
-      document.addEventListener(
-        "mousemove",
-        () => {
-          if (!musicStarted) {
-            bgMusic.play().then(() => {
-              musicStarted = true;
-              updateMusicUI();
-            });
-          }
-        },
-        { once: true }
-      );
+      /* Browser blocked — user must click toggle manually */
     });
 }
 
-/* ---------- stop all songs ---------- */
-function stopAllMusic() {
-  if (bgMusic) {
-    bgMusic.pause();
+document.addEventListener("mousemove", tryStartBgMusic, { once: true });
+document.addEventListener("click",     tryStartBgMusic, { once: true });
+
+/* ─── Vinyl utility functions ─── */
+
+/* Show vinyl (called when easter egg triggers) */
+function showVinyl() {
+  if (!vinylEl) return;
+  vinylEl.classList.remove("hidden");
+  easterUnlocked = true;
+}
+
+/* Hide vinyl + close panel — user must trigger easter egg again to see it */
+function hideVinyl() {
+  if (!vinylEl) return;
+  vinylEl.classList.add("hidden");
+  closeMusicPanel();
+  easterUnlocked = false;
+}
+
+/* Toggle the quarter-screen music selection panel */
+function toggleMusicPanel() {
+  if (!musicPanel) return;
+  musicPanel.classList.toggle("hidden");
+  if (!musicPanel.classList.contains("hidden")) {
+    updateMusicPanelState();
+  }
+}
+
+function closeMusicPanel() {
+  if (musicPanel) musicPanel.classList.add("hidden");
+}
+
+/* Play a song chosen from the panel */
+function playFromPanel(songId) {
+  bgMusic.pause();
+  rainSong.pause();
+  userPaused    = false;
+  currentSongId = songId;
+
+  if (songId === 'bg') {
     bgMusic.currentTime = 0;
-  }
-
-  if (rainSong) {
-    rainSong.pause();
+    bgMusic.play().catch(() => {});
+  } else if (songId === 'easter') {
     rainSong.currentTime = 0;
+    rainSong.play().catch(() => {});
   }
 
+  musicStarted = true;
   updateMusicUI();
 }
 
-/* ---------- update vinyl + song bar ---------- */
-function updateMusicUI() {
-  const isPlaying =
-    (!bgMusic.paused && !bgMusic.ended) ||
-    (!rainSong.paused && !rainSong.ended);
-
-  if (isPlaying) {
-    songBar.classList.add("playing");
-    songBar.innerHTML = "▌▌▌";
-  } else {
-    songBar.classList.remove("playing");
-    songBar.innerHTML = "▶";
-  }
-
-  if (easterUnlocked) {
-    vinylPlayer.classList.remove("hidden");
-
-    if (isPlaying) {
-      vinylPlayer.classList.remove("paused");
-    } else {
-      vinylPlayer.classList.add("paused");
-    }
-  } else {
-    vinylPlayer.classList.add("hidden");
-  }
+/* Vinyl click → toggle the music panel */
+if (vinylEl) {
+  vinylEl.addEventListener("click", () => {
+    toggleMusicPanel();
+  });
 }
 
-/* ---------- song bar click = stop music ---------- */
-songBar.addEventListener("click", () => {
-  stopAllMusic();
-});
-
-/* ---------- vinyl click = open mini playlist ---------- */
-vinylPlayer.addEventListener("click", () => {
-  let menu = document.getElementById("playlist-menu");
-
-  if (!menu) {
-    menu = document.createElement("div");
-    menu.id = "playlist-menu";
-
-    menu.innerHTML = `
-      <button data-song="default">Default Song</button>
-      <button data-song="rain">Rimjhim</button>
-    `;
-
-    document.body.appendChild(menu);
-
-    menu.querySelectorAll("button").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const type = btn.dataset.song;
-
-        stopAllMusic();
-
-        if (type === "default") {
-          bgMusic.play();
-        }
-
-        if (type === "rain") {
-          rainSong.play();
-        }
-
-        updateMusicUI();
-      });
-    });
-  }
-
-  menu.classList.toggle("show");
-});
-
-/* ---------- autoplay on page load ---------- */
-document.addEventListener(
-  "mousemove",
-  () => {
-    if (!musicStarted) {
-      playDefaultSong();
-    }
-  },
-  { once: true }
-);
-
-document.addEventListener(
-  "click",
-  () => {
-    if (!musicStarted) {
-      playDefaultSong();
-    }
-  },
-  { once: true }
-);
-
-/* ---------- keep UI synced ---------- */
-bgMusic.addEventListener("play", updateMusicUI);
-bgMusic.addEventListener("pause", updateMusicUI);
-
-rainSong.addEventListener("play", updateMusicUI);
-rainSong.addEventListener("pause", updateMusicUI);
-
-
-/* ---------- modify your existing easter egg ---------- */
+/* ─── NAME CLICK EASTER EGG ───
+   FIX: plays rainSong, stops bgMusic, shows vinyl.
+   After rain ends → bgMusic auto-resumes (handled by rainSong.ended above).
+   If music bar (toggle) is OFF (userPaused=true) → rain won't auto-start bg on end. */
 function nameclickHandler() {
   nameClicks++;
 
@@ -1113,11 +1208,17 @@ function nameclickHandler() {
   }
 
   if (nameClicks >= 7) {
-    easterUnlocked = true;
+    /* Show vinyl */
+    showVinyl();
 
-    stopAllMusic();
+    /* Stop bg, play rain */
+    bgMusic.pause();
+    currentSongId = 'easter';
+    userPaused    = false;
+    rainSong.currentTime = 0;
+    rainSong.play().catch(() => {});
+    musicStarted = true;
 
-    rainSong.play();
     updateMusicUI();
 
     setTimeout(() => {
