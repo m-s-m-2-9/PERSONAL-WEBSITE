@@ -53,12 +53,38 @@ function startHeroAnimations() {
   ['name-part-1', 'name-part-2', 'name-part-3'].forEach((id, i) => {
     setTimeout(() => {
       const el = document.getElementById(id);
-      if (el) el.classList.add('visible');
+
+      if (el) {
+        el.classList.add('visible');
+
+        // Manomay + Misra highlighted
+        if (id === 'name-part-1' || id === 'name-part-3') {
+          el.classList.add('highlight');
+        }
+
+        // Shailendra italic
+        if (id === 'name-part-2') {
+          el.style.fontStyle = 'italic';
+        }
+      }
+
     }, i * 150 + 200);
   });
-  setTimeout(() => document.getElementById('hero-tagline')?.classList.add('visible'),    800);
-  setTimeout(() => document.getElementById('hero-nav-hint')?.classList.add('visible'),   1000);
-  setTimeout(() => document.getElementById('scroll-indicator')?.classList.add('visible'),1200);
+
+  setTimeout(() => 
+    document.getElementById('hero-tagline')?.classList.add('visible'),
+    800
+  );
+
+  setTimeout(() => 
+    document.getElementById('hero-nav-hint')?.classList.add('visible'),
+    1000
+  );
+
+  setTimeout(() => 
+    document.getElementById('scroll-indicator')?.classList.add('visible'),
+    1200
+  );
 }
 
 /* ═══════════════════════════════════════════════════════════
