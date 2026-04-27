@@ -50,43 +50,51 @@ if (window.netlifyIdentity) {
    HERO ANIMATIONS
 ═══════════════════════════════════════════════════════════ */
 function startHeroAnimations() {
-  ['name-part-1', 'name-part-2', 'name-part-3'].forEach((id, i) => {
+  const nameParts = [
+    document.getElementById('name-part-1'),
+    document.getElementById('name-part-2'),
+    document.getElementById('name-part-3')
+  ];
+
+  /* Get current cycle index from localStorage */
+  let currentHighlight = parseInt(localStorage.getItem("heroHighlightIndex")) || 0;
+
+  /* Reset all highlights first */
+  nameParts.forEach(el => {
+    if (el) el.classList.remove("highlight");
+  });
+
+  /* Animate names appearing one by one */
+  nameParts.forEach((el, i) => {
     setTimeout(() => {
-      const el = document.getElementById(id);
-
-      if (el) {
-        el.classList.add('visible');
-
-        // Manomay + Misra highlighted
-        if (id === 'name-part-1' || id === 'name-part-3') {
-          el.classList.add('highlight');
-        }
-
-        // Shailendra italic
-        if (id === 'name-part-2') {
-          el.style.fontStyle = 'italic';
-        }
-      }
-
+      if (el) el.classList.add("visible");
     }, i * 150 + 200);
   });
 
-  setTimeout(() => 
-    document.getElementById('hero-tagline')?.classList.add('visible'),
-    800
-  );
+  /* After names appear → highlight one word */
+  setTimeout(() => {
+    if (nameParts[currentHighlight]) {
+      nameParts[currentHighlight].classList.add("highlight");
+    }
 
-  setTimeout(() => 
-    document.getElementById('hero-nav-hint')?.classList.add('visible'),
-    1000
-  );
+    /* Save next cycle */
+    let nextIndex = (currentHighlight + 1) % 3;
+    localStorage.setItem("heroHighlightIndex", nextIndex);
+  }, 700);
 
-  setTimeout(() => 
-    document.getElementById('scroll-indicator')?.classList.add('visible'),
-    1200
-  );
+  /* Remaining hero animations */
+  setTimeout(() => {
+    document.getElementById('hero-tagline')?.classList.add('visible');
+  }, 800);
+
+  setTimeout(() => {
+    document.getElementById('hero-nav-hint')?.classList.add('visible');
+  }, 1000);
+
+  setTimeout(() => {
+    document.getElementById('scroll-indicator')?.classList.add('visible');
+  }, 1200);
 }
-
 /* ═══════════════════════════════════════════════════════════
    CUSTOM CURSOR
    FIX: use (pointer: coarse) media query — more reliable than
