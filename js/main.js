@@ -59,28 +59,27 @@ function startHeroAnimations() {
   /* Get current cycle index from localStorage */
   let currentHighlight = parseInt(localStorage.getItem("heroHighlightIndex")) || 0;
 
-  /* Reset all highlights first */
-  nameParts.forEach(el => {
-    if (el) el.classList.remove("highlight");
-  });
+/* Reset all highlights first */
+nameParts.forEach(el => {
+  if (el) el.classList.remove("highlight");
+});
 
-  /* Animate names appearing one by one */
-  nameParts.forEach((el, i) => {
-    setTimeout(() => {
-      if (el) el.classList.add("visible");
-    }, i * 150 + 200);
-  });
-
-  /* After names appear → highlight one word */
+/* Animate names appearing one by one */
+nameParts.forEach((el, i) => {
   setTimeout(() => {
-    if (nameParts[currentHighlight]) {
-      nameParts[currentHighlight].classList.add("highlight");
-    }
+    if (el) el.classList.add("visible");
+  }, i * 150 + 200);
+});
 
-    /* Save next cycle */
-    let nextIndex = (currentHighlight + 1) % 3;
-    localStorage.setItem("heroHighlightIndex", nextIndex);
-  }, 700);
+/* After names appear → highlight one word */
+setTimeout(() => {
+  if (nameParts[currentHighlight]) {
+    nameParts[currentHighlight].classList.add("highlight");
+  }
+
+  let nextIndex = (currentHighlight + 1) % 3;
+  localStorage.setItem("heroHighlightIndex", nextIndex);
+}, 700);
 
   /* Remaining hero animations */
   setTimeout(() => {
