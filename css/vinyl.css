@@ -1,224 +1,368 @@
 /* ═══════════════════════════════════════════════════════════
-   VINYL + MUSIC SYSTEM
+   vinyl.css — Vinyl record player + music panel
+   The music toggle button CSS is in components.css — NOT here.
+   This file handles: vinyl record, backdrop, music panel only.
 ═══════════════════════════════════════════════════════════ */
 
-/* hidden until easter egg unlocks */
-.hidden {
-  display: none !important;
-}
+/* ─── UTILITY ─── */
+.hidden { display: none !important; }
 
-/* =========================
-   VINYL PLAYER
-========================= */
+/* ═══════════════════════════════════════════════════════════
+   VINYL RECORD — bottom left corner
+   Hidden by default (.hidden class). Shows after easter egg.
+   Rotates when any song is playing.
+   Click = opens music panel. Does NOT control music.
+═══════════════════════════════════════════════════════════ */
 .vinyl-player {
   position: fixed;
   bottom: 25px;
   left: 25px;
-  width: 70px;
-  height: 70px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
-  cursor: pointer;
   z-index: 9998;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .vinyl-player:hover {
   transform: scale(1.08);
 }
 
+/* The actual disc */
 .vinyl-disc {
   position: relative;
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: repeating-radial-gradient(
-    circle at center,
-    #111 0px,
-    #111 4px,
-    #222 5px,
-    #222 7px
-  );
-  border: 2px solid rgba(255,255,255,0.1);
 
-  animation: vinylSpin 4s linear infinite;
+  /* Realistic vinyl groove pattern */
+  background:
+    radial-gradient(circle at center, #0a0a0a 0%, #0a0a0a 12%, transparent 12%),
+    repeating-radial-gradient(
+      circle at center,
+      #111 0px,
+      #111 2px,
+      #1c1c1c 3px,
+      #1c1c1c 5px,
+      #141414 6px,
+      #141414 8px
+    );
+
+  border: 2px solid rgba(255,255,255,0.1);
+  box-shadow:
+    0 6px 24px rgba(0,0,0,0.6),
+    inset 0 0 0 1px rgba(255,255,255,0.04);
+
+  /* Spin animation — paused by default, runs when .paused class removed */
+  animation: vinylSpin 3s linear infinite;
   animation-play-state: paused;
 }
 
-/* center dot */
-.vinyl-disc::after {
-  content: "";
+/* Label area — colored circle in center (theme-connected) */
+.vinyl-disc::before {
+  content: '';
   position: absolute;
-  width: 14px;
-  height: 14px;
-  background: var(--accent);
-  border-radius: 50%;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.85;
+  box-shadow: 0 0 8px var(--accent-glow);
 }
 
-/* spin when song playing */
+/* Center hole */
+.vinyl-disc::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bg);
+  z-index: 1;
+}
+
+/* Spinning: when vinyl-player does NOT have .paused class */
 .vinyl-player:not(.paused) .vinyl-disc {
   animation-play-state: running;
 }
 
 @keyframes vinylSpin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
-
-/* =========================
-   SONG BAR BUTTON
-========================= */
-
-.song-bar {
+/* ═══════════════════════════════════════════════════════════
+   MUSIC BACKDROP — full-screen blur overlay
+   Hidden by default. Shown when panel opens.
+   Click on it = close panel (music keeps playing).
+═══════════════════════════════════════════════════════════ */
+#music-backdrop {
   position: fixed;
-  top: 22px;
-  right: 105px; /* left of theme dots */
-  width: 40px;
-  height: 24px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  z-index: 9999;
-  font-size: 18px;
+  inset: 0;
+  z-index: 9996;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
 }
 
-/* paused state */
-.song-bar:not(.playing)::before {
-  content: "⏸";
-  opacity: 0.8;
+#music-backdrop.open {
+  opacity: 1;
+  pointer-events: all;
 }
 
-/* playing animation */
-.song-bar.playing::before {
-  content: "▂▅▇▃";
-  animation: barDance 0.8s infinite;
-}
-
-@keyframes barDance {
-  0% {
-    transform: scaleY(1);
-  }
-  50% {
-    transform: scaleY(1.3);
-  }
-  100% {
-    transform: scaleY(1);
-  }
-}
-
-
-/* =========================
-   MINI MUSIC MENU
-========================= */
-
+/* ═══════════════════════════════════════════════════════════
+   MUSIC PANEL — Spotify-like quarter screen
+   Hidden by default via CSS (opacity:0 + scale(0.05)).
+   Opens with transform animation from vinyl position.
+   transform-origin: bottom left means it grows from that corner,
+   which is where the vinyl record sits — looks like it transforms
+   into the panel.
+═══════════════════════════════════════════════════════════ */
 .music-panel {
   position: fixed;
-  bottom: 110px;
-  left: 25px;
-  width: 220px;
-  background: rgba(15,15,15,0.95);
+  bottom: 20px;
+  left: 20px;
+  width: clamp(280px, 25vw, 360px);
+  z-index: 9997;
+
+  /* Glass dark background */
+  background: rgba(10, 10, 10, 0.96);
   border: 1px solid var(--border2);
-  border-radius: 14px;
-  padding: 15px;
-  z-index: 9999;
-  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  overflow: hidden;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.7),
+    0 0 0 1px rgba(255,255,255,0.04) inset;
+
+  /* Hidden state — scales from vinyl position (bottom-left) */
+  opacity: 0;
+  transform: scale(0.05);
+  transform-origin: bottom left;
+  pointer-events: none;
+  visibility: hidden;
+
+  /* Transition for both open and close */
+  transition:
+    opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0s 0.45s; /* delay hide on close */
 }
 
-.music-panel.hidden {
-  display: none;
+/* Open state — full size, fully visible */
+.music-panel.open {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: all;
+  visibility: visible;
+  transition:
+    opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0s 0s; /* no delay on open */
 }
 
-.music-panel h3 {
-  font-size: 14px;
-  margin-bottom: 12px;
+/* ─── Panel inner padding ─── */
+.music-panel-inner {
+  padding: 1.5rem;
+}
+
+/* ─── Panel header ─── */
+.music-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.music-panel-label {
+  font-family: var(--ff-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* ─── Now playing text ─── */
+.music-panel-now {
+  font-family: var(--ff-display);
+  font-size: 1.15rem;
+  font-weight: 300;
   color: var(--text);
+  font-style: italic;
+  margin-bottom: 0.75rem;
+  min-height: 1.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Animated bars inside panel (Spotify-style) ─── */
+.music-panel-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 24px;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.music-panel-bars span {
+  width: 4px;
+  background: var(--accent);
+  border-radius: 2px;
+  height: 4px;
+  transition: height 0.2s ease;
+}
+
+/* Animated when playing */
+.music-panel-bars.playing span:nth-child(1) { animation: panelBar 1.1s 0.0s infinite ease-in-out; }
+.music-panel-bars.playing span:nth-child(2) { animation: panelBar 1.1s 0.2s infinite ease-in-out; }
+.music-panel-bars.playing span:nth-child(3) { animation: panelBar 1.1s 0.4s infinite ease-in-out; }
+.music-panel-bars.playing span:nth-child(4) { animation: panelBar 1.1s 0.1s infinite ease-in-out; }
+.music-panel-bars.playing span:nth-child(5) { animation: panelBar 1.1s 0.3s infinite ease-in-out; }
+
+@keyframes panelBar {
+  0%, 100% { height: 4px; }
+  25%       { height: 20px; }
+  50%       { height: 10px; }
+  75%       { height: 18px; }
+}
+
+/* ─── Song list ─── */
+.music-panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .music-option {
-  padding: 10px;
-  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
   border-radius: 10px;
-  background: var(--bg2);
-  cursor: pointer;
-  transition: 0.3s ease;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid transparent;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .music-option:hover {
-  background: var(--accent);
-  color: black;
+  background: rgba(255,255,255,0.08);
+  border-color: var(--border2);
 }
 
+.music-option.active {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+}
 
-/* =========================
-   SNAKE GAME (keep existing)
-========================= */
+.music-option-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
 
+.music-option-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.music-option-name {
+  font-size: 0.88rem;
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.music-option-sub {
+  font-family: var(--ff-mono);
+  font-size: 0.6rem;
+  color: var(--text3);
+  letter-spacing: 0.05em;
+  margin-top: 0.15rem;
+}
+
+/* Playing indicator dot */
+.music-option-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.music-option-indicator.playing {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+  animation: indicatorPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes indicatorPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.7); }
+}
+
+/* ─── Panel footer ─── */
+.music-panel-footer {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.music-panel-tip {
+  font-family: var(--ff-mono);
+  font-size: 0.58rem;
+  color: var(--text3);
+  letter-spacing: 0.04em;
+  text-align: center;
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.music-hide-btn {
+  width: 100%;
+  padding: 0.65rem;
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--text3);
+  font-family: var(--ff-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.music-hide-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
+/* ─── Mobile: full-width panel ─── */
+@media (max-width: 768px) {
+  .music-panel {
+    width: calc(100vw - 40px);
+  }
+}
+
+/* ─── Snake game canvas (keep here for game styling) ─── */
 #snake-canvas {
   border: 1px solid var(--border2);
   background: var(--bg2);
-}
-
-
-
-
-
-
-
-/* MUSIC TOGGLE BUTTON */
-.music-toggle {
-  position: fixed;
-  bottom: 30px;
-  left: 30px;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--border2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 9999;
-}
-
-/* bars */
-.sound-bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 20px;
-}
-
-.sound-bars span {
-  width: 4px;
-  height: 10px;
-  background: var(--accent);
-  border-radius: 2px;
-}
-
-/* animate when playing */
-.music-toggle.playing .sound-bars span {
-  animation: soundWave 0.8s infinite ease-in-out;
-}
-
-.music-toggle.playing .sound-bars span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.music-toggle.playing .sound-bars span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-@keyframes soundWave {
-  0% { transform: scaleY(0.5); }
-  50% { transform: scaleY(1.5); }
-  100% { transform: scaleY(0.5); }
 }
