@@ -5,16 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manomay Shailendra Misra</title>
 
-  <!-- ═══════════════════════════════════════════════════════════
-       FONTS
-  ══════════════════════════════════════════════════════════════ -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
 
-  <!-- ═══════════════════════════════════════════════════════════
-       STYLESHEETS — order matters
-  ══════════════════════════════════════════════════════════════ -->
   <link rel="stylesheet" href="css/tokens.css" />
   <link rel="stylesheet" href="css/animations.css" />
   <link rel="stylesheet" href="css/components.css" />
@@ -25,9 +19,7 @@
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════════════════
-     LOADING SCREEN
-═══════════════════════════════════════════════════════════ -->
+<!-- LOADING SCREEN -->
 <div id="loading-screen">
   <div class="loading-name">M · S · M</div>
   <div class="loading-bar-wrap">
@@ -36,20 +28,14 @@
   <div class="loading-pct" id="loading-pct">0%</div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     CUSTOM CURSOR
-═══════════════════════════════════════════════════════════ -->
+<!-- CUSTOM CURSOR -->
 <div id="cursor-dot"></div>
 <div id="cursor-ring"></div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     FULL-PAGE TRANSITION OVERLAY
-═══════════════════════════════════════════════════════════ -->
+<!-- FULL-PAGE TRANSITION OVERLAY -->
 <div id="transition-overlay"></div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     PASSWORD GATE
-═══════════════════════════════════════════════════════════ -->
+<!-- PASSWORD GATE -->
 <div id="password-gate" class="password-gate">
   <div class="gate-icon"></div>
   <div class="gate-title">Restricted</div>
@@ -66,9 +52,7 @@
   <button class="btn" style="margin-top:2rem; border-color:var(--border); color:var(--text2);" onclick="closeGate()">← Go back</button>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     NAVIGATION BAR
-═══════════════════════════════════════════════════════════ -->
+<!-- NAVIGATION BAR -->
 <nav id="nav">
   <a href="#" class="nav-logo" onclick="navigateTo('home'); return false;">MSM</a>
 
@@ -89,7 +73,7 @@
   </ul>
 
   <div class="nav-right">
-    <!-- Music toggle — inline in nav, near theme dots. Controls play/pause ONLY. -->
+    <!-- Music toggle — inline in nav near theme dots. Play/pause ONLY. -->
     <button class="music-toggle muted" id="music-toggle" title="Play / Pause music">
       <div class="sound-bars">
         <span></span>
@@ -129,11 +113,9 @@
   <a href="#" onclick="navigateTo('social');  toggleMobileNav(); return false;">Social</a>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     ALL PAGES
-═══════════════════════════════════════════════════════════ -->
+<!-- ALL PAGES -->
 
-<!-- ─── PAGE: HOME ─── -->
+<!-- PAGE: HOME -->
 <section id="page-home" class="page active">
   <div class="page-inner" style="padding:0;">
     <div class="hero">
@@ -202,7 +184,7 @@
   </div>
 </section>
 
-<!-- ─── PAGE: ABOUT / IDENTITY ─── -->
+<!-- PAGE: ABOUT -->
 <section id="page-about" class="page">
   <div class="page-inner">
     <div class="container section">
@@ -235,19 +217,12 @@
               There's a hidden layer here. Enter the password to read the real story.
             </p>
             <div class="inline-password-form">
-              <input
-                type="password"
-                id="about-pw"
-                placeholder="password"
-                autocomplete="off"
-                onkeydown="if(event.key==='Enter')unlockSection('about-pw','secret-about-content')"
-              />
+              <input type="password" id="about-pw" placeholder="password" autocomplete="off"
+                onkeydown="if(event.key==='Enter')unlockSection('about-pw','secret-about-content')" />
               <button onclick="unlockSection('about-pw','secret-about-content')">Unlock</button>
             </div>
             <div class="secret-content" id="secret-about-content">
-              <p class="about-body" style="margin-top:1.5rem;">
-                Your private story goes here.
-              </p>
+              <p class="about-body" style="margin-top:1.5rem;">Your private story goes here.</p>
             </div>
           </div>
         </div>
@@ -256,7 +231,7 @@
   </div>
 </section>
 
-<!-- ─── PAGE: PHOTOS ─── -->
+<!-- PAGE: PHOTOS -->
 <section id="page-photos" class="page">
   <div class="page-inner">
     <div class="container">
@@ -329,7 +304,6 @@
           </div>
         </div>
       </div>
-
       <div style="height:4rem;"></div>
     </div>
   </div>
@@ -347,7 +321,7 @@
   </div>
 </div>
 
-<!-- ─── PAGE: CV / RESUME ─── -->
+<!-- PAGE: CV / RESUME -->
 <section id="page-resume" class="page">
   <div class="page-inner">
     <div class="resume-wrap">
@@ -421,7 +395,7 @@
   </div>
 </section>
 
-<!-- ─── PAGE: PROFILES ─── -->
+<!-- PAGE: PROFILES -->
 <section id="page-profiles" class="page">
   <div class="page-inner">
     <div class="container section">
@@ -431,23 +405,17 @@
       <div class="profiles-grid reveal reveal-d2">
         <a class="profile-item" id="linkedin-link" href="#" target="_blank">
           <div class="profile-icon">💼</div>
-          <div>
-            <div class="profile-info-name">LinkedIn</div>
-          </div>
+          <div><div class="profile-info-name">LinkedIn</div></div>
           <span class="profile-arrow">↗</span>
         </a>
         <a class="profile-item" id="instagram-link" href="#" target="_blank">
           <div class="profile-icon">📸</div>
-          <div>
-            <div class="profile-info-name">Instagram</div>
-          </div>
+          <div><div class="profile-info-name">Instagram</div></div>
           <span class="profile-arrow">↗</span>
         </a>
         <a class="profile-item" id="resume-link" href="#" target="_blank">
           <div class="profile-icon">📄</div>
-          <div>
-            <div class="profile-info-name">Resume</div>
-          </div>
+          <div><div class="profile-info-name">Resume</div></div>
           <span class="profile-arrow">↗</span>
         </a>
       </div>
@@ -455,7 +423,7 @@
   </div>
 </section>
 
-<!-- ─── PAGE: YEAR JOURNEY ─── -->
+<!-- PAGE: YEAR JOURNEY -->
 <section id="page-journey" class="page">
   <div class="page-inner">
     <div class="timeline-header">
@@ -499,12 +467,11 @@
         </p>
       </div>
     </div>
-
     <div style="height:4rem;"></div>
   </div>
 </section>
 
-<!-- ─── PAGE: BIRTHDAY TIMER ─── -->
+<!-- PAGE: BIRTHDAY TIMER -->
 <section id="page-birthday" class="page">
   <div class="page-inner">
     <div class="birthday-hero">
@@ -556,7 +523,7 @@
   </div>
 </section>
 
-<!-- ─── PAGE: THOUGHTS & BELIEFS ─── -->
+<!-- PAGE: THOUGHTS & BELIEFS -->
 <section id="page-thoughts" class="page">
   <div class="page-inner">
     <div class="container section">
@@ -613,7 +580,7 @@
   </div>
 </section>
 
-<!-- ─── PAGE: CONTACT ─── -->
+<!-- PAGE: CONTACT -->
 <section id="page-contact" class="page">
   <div class="page-inner">
     <div class="contact-wrap">
@@ -650,7 +617,7 @@
   </div>
 </section>
 
-<!-- ─── PAGE: LISTS ─── -->
+<!-- PAGE: LISTS -->
 <section id="page-lists" class="page">
   <div class="page-inner">
     <div class="container section">
@@ -764,7 +731,7 @@
   </div>
 </section>
 
-<!-- ─── PAGE: TRAITS / SKILLS ─── -->
+<!-- PAGE: TRAITS / SKILLS -->
 <section id="page-skills" class="page">
   <div class="page-inner">
     <div class="container section">
@@ -785,7 +752,6 @@
           <span class="marquee-item">xyz Skill<span class="marquee-dot">·</span></span>
           <span class="marquee-item">xyz Hobby<span class="marquee-dot">·</span></span>
           <span class="marquee-item">xyz Interest<span class="marquee-dot">·</span></span>
-          <!-- Duplicate for seamless loop -->
           <span class="marquee-item">xyz Skill<span class="marquee-dot">·</span></span>
           <span class="marquee-item">xyz Skill<span class="marquee-dot">·</span></span>
           <span class="marquee-item">xyz Hobby<span class="marquee-dot">·</span></span>
@@ -840,15 +806,13 @@
   </div>
 </section>
 
-<!-- ─── PAGE: GAMES ─── -->
-<!-- ALL 5 PUBLIC — no password. Private section below with password. -->
+<!-- PAGE: GAMES — ALL 5 PUBLIC, private section below -->
 <section id="page-games" class="page">
   <div class="page-inner">
     <div class="container section">
       <div class="section-label reveal">12 — Games</div>
       <h2 class="section-title reveal reveal-d1">Take a break.<br>Play something.</h2>
 
-      <!-- Public games — all free, no password required -->
       <div class="games-grid reveal reveal-d2">
         <div class="game-card" onclick="openGame('snake')">
           <div class="game-icon">🐍</div>
@@ -882,14 +846,14 @@
         </div>
       </div>
 
-      <!-- Private games — password protected, family only, external links -->
+      <!-- Private games — family only, external links -->
       <div class="divider reveal" style="margin-top:3rem;"></div>
 
       <div class="section-label reveal" style="margin-top:0;">
         Private Games · Family Only <span class="locked-badge" style="margin-left:0.5rem;">🔒</span>
       </div>
       <p style="font-size:0.8rem;color:var(--text3);margin-bottom:1.5rem;line-height:1.6;" class="reveal reveal-d1">
-        Personal games built exclusively for family. Not playable on this site — access the links below after unlocking.
+        Personal games built exclusively for family. Not playable on this site — access links below after unlocking.
       </p>
       <div class="inline-password-form reveal reveal-d2">
         <input type="password" id="private-games-pw" placeholder="password" autocomplete="off"
@@ -899,7 +863,6 @@
 
       <div class="secret-content" id="private-games-content">
         <div class="games-grid" style="margin-top:1.5rem;">
-          <!-- REPLACE: Add your actual game links below -->
           <div class="game-card">
             <div class="game-icon">🎮</div>
             <div class="game-name">Private Game 1 — REPLACE</div>
@@ -920,7 +883,6 @@
           </div>
         </div>
       </div>
-
     </div>
   </div>
 </section>
@@ -931,7 +893,7 @@
   <div id="game-container" style="width:100%;max-width:600px;"></div>
 </div>
 
-<!-- ─── PAGE: SOCIAL PROOF ─── -->
+<!-- PAGE: SOCIAL PROOF -->
 <section id="page-social" class="page">
   <div class="page-inner">
     <div class="container section">
@@ -950,7 +912,6 @@
           <span class="logo-item">·</span>
           <span class="logo-item">Agency Name</span>
           <span class="logo-item">·</span>
-          <!-- Duplicate for loop -->
           <span class="logo-item">Company Name</span>
           <span class="logo-item">·</span>
           <span class="logo-item">Brand Name</span>
@@ -985,14 +946,10 @@
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════
-     EASTER EGGS
-═══════════════════════════════════════════════════════════ -->
+<!-- EASTER EGG POPUP -->
 <div id="konami-egg">🎮 You found it! Konami code unlocked. You're clearly one of us.</div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     AUDIO
-═══════════════════════════════════════════════════════════ -->
+<!-- AUDIO -->
 <audio id="rain-song">
   <source src="songs/rimjhim.mp3" type="audio/mpeg">
 </audio>
@@ -1000,44 +957,54 @@
   <source src="songs/SONG1.mp3" type="audio/mpeg">
 </audio>
 
-<!-- ═══════════════════════════════════════════════════════════
-     VINYL RECORD — hidden until easter egg (7 name clicks)
-     "hidden" class = display:none — JS removes it on egg trigger
-═══════════════════════════════════════════════════════════ -->
+<!-- VINYL RECORD — hidden until 7 name clicks (easter egg) -->
 <div class="vinyl-player paused hidden" id="vinyl-player">
   <div class="vinyl-disc"></div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     MUSIC PANEL — appears when vinyl is clicked (quarter screen)
-     Hidden by CSS transform/opacity — no .hidden class needed
-═══════════════════════════════════════════════════════════ -->
+<!-- MUSIC PANEL BACKDROP — click here to close panel, music keeps playing -->
+<div id="music-backdrop"></div>
+
+<!-- MUSIC PANEL — Spotify-like, quarter screen, hidden by default via CSS -->
 <div id="music-panel" class="music-panel">
   <div class="music-panel-inner">
     <div class="music-panel-header">
-      <span class="music-panel-title">Now Playing</span>
-      <button class="music-panel-close" onclick="closeMusicPanel()">✕</button>
+      <span class="music-panel-label">Now Playing</span>
     </div>
     <div class="music-panel-now" id="music-panel-now">—</div>
+    <div class="music-panel-bars" id="music-panel-bars">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
     <div class="music-panel-list">
       <div class="music-option" data-song="bg" onclick="playFromPanel('bg')">
-        <div class="music-option-name">Background Ambience</div>
-        <div class="music-option-sub">Loop · Ambient</div>
+        <div class="music-option-left">
+          <div class="music-option-icon">🌙</div>
+          <div>
+            <div class="music-option-name">Background Ambience</div>
+            <div class="music-option-sub">Loop · Ambient · SONG1.mp3</div>
+          </div>
+        </div>
+        <div class="music-option-indicator" id="indicator-bg"></div>
       </div>
       <div class="music-option" data-song="easter" onclick="playFromPanel('easter')">
-        <div class="music-option-name">Rimjhim Gire Sawan</div>
-        <div class="music-option-sub">Easter Egg Song</div>
+        <div class="music-option-left">
+          <div class="music-option-icon">🌧️</div>
+          <div>
+            <div class="music-option-name">Rimjhim Gire Sawan</div>
+            <div class="music-option-sub">Easter Egg Song</div>
+          </div>
+        </div>
+        <div class="music-option-indicator" id="indicator-easter"></div>
       </div>
     </div>
     <div class="music-panel-footer">
-      <button class="music-hide-btn" onclick="hideVinyl()">Hide Record</button>
+      <p class="music-panel-tip">Click outside to close panel · Music keeps playing</p>
+      <button class="music-hide-btn" onclick="hideVinyl()">Hide Vinyl Record</button>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     SCRIPTS
-═══════════════════════════════════════════════════════════ -->
+<!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 <script src="js/data.js"></script>
