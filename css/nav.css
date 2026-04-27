@@ -5,55 +5,98 @@
 
 /* ─── NAVIGATION ─── */
 #nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 9000;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 3rem; height: 64px;
-  background: transparent; border-bottom: 1px solid transparent;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 3rem;
+  height: 64px;
+  background: transparent;
+  border-bottom: 1px solid transparent;
   transition: background 0.5s ease, backdrop-filter 0.5s ease, border-color 0.5s ease;
 }
+
 #nav.scrolled {
   background: rgba(9,9,9,0.85);
   backdrop-filter: blur(20px) saturate(180%);
   border-color: var(--border);
 }
+
 [data-theme="light"]  #nav.scrolled { background: rgba(250,250,248,0.85); }
 [data-theme="slate"]  #nav.scrolled { background: rgba(13,15,20,0.85); }
 [data-theme="forest"] #nav.scrolled { background: rgba(10,14,9,0.85); }
 
 .nav-logo {
-  font-family: var(--ff-display); font-size: 1.1rem; font-weight: 600;
-  letter-spacing: 0.05em; color: var(--text); text-decoration: none;
+  font-family: var(--ff-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text);
+  text-decoration: none;
 }
 
 .nav-links { display: flex; gap: 0; list-style: none; }
+
 .nav-links a {
-  color: var(--text2); text-decoration: none; font-size: 0.78rem;
-  letter-spacing: 0.08em; text-transform: uppercase; padding: 0.5rem 1rem;
-  transition: color var(--transition-fast); position: relative;
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.5rem 1rem;
+  transition: color var(--transition-fast);
+  position: relative;
 }
+
 .nav-links a::after {
-  content: ''; position: absolute; bottom: 0; left: 50%; width: 0; height: 1px;
-  background: var(--accent); transform: translateX(-50%); transition: width var(--transition-fast);
+  content: '';
+  position: absolute;
+  bottom: 0; left: 50%;
+  width: 0; height: 1px;
+  background: var(--accent);
+  transform: translateX(-50%);
+  transition: width var(--transition-fast);
 }
+
 .nav-links a:hover       { color: var(--text); }
 .nav-links a:hover::after { width: 60%; }
 .nav-links a.active      { color: var(--accent); }
 
-/* Lock icon used in nav links */
+/* Lock icon */
 .lock-icon {
-  display: inline-block; width: 8px; height: 8px;
-  border: 1px solid currentColor; border-radius: 1px;
-  margin-left: 4px; position: relative; vertical-align: middle;
-}
-.lock-icon::before {
-  content: ''; position: absolute; top: -5px; left: 0; right: 0; height: 5px;
-  border: 1px solid currentColor; border-bottom: none; border-radius: 4px 4px 0 0;
+  display: inline-block;
+  width: 8px; height: 8px;
+  border: 1px solid currentColor;
+  border-radius: 1px;
+  margin-left: 4px;
+  position: relative;
+  vertical-align: middle;
 }
 
-/* ─── NAV RIGHT — theme switcher ─── */
-.nav-right { display: flex; align-items: center; gap: 1rem; }
+.lock-icon::before {
+  content: '';
+  position: absolute;
+  top: -5px; left: 0; right: 0; height: 5px;
+  border: 1px solid currentColor;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+}
+
+/* ─── NAV RIGHT ─── */
+.nav-right { display: flex; align-items: center; gap: 0.75rem; }
+
+/* ─── THEME SWITCHER ─── */
 .theme-switcher { display: flex; gap: 6px; align-items: center; }
-.theme-dot { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; transition: transform 0.2s ease; border: 1px solid transparent; }
+
+.theme-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  border: 1px solid transparent;
+}
+
 .theme-dot:hover { transform: scale(1.3); }
 .theme-dot.active { border-color: var(--text); }
 .theme-dot[data-t="dark"]   { background: #090909; border-color: #444; }
@@ -61,21 +104,63 @@
 .theme-dot[data-t="slate"]  { background: #8899ff; }
 .theme-dot[data-t="forest"] { background: #b5d47a; }
 
-/* ─── HAMBURGER ─── */
-.hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
-.hamburger span { display: block; width: 22px; height: 1px; background: var(--text); transition: all 0.3s ease; }
+/* ─── HAMBURGER (mobile) ─── */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  padding: 4px;
+}
+
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 1px;
+  background: var(--text);
+  transition: all 0.3s ease;
+  transform-origin: center;
+}
+
+/* X animation when mobile nav is open */
+.hamburger.open span:nth-child(1) {
+  transform: rotate(45deg) translate(4px, 4px);
+}
+.hamburger.open span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+.hamburger.open span:nth-child(3) {
+  transform: rotate(-45deg) translate(4px, -4px);
+}
 
 /* ─── MOBILE NAV ─── */
 #mobile-nav {
-  position: fixed; inset: 0; z-index: 8800; background: var(--bg);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 2rem; opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+  position: fixed;
+  inset: 0;
+  z-index: 8800;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
 }
+
+/* FIX: was broken as markdown link in chat — correct CSS: */
 #mobile-nav.open { opacity: 1; pointer-events: all; }
+
 #mobile-nav a {
-  font-family: var(--ff-display); font-size: 2rem; font-weight: 300;
-  color: var(--text2); text-decoration: none; transition: color 0.2s;
+  font-family: var(--ff-display);
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--text2);
+  text-decoration: none;
+  transition: color 0.2s;
 }
+
 #mobile-nav a:hover { color: var(--accent); }
 
 /* ─── RESPONSIVE ─── */
