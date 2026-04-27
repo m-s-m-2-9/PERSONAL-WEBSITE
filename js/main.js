@@ -1156,22 +1156,61 @@ function hideVinyl() {
 
 /* Toggle the quarter-screen music selection panel */
 function toggleMusicPanel() {
-  if (!musicPanel) return;
-  musicPanel.classList.toggle("hidden");
-  if (!musicPanel.classList.contains("hidden")) {
+  if (!musicPanel || !vinylEl) return;
+
+  const isHidden = musicPanel.classList.contains("hidden");
+
+  if (isHidden) {
+    // show panel
+    musicPanel.classList.remove("hidden");
     updateMusicPanelState();
+
+    const vinylRect = vinylEl.getBoundingClientRect();
+
+    // panel starts from vinyl position
+    musicPanel.style.transformOrigin = "bottom left";
+    musicPanel.style.left = vinylRect.left + "px";
+    musicPanel.style.bottom =
+      (window.innerHeight - vinylRect.bottom) + "px";
+
+    musicPanel.style.transform = "scale(0.2)";
+    musicPanel.style.opacity = "0";
+
+    requestAnimationFrame(() => {
+      musicPanel.style.transition = "all 0.45s ease";
+      musicPanel.style.left = "20px";
+      musicPanel.style.bottom = "20px";
+      musicPanel.style.transform = "scale(1)";
+      musicPanel.style.opacity = "1";
+    });
+
+  } else {
+    closeMusicPanel();
   }
 }
 
 function closeMusicPanel() {
-  if (musicPanel) musicPanel.classList.add("hidden");
+  if (!musicPanel || !vinylEl) return;
+
+  const vinylRect = vinylEl.getBoundingClientRect();
+
+  musicPanel.style.left = vinylRect.left + "px";
+  musicPanel.style.bottom =
+    (window.innerHeight - vinylRect.bottom) + "px";
+
+  musicPanel.style.transform = "scale(0.2)";
+  musicPanel.style.opacity = "0";
+
+  setTimeout(() => {
+    musicPanel.classList.add("hidden");
+  }, 450);
 }
 
 /* Play a song chosen from the panel */
 function playFromPanel(songId) {
   bgMusic.pause();
   rainSong.pause();
-  userPaused    = false;
+  userPaused = false;
   currentSongId = songId;
 
   if (songId === 'bg') {
@@ -1214,7 +1253,7 @@ function nameclickHandler() {
     /* Stop bg, play rain */
     bgMusic.pause();
     currentSongId = 'easter';
-    userPaused    = false;
+    userPaused = false;
     rainSong.currentTime = 0;
     rainSong.play().catch(() => {});
     musicStarted = true;
