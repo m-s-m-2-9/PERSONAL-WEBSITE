@@ -1,25 +1,13 @@
 /* ═══════════════════════════════════════════════════════════
    main.js — Core site logic
-   Based on original. Changes made:
-   1. Cursor disabled on touch/mobile
-   2. games removed from lockedPages
-   3. submitGate bug fixed (target saved before closeGate)
-   4. toggleMobileNav uses classList (CSS handles X animation)
-   5. Per-game password gate (snake free, others locked)
-   6. updateMusicUI — no innerHTML replace, just toggles .muted
-   7. Music toggle click — proper pause/resume (not stop+reset)
-   8. rainSong.ended → auto-resume bgMusic if user didn't manually pause
-   9. Vinyl — shows only on easter egg, click opens panel, hideVinyl()
-   10. nameclickHandler — plays rain, stops bg, shows vinyl
-   11. Year data 2008-2012 preserved from original
 ═══════════════════════════════════════════════════════════ */
 
 /* ─── CONFIGURATION ─── */
 const CONFIG = {
-  MASTER_PASSWORD: "manomay2026",          // REPLACE
-  EMAILJS_PUBLIC_KEY:  "YOUR_PUBLIC_KEY",  // REPLACE
-  EMAILJS_SERVICE_ID:  "YOUR_SERVICE_ID",  // REPLACE
-  EMAILJS_TEMPLATE_ID: "YOUR_TEMPLATE_ID", // REPLACE
+  MASTER_PASSWORD:    "manomay2026",         // REPLACE
+  EMAILJS_PUBLIC_KEY: "YOUR_PUBLIC_KEY",     // REPLACE
+  EMAILJS_SERVICE_ID: "YOUR_SERVICE_ID",     // REPLACE
+  EMAILJS_TEMPLATE_ID:"YOUR_TEMPLATE_ID",   // REPLACE
 };
 
 /* ─── EMAILJS INIT ─── */
@@ -39,7 +27,7 @@ if (window.netlifyIdentity) {
 /* ═══════════════════════════════════════════════════════════
    LOADING SCREEN
 ═══════════════════════════════════════════════════════════ */
-(function() {
+(function () {
   const bar = document.getElementById('loading-bar');
   const pct = document.getElementById('loading-pct');
   let progress = 0;
@@ -62,13 +50,12 @@ if (window.netlifyIdentity) {
    HERO ANIMATIONS
 ═══════════════════════════════════════════════════════════ */
 function startHeroAnimations() {
-  ['name-part-1','name-part-2','name-part-3'].forEach((id, i) => {
+  ['name-part-1', 'name-part-2', 'name-part-3'].forEach((id, i) => {
     setTimeout(() => {
       const el = document.getElementById(id);
       if (el) el.classList.add('visible');
     }, i * 150 + 200);
   });
-
   setTimeout(() => document.getElementById('hero-tagline')?.classList.add('visible'),    800);
   setTimeout(() => document.getElementById('hero-nav-hint')?.classList.add('visible'),   1000);
   setTimeout(() => document.getElementById('scroll-indicator')?.classList.add('visible'),1200);
@@ -76,34 +63,42 @@ function startHeroAnimations() {
 
 /* ═══════════════════════════════════════════════════════════
    CUSTOM CURSOR
-   FIX #1 — disabled on touch/mobile so it doesn't get stuck
+   FIX: use (pointer: coarse) media query — more reliable than
+   ontouchstart which false-positives on touch-capable laptops.
+   On mobile (coarse pointer): restore native cursor, hide custom.
+   On desktop (fine pointer): run custom cursor.
 ═══════════════════════════════════════════════════════════ */
 const dot  = document.getElementById('cursor-dot');
 const ring = document.getElementById('cursor-ring');
 
-const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+/* pointer:coarse = touch screen | pointer:fine = mouse/trackpad */
+const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 
 if (isTouchDevice) {
-  /* Mobile: restore native cursor, hide custom elements */
+  /* Mobile — restore native cursor, hide custom elements */
   document.body.style.cursor = 'auto';
-  if (dot)  dot.style.display  = 'none';
-  if (ring) ring.style.display = 'none';
+  if (dot)  { dot.style.display  = 'none'; }
+  if (ring) { ring.style.display = 'none'; }
 } else {
-  /* Desktop only */
+  /* Desktop — run custom cursor */
   let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
 
   document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
-    dot.style.left = mouseX + 'px';
-    dot.style.top  = mouseY + 'px';
+    if (dot) {
+      dot.style.left = mouseX + 'px';
+      dot.style.top  = mouseY + 'px';
+    }
   });
 
   (function animateRing() {
     ringX += (mouseX - ringX) * 0.12;
     ringY += (mouseY - ringY) * 0.12;
-    ring.style.left = ringX + 'px';
-    ring.style.top  = ringY + 'px';
+    if (ring) {
+      ring.style.left = ringX + 'px';
+      ring.style.top  = ringY + 'px';
+    }
     requestAnimationFrame(animateRing);
   })();
 
@@ -131,7 +126,7 @@ function setTheme(theme) {
   localStorage.setItem('msm-theme', theme);
 }
 
-(function() {
+(function () {
   const saved = localStorage.getItem('msm-theme');
   if (saved) setTheme(saved);
 })();
@@ -146,27 +141,20 @@ document.querySelectorAll('.page').forEach(page => {
 });
 
 /* ═══════════════════════════════════════════════════════════
-   PAGE NAVIGATION
-   FIX #2 — games removed from lockedPages (per-game lock instead)
+   PAGE NAVIGATION — games now open freely, no nav-level lock
 ═══════════════════════════════════════════════════════════ */
 let currentPage = 'home';
 const overlay   = document.getElementById('transition-overlay');
 
 function navigateTo(pageId) {
   if (pageId === currentPage) return;
-  /* No nav-level locks — games and social both open freely */
-  const lockedPages = [];
-  if (lockedPages.includes(pageId)) {
-    tryLockedPage(pageId);
-    return;
-  }
   doTransition(pageId);
 }
 
 function doTransition(pageId) {
-  overlay.style.transition       = 'transform 0.4s cubic-bezier(0.76, 0, 0.24, 1)';
-  overlay.style.transformOrigin  = 'bottom';
-  overlay.style.transform        = 'scaleY(1)';
+  overlay.style.transition      = 'transform 0.4s cubic-bezier(0.76, 0, 0.24, 1)';
+  overlay.style.transformOrigin = 'bottom';
+  overlay.style.transform       = 'scaleY(1)';
 
   setTimeout(() => {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active', 'exit-up'));
@@ -229,7 +217,7 @@ setTimeout(() => triggerPageReveals('home'), 1500);
 
 /* ═══════════════════════════════════════════════════════════
    PASSWORD SYSTEM
-   FIX #3 — submitGate saves target BEFORE closeGate() nullifies it
+   submitGate: saves target BEFORE closeGate nullifies gateTargetPage
 ═══════════════════════════════════════════════════════════ */
 let gateTargetPage = null;
 
@@ -245,7 +233,7 @@ function unlockSection(inputId, contentId) {
     if (form) { form.style.opacity = '0.3'; form.style.pointerEvents = 'none'; }
   } else {
     input.classList.add('error');
-    input.value = '';
+    input.value       = '';
     input.placeholder = 'Wrong password ✗';
     setTimeout(() => {
       input.classList.remove('error');
@@ -269,7 +257,7 @@ function closeGate() {
 
 function submitGate() {
   const input  = document.getElementById('gate-input');
-  const target = gateTargetPage; /* FIX: save BEFORE closeGate sets it to null */
+  const target = gateTargetPage; /* save BEFORE closeGate nullifies it */
   if (input.value === CONFIG.MASTER_PASSWORD) {
     closeGate();
     if (target) doTransition(target);
@@ -286,8 +274,7 @@ document.getElementById('gate-input').addEventListener('keydown', (e) => {
 });
 
 /* ═══════════════════════════════════════════════════════════
-   MOBILE NAV
-   FIX #4 — hamburger uses classList so CSS handles X animation
+   MOBILE NAV — hamburger uses classList so CSS handles X animation
 ═══════════════════════════════════════════════════════════ */
 let mobileNavOpen = false;
 function toggleMobileNav() {
@@ -310,7 +297,7 @@ function updateBirthdayTimer() {
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((diff % (1000 * 60)) / 1000);
   const ms      = diff % 1000;
-  const pad     = (n, len=2) => String(n).padStart(len, '0');
+  const pad     = (n, len = 2) => String(n).padStart(len, '0');
 
   document.getElementById('bd-days').textContent  = pad(days, 3);
   document.getElementById('bd-hours').textContent = pad(hours);
@@ -330,7 +317,6 @@ updateBirthdayTimer();
 
 /* ═══════════════════════════════════════════════════════════
    YEAR JOURNEY TIMELINE
-   (Real text 2008–2012 preserved from original)
 ═══════════════════════════════════════════════════════════ */
 const yearData = {
   2008: { title: "The Beginning", body: "The story begins in the humid, electric atmosphere of Maharashtra, my entry into the world was marked by a setting defined by contrast—where the old soul of India meets the relentless ambition of its financial heart. From the very first day, my life was positioned at the intersection of diverse cultures and high expectations. Even though these early months are a blur of sensory memories, they established the -Nomadic- blueprint of my life. I was born into a family that valued education and presence, setting the stage for a boy who would eventually grow to command rooms and lead institutions." },
@@ -361,7 +347,7 @@ const yearData = {
     const node = document.createElement('div');
     node.className = 'year-node';
     node.innerHTML = `<div class="year-dot"></div><div class="year-label">${year}</div>`;
-    node.onclick = () => showYear(year, node);
+    node.onclick   = () => showYear(year, node);
     track.appendChild(node);
   }
 })();
@@ -448,8 +434,8 @@ async function submitContactForm(e) {
   const status = document.getElementById('form-status');
   const btn    = form.querySelector('button[type=submit]');
 
-  btn.textContent = 'Sending...';
-  btn.disabled    = true;
+  btn.textContent    = 'Sending...';
+  btn.disabled       = true;
   status.textContent = '';
 
   try {
@@ -481,14 +467,14 @@ function switchListTab(panel, tabEl) {
    PHOTO VIEWER
 ═══════════════════════════════════════════════════════════ */
 const albumData = {
-  album1:  { photos: [{ src:'', title:'xyz Photo Title — REPLACE', desc:'xyz description — REPLACE' }, { src:'', title:'xyz Photo Title — REPLACE', desc:'xyz description — REPLACE' }]},
-  album2:  { photos: [{ src:'', title:'xyz Photo Title — REPLACE', desc:'xyz description — REPLACE' }]},
-  album3:  { photos: [{ src:'', title:'xyz Photo Title — REPLACE', desc:'xyz description — REPLACE' }]},
-  secret1: { photos: [{ src:'', title:'xyz Private Photo — REPLACE', desc:'xyz description — REPLACE' }]},
-  secret2: { photos: [{ src:'', title:'xyz Private Photo — REPLACE', desc:'xyz description — REPLACE' }]},
+  album1:  { photos: [{ src:'', title:'xyz Photo Title — REPLACE', desc:'xyz description — REPLACE' }, { src:'', title:'xyz Photo Title — REPLACE', desc:'xyz description — REPLACE' }] },
+  album2:  { photos: [{ src:'', title:'xyz Photo Title — REPLACE', desc:'xyz description — REPLACE' }] },
+  album3:  { photos: [{ src:'', title:'xyz Photo Title — REPLACE', desc:'xyz description — REPLACE' }] },
+  secret1: { photos: [{ src:'', title:'xyz Private Photo — REPLACE', desc:'xyz description — REPLACE' }] },
+  secret2: { photos: [{ src:'', title:'xyz Private Photo — REPLACE', desc:'xyz description — REPLACE' }] },
 };
 
-let currentAlbum = null;
+let currentAlbum     = null;
 let currentPhotoIndex = 0;
 
 function openAlbum(albumId) {
@@ -503,8 +489,7 @@ function showPhoto(index) {
   if (!photos || photos.length === 0) return;
   currentPhotoIndex = (index + photos.length) % photos.length;
   const photo = photos[currentPhotoIndex];
-
-  const img = document.getElementById('viewer-img');
+  const img   = document.getElementById('viewer-img');
   img.src = photo.src || `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect fill='%23222'/><text x='50%25' y='50%25' fill='%23555' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='16'>Photo placeholder — add real image src</text></svg>`;
   img.alt = photo.title;
   document.getElementById('viewer-title').textContent = photo.title;
@@ -518,74 +503,20 @@ function closeViewer() {
 }
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeViewer(); closeGame(); closeGate(); }
+  if (e.key === 'Escape') { closeViewer(); closeGame(); closeGate(); closeMusicPanel(); }
 });
 
 /* ═══════════════════════════════════════════════════════════
-   GAMES
-   FIX #5 — snake is free, other 4 require password (per-game)
+   GAMES — all 5 are public, no password gate
+   Private games (family only, external links) are in HTML
+   behind unlockSection password — handled separately
 ═══════════════════════════════════════════════════════════ */
-/* Games that need a password. Once unlocked this session, remembered. */
-const LOCKED_GAMES  = new Set(['memory', '2048', 'reaction', 'word']);
-const unlockedGames = new Set(['snake']); /* snake always unlocked */
-
 let activeGame = null;
 
 function openGame(gameId) {
   activeGame = gameId;
   document.getElementById('game-modal').classList.add('open');
-
-  /* If locked and not yet unlocked this session → show in-modal gate */
-  if (LOCKED_GAMES.has(gameId) && !unlockedGames.has(gameId)) {
-    renderGameGate(gameId);
-    return;
-  }
-  renderGame(gameId);
-}
-
-/* In-modal password gate for individual games */
-function renderGameGate(gameId) {
-  const names = { memory: 'Memory Match', '2048': '2048', reaction: 'Reaction Time', word: 'Word Scramble' };
-  const container = document.getElementById('game-container');
-  container.innerHTML = `
-    <div style="text-align:center;padding:2rem;max-width:320px;margin:0 auto;">
-      <div style="font-size:2.5rem;margin-bottom:1rem;">🔒</div>
-      <h3 style="font-family:var(--ff-display);font-size:1.6rem;font-weight:300;color:var(--text);margin-bottom:0.5rem;">${names[gameId] || gameId}</h3>
-      <p style="font-size:0.8rem;color:var(--text3);margin-bottom:1.5rem;line-height:1.6;">
-        This game requires a password.<br>
-        <a href="#" onclick="navigateTo('contact'); closeGame(); return false;" style="color:var(--accent);text-decoration:none;">Contact Manomay to get access →</a>
-      </p>
-      <div style="display:flex;gap:0;max-width:240px;margin:0 auto 0.75rem;">
-        <input id="game-gate-input" type="password" placeholder="Enter password"
-          style="flex:1;background:var(--bg3);border:1px solid var(--border2);color:var(--text);
-                 padding:0.75rem 1rem;font-family:var(--ff-mono);font-size:0.85rem;outline:none;
-                 border-right:none;border-radius:2px 0 0 2px;letter-spacing:0.1em;"
-          onkeydown="if(event.key==='Enter')submitGameGate('${gameId}')" />
-        <button onclick="submitGameGate('${gameId}')"
-          style="background:var(--accent);border:1px solid var(--accent);color:var(--bg);
-                 padding:0.75rem 1rem;cursor:pointer;font-family:var(--ff-mono);font-size:0.9rem;
-                 border-radius:0 2px 2px 0;">→</button>
-      </div>
-      <div id="game-gate-error" style="color:#ff4444;font-size:0.75rem;min-height:1.4rem;font-family:var(--ff-mono);"></div>
-    </div>
-  `;
-  setTimeout(() => document.getElementById('game-gate-input')?.focus(), 100);
-}
-
-function submitGameGate(gameId) {
-  const input = document.getElementById('game-gate-input');
-  if (!input) return;
-  if (input.value === CONFIG.MASTER_PASSWORD) {
-    unlockedGames.add(gameId); /* remember for this session */
-    renderGame(gameId);
-  } else {
-    input.value = '';
-    const err = document.getElementById('game-gate-error');
-    if (err) {
-      err.textContent = 'Wrong password. Try again.';
-      setTimeout(() => { if (err) err.textContent = ''; }, 2000);
-    }
-  }
+  renderGame(gameId); /* directly open — no password */
 }
 
 function closeGame() {
@@ -597,12 +528,12 @@ function closeGame() {
 function renderGame(gameId) {
   const container = document.getElementById('game-container');
   container.innerHTML = '';
-  switch(gameId) {
-    case 'snake':    renderSnake(container);       break;
-    case 'memory':   renderMemory(container);      break;
-    case '2048':     render2048(container);        break;
-    case 'reaction': renderReaction(container);    break;
-    case 'word':     renderWordScramble(container);break;
+  switch (gameId) {
+    case 'snake':    renderSnake(container);        break;
+    case 'memory':   renderMemory(container);       break;
+    case '2048':     render2048(container);         break;
+    case 'reaction': renderReaction(container);     break;
+    case 'word':     renderWordScramble(container); break;
   }
 }
 
@@ -617,20 +548,14 @@ function renderSnake(container) {
 
   const canvas = document.getElementById('snake-canvas');
   const ctx    = canvas.getContext('2d');
-  const SIZE   = 20;
-  const COLS   = canvas.width  / SIZE;
-  const ROWS   = canvas.height / SIZE;
-
-  let snake = [{x:10,y:10}];
-  let dir   = {x:0,y:0};
-  let food  = spawnFood();
-  let score = 0, running = false, gameOver = false;
-  let interval;
+  const SIZE = 20, COLS = canvas.width / SIZE, ROWS = canvas.height / SIZE;
+  let snake = [{ x: 10, y: 10 }], dir = { x: 0, y: 0 }, food = spawnFood();
+  let score = 0, running = false, gameOver = false, interval;
 
   function spawnFood() {
     let f;
-    do { f = { x: Math.floor(Math.random()*COLS), y: Math.floor(Math.random()*ROWS) }; }
-    while (snake.some(s => s.x===f.x && s.y===f.y));
+    do { f = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) }; }
+    while (snake.some(s => s.x === f.x && s.y === f.y));
     return f;
   }
 
@@ -638,10 +563,10 @@ function renderSnake(container) {
     ctx.fillStyle = '#111';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#e8d5b7';
-    ctx.fillRect(food.x*SIZE+2, food.y*SIZE+2, SIZE-4, SIZE-4);
+    ctx.fillRect(food.x * SIZE + 2, food.y * SIZE + 2, SIZE - 4, SIZE - 4);
     snake.forEach((seg, i) => {
-      ctx.fillStyle = i===0 ? '#e8d5b7' : `rgba(232,213,183,${0.4 + 0.6*(i/snake.length)})`;
-      ctx.fillRect(seg.x*SIZE+1, seg.y*SIZE+1, SIZE-2, SIZE-2);
+      ctx.fillStyle = i === 0 ? '#e8d5b7' : `rgba(232,213,183,${0.4 + 0.6 * (i / snake.length)})`;
+      ctx.fillRect(seg.x * SIZE + 1, seg.y * SIZE + 1, SIZE - 2, SIZE - 2);
     });
     if (gameOver) {
       ctx.fillStyle = 'rgba(0,0,0,0.7)';
@@ -649,39 +574,33 @@ function renderSnake(container) {
       ctx.fillStyle = '#e8d5b7';
       ctx.font = '20px Cormorant Garamond, serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Game Over — Score: ' + score, canvas.width/2, canvas.height/2);
+      ctx.fillText('Game Over — Score: ' + score, canvas.width / 2, canvas.height / 2);
       ctx.font = '13px DM Sans, sans-serif';
       ctx.fillStyle = '#888';
-      ctx.fillText('Press any key to restart', canvas.width/2, canvas.height/2+28);
+      ctx.fillText('Press any key to restart', canvas.width / 2, canvas.height / 2 + 28);
     }
   }
 
   function step() {
     if (!running || gameOver) return;
-    const head = { x: snake[0].x+dir.x, y: snake[0].y+dir.y };
-    if (head.x<0||head.x>=COLS||head.y<0||head.y>=ROWS) { endGame(); return; }
-    if (snake.some(s => s.x===head.x && s.y===head.y))  { endGame(); return; }
+    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+    if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) { endGame(); return; }
+    if (snake.some(s => s.x === head.x && s.y === head.y)) { endGame(); return; }
     snake.unshift(head);
-    if (head.x===food.x && head.y===food.y) {
+    if (head.x === food.x && head.y === food.y) {
       score++;
       document.getElementById('snake-score').textContent = score;
       food = spawnFood();
-    } else {
-      snake.pop();
-    }
+    } else { snake.pop(); }
     draw();
   }
 
   function endGame() { gameOver = true; clearInterval(interval); draw(); }
 
   function startGame() {
-    snake = [{x:10,y:10}];
-    dir   = {x:1,y:0};
-    score = 0;
+    snake = [{ x: 10, y: 10 }]; dir = { x: 1, y: 0 }; score = 0;
     document.getElementById('snake-score').textContent = 0;
-    food     = spawnFood();
-    gameOver = false;
-    running  = true;
+    food = spawnFood(); gameOver = false; running = true;
     document.getElementById('snake-msg').textContent = '';
     clearInterval(interval);
     interval = setInterval(step, 120);
@@ -712,9 +631,9 @@ function renderSnake(container) {
 
 /* ─── GAME 2: MEMORY MATCH ─── */
 function renderMemory(container) {
-  const emojis = ['🌙','⭐','☀️','🌊','🔥','🌿','💎','🎭'];
-  let cards    = [...emojis,...emojis].sort(()=>Math.random()-0.5);
-  let flipped  = [], matched = 0, locked = false;
+  const emojis = ['🌙', '⭐', '☀️', '🌊', '🔥', '🌿', '💎', '🎭'];
+  let cards = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
+  let flipped = [], matched = 0, locked = false, moves = 0;
 
   container.innerHTML = `
     <h3 style="font-family:var(--ff-display);font-size:1.5rem;color:var(--text);text-align:center;margin-bottom:0.5rem;">Memory Match</h3>
@@ -722,49 +641,29 @@ function renderMemory(container) {
     <div id="mem-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:340px;margin:0 auto;"></div>
   `;
 
-  let moves = 0;
   const grid = document.getElementById('mem-grid');
-
   cards.forEach((emoji, i) => {
     const card = document.createElement('div');
     card.style.cssText = `width:100%;aspect-ratio:1;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.5rem;transition:all 0.3s ease;user-select:none;`;
-    card.dataset.emoji = emoji;
-    card.dataset.index = i;
-    card.textContent   = '?';
-    card.style.color   = 'var(--text3)';
-
+    card.dataset.emoji = emoji; card.textContent = '?'; card.style.color = 'var(--text3)';
     card.onclick = () => {
       if (locked || flipped.includes(i) || card.dataset.matched) return;
-      card.textContent       = emoji;
-      card.style.background  = 'var(--bg4)';
-      card.style.borderColor = 'var(--accent)';
-      card.style.color       = '#fff';
+      card.textContent = emoji; card.style.background = 'var(--bg4)'; card.style.borderColor = 'var(--accent)'; card.style.color = '#fff';
       flipped.push(i);
-
       if (flipped.length === 2) {
-        locked = true;
-        moves++;
+        locked = true; moves++;
         document.getElementById('mem-moves').textContent = moves;
-        const [a, b] = flipped;
-        const cardA  = grid.children[a];
-        const cardB  = grid.children[b];
-
-        if (cardA.dataset.emoji === cardB.dataset.emoji) {
-          cardA.dataset.matched = cardB.dataset.matched = 'yes';
-          cardA.style.background = cardB.style.background = 'var(--accent-glow)';
-          matched++;
-          document.getElementById('mem-pairs').textContent = matched;
+        const [a, b] = flipped; const cA = grid.children[a], cB = grid.children[b];
+        if (cA.dataset.emoji === cB.dataset.emoji) {
+          cA.dataset.matched = cB.dataset.matched = 'yes';
+          cA.style.background = cB.style.background = 'var(--accent-glow)';
+          matched++; document.getElementById('mem-pairs').textContent = matched;
           flipped = []; locked = false;
           if (matched === 8) setTimeout(() => container.insertAdjacentHTML('beforeend',
             `<p style="text-align:center;color:var(--accent);margin-top:1.5rem;font-family:var(--ff-display);font-size:1.2rem;">Completed in ${moves} moves!</p>`), 300);
         } else {
           setTimeout(() => {
-            [cardA,cardB].forEach(c => {
-              c.textContent      = '?';
-              c.style.background = 'var(--bg3)';
-              c.style.borderColor= 'var(--border2)';
-              c.style.color      = 'var(--text3)';
-            });
+            [cA, cB].forEach(c => { c.textContent = '?'; c.style.background = 'var(--bg3)'; c.style.borderColor = 'var(--border2)'; c.style.color = 'var(--text3)'; });
             flipped = []; locked = false;
           }, 900);
         }
@@ -776,58 +675,45 @@ function renderMemory(container) {
 
 /* ─── GAME 3: 2048 ─── */
 function render2048(container) {
-  let grid  = Array(4).fill(null).map(() => Array(4).fill(0));
-  let score = 0;
-
+  let grid = Array(4).fill(null).map(() => Array(4).fill(0)), score = 0;
   container.innerHTML = `
     <h3 style="font-family:var(--ff-display);font-size:1.5rem;color:var(--text);text-align:center;margin-bottom:0.5rem;">2048</h3>
     <p style="text-align:center;font-size:0.75rem;color:var(--text3);margin-bottom:1rem;">Score: <span id="g2048-score">0</span> · Arrow keys to slide</p>
     <div id="g2048-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-width:340px;margin:0 auto;background:var(--bg3);padding:6px;border-radius:4px;"></div>
   `;
-
   const colors = {0:'var(--bg3)',2:'#eee4da',4:'#ede0c8',8:'#f2b179',16:'#f59563',32:'#f67c5f',64:'#f65e3b',128:'#edcf72',256:'#edcc61',512:'#edc850',1024:'#edc53f',2048:'#edc22e'};
 
   function addRandom() {
     const empty = [];
-    grid.forEach((row,r) => row.forEach((val,c) => { if (!val) empty.push([r,c]); }));
-    if (empty.length) {
-      const [r,c] = empty[Math.floor(Math.random()*empty.length)];
-      grid[r][c] = Math.random()<0.9 ? 2 : 4;
-    }
+    grid.forEach((row, r) => row.forEach((val, c) => { if (!val) empty.push([r, c]); }));
+    if (empty.length) { const [r, c] = empty[Math.floor(Math.random() * empty.length)]; grid[r][c] = Math.random() < 0.9 ? 2 : 4; }
   }
 
   function drawGrid() {
-    const g = document.getElementById('g2048-grid');
-    if (!g) return;
-    g.innerHTML = '';
+    const g = document.getElementById('g2048-grid'); if (!g) return; g.innerHTML = '';
     grid.forEach(row => row.forEach(val => {
       const cell = document.createElement('div');
-      const bg   = colors[val] || '#f9f6f2';
-      const tc   = val > 4 ? '#f9f6f2' : '#776e65';
-      cell.style.cssText = `aspect-ratio:1;background:${bg};border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--ff-display);font-size:${val>999?'1rem':'1.3rem'};font-weight:600;color:${tc};`;
-      cell.textContent = val || '';
-      g.appendChild(cell);
+      cell.style.cssText = `aspect-ratio:1;background:${colors[val] || '#f9f6f2'};border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--ff-display);font-size:${val > 999 ? '1rem' : '1.3rem'};font-weight:600;color:${val > 4 ? '#f9f6f2' : '#776e65'};`;
+      cell.textContent = val || ''; g.appendChild(cell);
     }));
     document.getElementById('g2048-score').textContent = score;
   }
 
   function slide(row) {
     let arr = row.filter(v => v);
-    for (let i=0; i<arr.length-1; i++) {
-      if (arr[i] === arr[i+1]) { arr[i] *= 2; score += arr[i]; arr.splice(i+1,1); }
-    }
+    for (let i = 0; i < arr.length - 1; i++) { if (arr[i] === arr[i + 1]) { arr[i] *= 2; score += arr[i]; arr.splice(i + 1, 1); } }
     while (arr.length < 4) arr.push(0);
     return arr;
   }
 
-  function transpose(g) { return g[0].map((_,i) => g.map(row => row[i])); }
+  function transpose(g) { return g[0].map((_, i) => g.map(row => row[i])); }
 
   function move(dir) {
     const prev = JSON.stringify(grid);
-    if (dir==='left')  grid = grid.map(row => slide(row));
-    if (dir==='right') grid = grid.map(row => slide([...row].reverse()).reverse());
-    if (dir==='up')  { grid = transpose(grid).map(row => slide(row)); grid = transpose(grid); }
-    if (dir==='down'){ grid = transpose(grid).map(row => slide([...row].reverse()).reverse()); grid = transpose(grid); }
+    if (dir === 'left')  grid = grid.map(row => slide(row));
+    if (dir === 'right') grid = grid.map(row => slide([...row].reverse()).reverse());
+    if (dir === 'up')  { grid = transpose(grid).map(row => slide(row)); grid = transpose(grid); }
+    if (dir === 'down'){ grid = transpose(grid).map(row => slide([...row].reverse()).reverse()); grid = transpose(grid); }
     if (JSON.stringify(grid) !== prev) addRandom();
     drawGrid();
   }
@@ -835,66 +721,37 @@ function render2048(container) {
   addRandom(); addRandom(); drawGrid();
 
   document.addEventListener('keydown', function keys2048(e) {
-    if (!document.getElementById('game-modal').classList.contains('open')) {
-      document.removeEventListener('keydown', keys2048); return;
-    }
-    const map = {ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'};
+    if (!document.getElementById('game-modal').classList.contains('open')) { document.removeEventListener('keydown', keys2048); return; }
+    const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
     if (map[e.key]) { e.preventDefault(); move(map[e.key]); }
   });
 }
 
 /* ─── GAME 4: REACTION TIME ─── */
 function renderReaction(container) {
-  let state = 'waiting';
-  let startTime;
-  let times = [];
-
+  let state = 'waiting', startTime, times = [];
   container.innerHTML = `
     <h3 style="font-family:var(--ff-display);font-size:1.5rem;color:var(--text);text-align:center;margin-bottom:1rem;">Reaction Time</h3>
-    <div id="react-box" style="width:300px;height:200px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;margin:0 auto;transition:background 0.3s ease;" onclick="reactionClick()">
+    <div id="react-box" style="width:300px;height:200px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;margin:0 auto;transition:background 0.3s ease;">
       <div id="react-text" style="font-family:var(--ff-display);font-size:1.2rem;color:var(--text2);text-align:center;"></div>
-      <div id="react-sub"  style="font-size:0.7rem;color:var(--text3);margin-top:0.5rem;"></div>
+      <div id="react-sub" style="font-size:0.7rem;color:var(--text3);margin-top:0.5rem;"></div>
     </div>
     <p id="react-results" style="text-align:center;font-size:0.8rem;color:var(--text2);margin-top:1.5rem;"></p>
   `;
-
-  const box  = document.getElementById('react-box');
-  const text = document.getElementById('react-text');
-  const sub  = document.getElementById('react-sub');
-
-  function reset() {
-    state = 'waiting';
-    box.style.background = 'var(--bg3)';
-    text.textContent = 'Click when it turns green';
-    sub.textContent  = '';
-  }
-  reset();
-
-  let timeout;
+  const box = document.getElementById('react-box'), text = document.getElementById('react-text'), sub = document.getElementById('react-sub');
+  function reset() { state = 'waiting'; box.style.background = 'var(--bg3)'; text.textContent = 'Click when it turns green'; sub.textContent = ''; }
+  reset(); let timeout;
   function reactionClick() {
     if (state === 'waiting') {
-      state = 'ready';
-      box.style.background = '#c0392b';
-      text.textContent = 'Wait...';
-      sub.textContent  = '';
+      state = 'ready'; box.style.background = '#c0392b'; text.textContent = 'Wait...'; sub.textContent = '';
       clearTimeout(timeout);
-      timeout = setTimeout(() => {
-        state = 'go';
-        box.style.background = '#27ae60';
-        text.textContent = 'Click now!';
-        startTime = performance.now();
-      }, 1500 + Math.random() * 3000);
+      timeout = setTimeout(() => { state = 'go'; box.style.background = '#27ae60'; text.textContent = 'Click now!'; startTime = performance.now(); }, 1500 + Math.random() * 3000);
     } else if (state === 'ready') {
-      clearTimeout(timeout);
-      box.style.background = '#c0392b';
-      text.textContent = 'Too early! Click again.';
-      setTimeout(reset, 1000);
+      clearTimeout(timeout); box.style.background = '#c0392b'; text.textContent = 'Too early! Click again.'; setTimeout(reset, 1000);
     } else if (state === 'go') {
-      const t = Math.round(performance.now() - startTime);
-      times.push(t);
-      const avg = Math.round(times.reduce((a,b)=>a+b,0)/times.length);
-      document.getElementById('react-results').innerHTML =
-        `Last: <strong style="color:var(--accent)">${t}ms</strong> &nbsp;·&nbsp; Best: <strong style="color:var(--accent)">${Math.min(...times)}ms</strong> &nbsp;·&nbsp; Avg: ${avg}ms`;
+      const t = Math.round(performance.now() - startTime); times.push(t);
+      const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+      document.getElementById('react-results').innerHTML = `Last: <strong style="color:var(--accent)">${t}ms</strong> &nbsp;·&nbsp; Best: <strong style="color:var(--accent)">${Math.min(...times)}ms</strong> &nbsp;·&nbsp; Avg: ${avg}ms`;
       reset();
     }
   }
@@ -904,24 +761,17 @@ function renderReaction(container) {
 
 /* ─── GAME 5: WORD SCRAMBLE ─── */
 function renderWordScramble(container) {
-  const words = ['PLANET','SILENT','MUSIC','OCEAN','DREAM','LIGHT','FLAME','STORM','GRACE','SWIFT'];
+  const words = ['PLANET', 'SILENT', 'MUSIC', 'OCEAN', 'DREAM', 'LIGHT', 'FLAME', 'STORM', 'GRACE', 'SWIFT'];
   let current = 0, score = 0;
-
-  function scramble(word) {
-    return word.split('').sort(()=>Math.random()-0.5).join('');
-  }
-
+  function scramble(word) { return word.split('').sort(() => Math.random() - 0.5).join(''); }
   function nextWord() {
-    const word = words[current % words.length];
-    let s = scramble(word);
+    const word = words[current % words.length]; let s = scramble(word);
     while (s === word) s = scramble(word);
-    document.getElementById('ws-scramble').textContent  = s;
-    document.getElementById('ws-input').value = '';
-    document.getElementById('ws-input').focus();
+    document.getElementById('ws-scramble').textContent = s;
+    document.getElementById('ws-input').value = ''; document.getElementById('ws-input').focus();
     document.getElementById('ws-feedback').textContent = '';
-    document.getElementById('ws-word').dataset.answer   = word;
+    document.getElementById('ws-word').dataset.answer = word;
   }
-
   container.innerHTML = `
     <h3 style="font-family:var(--ff-display);font-size:1.5rem;color:var(--text);text-align:center;margin-bottom:0.5rem;">Word Scramble</h3>
     <p style="text-align:center;font-size:0.75rem;color:var(--text3);margin-bottom:2rem;">Score: <span id="ws-score">0</span> · Unscramble the word</p>
@@ -935,25 +785,16 @@ function renderWordScramble(container) {
       <span id="ws-word" style="display:none;"></span>
     </div>
   `;
-
   nextWord();
   document.getElementById('ws-input').addEventListener('keydown', e => { if (e.key === 'Enter') wsCheck(); });
-
-  window.wsCheck = function() {
-    const input  = document.getElementById('ws-input').value.trim().toUpperCase();
+  window.wsCheck = function () {
+    const input = document.getElementById('ws-input').value.trim().toUpperCase();
     const answer = document.getElementById('ws-word').dataset.answer;
-    const fb     = document.getElementById('ws-feedback');
+    const fb = document.getElementById('ws-feedback');
     if (input === answer) {
-      score++;
-      document.getElementById('ws-score').textContent = score;
-      fb.style.color   = '#4ade80';
-      fb.textContent   = '✓ Correct!';
-      current++;
-      setTimeout(nextWord, 800);
-    } else {
-      fb.style.color = '#f87171';
-      fb.textContent = '✗ Try again';
-    }
+      score++; document.getElementById('ws-score').textContent = score;
+      fb.style.color = '#4ade80'; fb.textContent = '✓ Correct!'; current++; setTimeout(nextWord, 800);
+    } else { fb.style.color = '#f87171'; fb.textContent = '✗ Try again'; }
   };
 }
 
@@ -962,25 +803,16 @@ function renderWordScramble(container) {
 ═══════════════════════════════════════════════════════════ */
 
 /* 1. Konami Code */
-(function() {
+(function () {
   const konami = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
   let idx = 0;
   document.addEventListener('keydown', e => {
-    if (e.key === konami[idx]) {
-      idx++;
-      if (idx === konami.length) {
-        const egg = document.getElementById('konami-egg');
-        egg.classList.add('show');
-        setTimeout(() => egg.classList.remove('show'), 3500);
-        idx = 0;
-      }
-    } else {
-      idx = 0;
-    }
+    if (e.key === konami[idx]) { idx++; if (idx === konami.length) { const egg = document.getElementById('konami-egg'); egg.classList.add('show'); setTimeout(() => egg.classList.remove('show'), 3500); idx = 0; } }
+    else { idx = 0; }
   });
 })();
 
-/* 2. Name click — counter + messages (handler defined below in music section) */
+/* 2. Name click counter */
 let nameClicks = 0;
 const nameClickMessages = [
   "", "", "", "", "",
@@ -990,11 +822,10 @@ const nameClickMessages = [
 ];
 
 /* 3. Type "manomay" anywhere */
-(function() {
+(function () {
   let typed = '';
   document.addEventListener('keypress', e => {
-    typed += e.key.toLowerCase();
-    typed  = typed.slice(-7);
+    typed += e.key.toLowerCase(); typed = typed.slice(-7);
     if (typed === 'manomay') {
       document.documentElement.style.setProperty('--accent', '#ff6b6b');
       setTimeout(() => document.documentElement.style.setProperty('--accent', ''), 1500);
@@ -1008,91 +839,97 @@ const nameClickMessages = [
 window.addEventListener('load', () => {
   updateNavActive('home');
   setTimeout(() => triggerPageReveals('home'), 2000);
+
+  /* Backdrop click closes panel — music keeps playing */
+  const backdrop = document.getElementById('music-backdrop');
+  if (backdrop) backdrop.addEventListener('click', closeMusicPanel);
 });
 
 /* ═══════════════════════════════════════════════════════════
    MUSIC SYSTEM
-   FIX #6  — updateMusicUI: toggle .muted class, never touch innerHTML
-   FIX #7  — music toggle click: proper pause/resume (no hard stop/reset)
-   FIX #8  — rainSong.ended: auto-resume bgMusic if user didn't manually pause
-   FIX #9  — vinyl: only shows on easter egg, click opens panel, hideVinyl()
-   FIX #10 — nameclickHandler: plays rain, pauses bg, shows vinyl
+   Music bar (nav) = play/pause toggle only
+   Vinyl record (bottom-left) = separate easter egg, panel control
+   They are completely independent
 ═══════════════════════════════════════════════════════════ */
 
 const bgMusic    = document.getElementById("bg-music");
 const rainSong   = document.getElementById("rain-song");
-const songBar    = document.getElementById("music-toggle");  /* the button in nav */
+const songBar    = document.getElementById("music-toggle"); /* nav button */
 const vinylEl    = document.getElementById("vinyl-player");
 const musicPanel = document.getElementById("music-panel");
 
-/* State */
 let easterUnlocked = false;
 let musicStarted   = false;
-let userPaused     = false;   /* true when user manually clicked toggle to stop */
-let currentSongId  = 'bg';   /* 'bg' | 'easter' — tracks which song is "active" */
+let userPaused     = false;   /* true when user manually paused via toggle */
+let currentSongId  = 'bg';   /* 'bg' | 'easter' */
 
 /* ─── updateMusicUI ───
-   FIX: only toggle .muted class on songBar — NEVER set innerHTML.
-   The sound-bars spans and their CSS animation depend on the DOM staying intact. */
+   ONLY toggles .muted class on the nav bar button.
+   NEVER sets innerHTML — that would destroy the sound-bars spans. */
 function updateMusicUI() {
   const isPlaying = (bgMusic && !bgMusic.paused && !bgMusic.ended) ||
                     (rainSong && !rainSong.paused && !rainSong.ended);
 
-  /* Toggle muted class — CSS animates bars when NOT muted */
+  /* Toggle muted on nav button — CSS animations handle the bars */
   if (isPlaying) {
     songBar.classList.remove("muted");
   } else {
     songBar.classList.add("muted");
   }
 
-  /* Vinyl spin — only if vinyl is visible (easter egg active) */
+  /* Vinyl rotation — only if vinyl is visible */
   if (vinylEl) {
-    if (isPlaying) {
-      vinylEl.classList.remove("paused");
-    } else {
-      vinylEl.classList.add("paused");
-    }
+    if (isPlaying) { vinylEl.classList.remove("paused"); }
+    else           { vinylEl.classList.add("paused"); }
   }
 
-  /* Update panel "now playing" text */
+  /* Animated bars inside the panel */
+  const panelBars = document.getElementById('music-panel-bars');
+  if (panelBars) {
+    if (isPlaying) { panelBars.classList.add('playing'); }
+    else           { panelBars.classList.remove('playing'); }
+  }
+
   updateMusicPanelState();
 }
 
-/* ─── Update which song is highlighted in the panel ─── */
+/* ─── updateMusicPanelState ─── */
 function updateMusicPanelState() {
   const nowEl = document.getElementById('music-panel-now');
   if (!nowEl) return;
 
-  document.querySelectorAll('.music-option').forEach(o => o.classList.remove('active'));
   const isPlaying = (bgMusic && !bgMusic.paused) || (rainSong && !rainSong.paused);
+
+  document.querySelectorAll('.music-option').forEach(o => o.classList.remove('active'));
+  document.querySelectorAll('.music-option-indicator').forEach(ind => ind.classList.remove('playing'));
 
   if (!isPlaying) {
     nowEl.textContent = '— paused —';
   } else if (currentSongId === 'easter') {
     nowEl.textContent = 'Rimjhim Gire Sawan';
     document.querySelector('.music-option[data-song="easter"]')?.classList.add('active');
+    document.getElementById('indicator-easter')?.classList.add('playing');
   } else {
     nowEl.textContent = 'Background Ambience';
     document.querySelector('.music-option[data-song="bg"]')?.classList.add('active');
+    document.getElementById('indicator-bg')?.classList.add('playing');
   }
 }
 
-/* ─── Music toggle click: proper pause/resume ───
-   FIX: old code called stopAllMusic() which reset currentTime = 0.
-   This means resume after pause would restart from beginning, not continue.
-   New: just .pause() to keep position, .play() to resume. */
+/* ─── MUSIC TOGGLE CLICK (nav bar button) ───
+   ONLY pauses/resumes. Resumes from exact timestamp. No reset. */
 songBar.addEventListener("click", () => {
   const isPlaying = (bgMusic && !bgMusic.paused && !bgMusic.ended) ||
                     (rainSong && !rainSong.paused && !rainSong.ended);
 
   if (isPlaying) {
-    /* Pause without resetting — user can resume */
+    /* Pause without resetting currentTime — resume will continue from here */
     bgMusic.pause();
     rainSong.pause();
     userPaused = true;
   } else {
-    /* Resume correct song */
     userPaused = false;
+    /* Resume the correct song from where it stopped */
     if (currentSongId === 'easter' && rainSong.currentTime > 0 && !rainSong.ended) {
       rainSong.play().catch(() => {});
     } else {
@@ -1103,8 +940,7 @@ songBar.addEventListener("click", () => {
   updateMusicUI();
 });
 
-/* ─── Rain song ended: auto-resume bgMusic ───
-   FIX: original had no "ended" listener so bg music never resumed after rain. */
+/* ─── When rain song ends: auto-resume bgMusic (if user hasn't paused) ─── */
 rainSong.addEventListener("ended", () => {
   currentSongId = 'bg';
   if (!userPaused) {
@@ -1114,7 +950,7 @@ rainSong.addEventListener("ended", () => {
   updateMusicUI();
 });
 
-/* ─── Keep UI synced when browser changes audio state ─── */
+/* Keep UI synced when browser changes audio state */
 bgMusic.addEventListener("play",  updateMusicUI);
 bgMusic.addEventListener("pause", updateMusicUI);
 rainSong.addEventListener("play",  updateMusicUI);
@@ -1129,88 +965,72 @@ function tryStartBgMusic() {
       currentSongId = 'bg';
       updateMusicUI();
     })
-    .catch(() => {
-      /* Browser blocked — user must click toggle manually */
-    });
+    .catch(() => { /* browser blocked — user must click toggle to start */ });
 }
 
+/* Start on ANY interaction — mousemove, click, scroll */
 document.addEventListener("mousemove", tryStartBgMusic, { once: true });
 document.addEventListener("click",     tryStartBgMusic, { once: true });
+document.addEventListener("scroll",    tryStartBgMusic, { once: true, capture: true });
 
-/* ─── Vinyl utility functions ─── */
+/* ─── VINYL PANEL FUNCTIONS ─── */
 
-/* Show vinyl (called when easter egg triggers) */
+function openMusicPanel() {
+  if (!musicPanel) return;
+  musicPanel.classList.add('open');
+  const backdrop = document.getElementById('music-backdrop');
+  if (backdrop) backdrop.classList.add('open');
+  updateMusicPanelState();
+}
+
+function closeMusicPanel() {
+  if (!musicPanel) return;
+  musicPanel.classList.remove('open');
+  const backdrop = document.getElementById('music-backdrop');
+  if (backdrop) backdrop.classList.remove('open');
+  /* music continues playing — do NOT pause here */
+}
+
+function toggleMusicPanel() {
+  if (!musicPanel) return;
+  if (musicPanel.classList.contains('open')) {
+    closeMusicPanel();
+  } else {
+    openMusicPanel();
+  }
+}
+
+/* Vinyl click → open/close panel. Does NOT control music. */
+if (vinylEl) {
+  vinylEl.addEventListener("click", () => {
+    toggleMusicPanel();
+  });
+}
+
+/* ─── SHOW/HIDE VINYL ─── */
+
 function showVinyl() {
   if (!vinylEl) return;
   vinylEl.classList.remove("hidden");
   easterUnlocked = true;
 }
 
-/* Hide vinyl + close panel — user must trigger easter egg again to see it */
+/* Called by "Hide Vinyl Record" button inside panel */
 function hideVinyl() {
   if (!vinylEl) return;
-  vinylEl.classList.add("hidden");
   closeMusicPanel();
-  easterUnlocked = false;
-}
-
-/* Toggle the quarter-screen music selection panel */
-function toggleMusicPanel() {
-  if (!musicPanel || !vinylEl) return;
-
-  const isHidden = musicPanel.classList.contains("hidden");
-
-  if (isHidden) {
-    // show panel
-    musicPanel.classList.remove("hidden");
-    updateMusicPanelState();
-
-    const vinylRect = vinylEl.getBoundingClientRect();
-
-    // panel starts from vinyl position
-    musicPanel.style.transformOrigin = "bottom left";
-    musicPanel.style.left = vinylRect.left + "px";
-    musicPanel.style.bottom =
-      (window.innerHeight - vinylRect.bottom) + "px";
-
-    musicPanel.style.transform = "scale(0.2)";
-    musicPanel.style.opacity = "0";
-
-    requestAnimationFrame(() => {
-      musicPanel.style.transition = "all 0.45s ease";
-      musicPanel.style.left = "20px";
-      musicPanel.style.bottom = "20px";
-      musicPanel.style.transform = "scale(1)";
-      musicPanel.style.opacity = "1";
-    });
-
-  } else {
-    closeMusicPanel();
-  }
-}
-
-function closeMusicPanel() {
-  if (!musicPanel || !vinylEl) return;
-
-  const vinylRect = vinylEl.getBoundingClientRect();
-
-  musicPanel.style.left = vinylRect.left + "px";
-  musicPanel.style.bottom =
-    (window.innerHeight - vinylRect.bottom) + "px";
-
-  musicPanel.style.transform = "scale(0.2)";
-  musicPanel.style.opacity = "0";
-
+  /* Small delay so panel closes before vinyl disappears */
   setTimeout(() => {
-    musicPanel.classList.add("hidden");
-  }, 450);
+    vinylEl.classList.add("hidden");
+    easterUnlocked = false;
+  }, 200);
 }
 
-/* Play a song chosen from the panel */
+/* ─── PLAY FROM PANEL ─── */
 function playFromPanel(songId) {
   bgMusic.pause();
   rainSong.pause();
-  userPaused = false;
+  userPaused    = false;
   currentSongId = songId;
 
   if (songId === 'bg') {
@@ -1225,20 +1045,9 @@ function playFromPanel(songId) {
   updateMusicUI();
 }
 
-/* Vinyl click → toggle the music panel */
-if (vinylEl) {
-  vinylEl.addEventListener("click", () => {
-    toggleMusicPanel();
-  });
-}
-
-/* ─── NAME CLICK EASTER EGG ───
-   FIX: plays rainSong, stops bgMusic, shows vinyl.
-   After rain ends → bgMusic auto-resumes (handled by rainSong.ended above).
-   If music bar (toggle) is OFF (userPaused=true) → rain won't auto-start bg on end. */
+/* ─── NAME CLICK EASTER EGG ─── */
 function nameclickHandler() {
   nameClicks++;
-
   const hint = document.getElementById("name-click-hint");
 
   if (nameClicks >= 5) {
@@ -1247,17 +1056,25 @@ function nameclickHandler() {
   }
 
   if (nameClicks >= 7) {
-    /* Show vinyl */
-    showVinyl();
+    /* If vinyl already visible → show "already enabled" message, do NOT hide vinyl */
+    if (easterUnlocked) {
+      hint.textContent = "Easter egg already enabled! Check the bottom-left corner 🎵";
+      hint.classList.add("show");
+      setTimeout(() => {
+        nameClicks = 0;
+        hint.classList.remove("show");
+      }, 3000);
+      return; /* exit early — do not re-trigger */
+    }
 
-    /* Stop bg, play rain */
+    /* First time — show vinyl, play rain song */
+    showVinyl();
     bgMusic.pause();
     currentSongId = 'easter';
-    userPaused = false;
+    userPaused    = false;
     rainSong.currentTime = 0;
     rainSong.play().catch(() => {});
-    musicStarted = true;
-
+    musicStarted  = true;
     updateMusicUI();
 
     setTimeout(() => {
