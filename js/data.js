@@ -1,181 +1,151 @@
-const portfolioData = {
-  about: `
-I’m Manomay Shailendra Misra — a commerce student, storyteller, public speaker, builder, and someone deeply obsessed with creating things that feel timeless.
+/* ═══════════════════════════════════════════════════════════
+   data.js — Loads data.json and populates DOM elements
+   Runs before main.js. Populates: name, tagline, about text,
+   photos, social links, resume details, footer, etc.
+═══════════════════════════════════════════════════════════ */
 
-I’ve represented regions at national competitions, built digital projects from scratch, explored AI tools, written fiction, experimented with entrepreneurship ideas, and somehow balanced all of that while still being deeply attached to old songs, vintage aesthetics, poetry, and cultural nostalgia.
+fetch("data.json")
+  .then(function (r) { return r.json(); })
+  .then(function (data) {
 
-I like building things that feel personal.
-Not corporate.
-Not fake productivity-core nonsense.
-
-I’m interested in business, media, technology, branding, storytelling, and building a life that gives both freedom and legacy.
-
-Still figuring life out.
-Still ambitious as hell.
-Still soft enough to romanticize rainy evenings and old music.
-`,
-
-  timeline: [
-    {
-      year: "2008",
-      title: "Beginning",
-      description: "Born on 29 August 2008 in Andheri, Maharashtra."
-    },
-    {
-      year: "2009",
-      title: "Childhood",
-      description: "Tiny human. No taxes. Peak life."
-    },
-    {
-      year: "2010",
-      title: "Growing Years",
-      description: "Learning, playing, causing harmless chaos."
-    },
-    {
-      year: "2011",
-      title: "School Begins",
-      description: "Entered formal education."
-    },
-    {
-      year: "2012",
-      title: "Curiosity Era",
-      description: "Started becoming deeply curious about everything."
-    },
-    {
-      year: "2023",
-      title: "Leadership",
-      description: "Worked on speeches, competitions, leadership roles."
-    },
-    {
-      year: "2024",
-      title: "Artifex Nationals",
-      description: "Represented Bangalore region at national competition in Hyderabad."
-    },
-    {
-      year: "2025",
-      title: "Building Phase",
-      description: "Explored coding, AI tools, business ideas, storytelling projects."
-    },
-    {
-      year: "2026",
-      title: "Reinvention",
-      description: "Building personal brand, portfolio and future career path."
+    /* ── Page title ── */
+    if (data.site && data.site.title) {
+      document.title = data.site.title;
     }
-  ],
 
-  photos: {
-    album1: {
-      title: "City Frames",
-      description: "Urban photography and random moments.",
-      images: [
-        "photos/photo1.jpg",
-        "photos/photo2.jpg"
-      ]
-    },
-
-    album2: {
-      title: "Events",
-      description: "Competitions, performances and memories.",
-      images: [
-        "photos/photo3.jpg",
-        "photos/photo4.jpg"
-      ]
-    },
-
-    album3: {
-      title: "Travel",
-      description: "Places that left a mark.",
-      images: [
-        "photos/photo5.jpg",
-        "photos/photo6.jpg"
-      ]
-    },
-
-    secret1: {
-      title: "Private Memories",
-      description: "Not for everyone.",
-      images: [
-        "photos/private1.jpg"
-      ]
-    },
-
-    secret2: {
-      title: "Inner Circle",
-      description: "Close people and hidden memories.",
-      images: [
-        "photos/private2.jpg"
-      ]
+    /* ── Hero name (split into 3 word parts) ── */
+    if (data.heroName) {
+      var parts = data.heroName.trim().split(" ");
+      var n1 = document.getElementById("name-part-1");
+      var n2 = document.getElementById("name-part-2");
+      var n3 = document.getElementById("name-part-3");
+      if (n1) n1.textContent = parts[0] || "";
+      if (n2) n2.textContent = parts[1] || "";
+      if (n3) n3.textContent = parts[2] || "";
     }
-  },
 
-  beliefs: {
-    politics: [
-      {
-        title: "Power & Responsibility",
-        content: "Politics should create systems that outlive leaders."
+    /* ── Hero tagline ── */
+    var taglineEl = document.getElementById("hero-tagline");
+    if (taglineEl) {
+      var tl = (data.tagline) || (data.site && data.site.tagline) || "";
+      if (tl) taglineEl.textContent = tl;
+    }
+
+    /* ── Hero nav hint ── */
+    var navHintEl = document.getElementById("hero-nav-hint");
+    if (navHintEl && data.site && data.site.nav_hint) {
+      navHintEl.innerHTML = data.site.nav_hint;
+    }
+
+    /* ── Hero photo ── */
+    var heroPhoto = document.querySelector(".hero-photo");
+    if (heroPhoto && data.site && data.site.hero_photo_url) {
+      heroPhoto.src = data.site.hero_photo_url;
+    }
+
+    /* ── About photo ── */
+    var aboutPhoto = document.querySelector(".about-photo");
+    if (aboutPhoto && data.site && data.site.about_photo_url) {
+      aboutPhoto.src = data.site.about_photo_url;
+    }
+
+    /* ── About photo label ── */
+    var aboutLabel = document.querySelector(".about-photo-label");
+    if (aboutLabel && data.site && data.site.about_photo_label) {
+      aboutLabel.textContent = data.site.about_photo_label;
+    }
+
+    /* ── About body text ── */
+    var aboutEl = document.getElementById("about-text");
+    if (aboutEl) {
+      var aboutText = data.aboutText || (data.about && data.about.paragraph_1) || "";
+      if (aboutText) aboutEl.textContent = aboutText;
+    }
+
+    /* ── About intro quote ── */
+    var introEl = document.querySelector(".about-intro");
+    if (introEl && data.about && data.about.intro_quote) {
+      introEl.textContent = '"' + data.about.intro_quote + '"';
+    }
+
+    /* ── Secret about text ── */
+    var secretAboutEl = document.querySelector("#secret-about-content .about-body");
+    if (secretAboutEl && data.about && data.about.secret_text) {
+      secretAboutEl.textContent = data.about.secret_text;
+    }
+
+    /* ── Social / profile links ── */
+    if (data.socialLinks) {
+      var li = document.getElementById("linkedin-link");
+      var ig = document.getElementById("instagram-link");
+      var rv = document.getElementById("resume-link");
+      if (li && data.socialLinks.linkedin) {
+        li.href = "https://linkedin.com/in/" + data.socialLinks.linkedin;
       }
-    ],
-
-    god: [
-      {
-        title: "Faith",
-        content: "I question religion often but remain fascinated by faith."
+      if (ig && data.socialLinks.instagram) {
+        ig.href = "https://instagram.com/" + data.socialLinks.instagram;
       }
-    ],
-
-    science: [
-      {
-        title: "Cosmos",
-        content: "The universe feels terrifying and beautiful at the same time."
+      if (rv && data.socialLinks.resume) {
+        rv.href = data.socialLinks.resume;
       }
-    ],
+    }
 
-    life: [
-      {
-        title: "Meaning",
-        content: "Legacy matters. But so do quiet evenings."
+    /* ── Footer ── */
+    if (data.site) {
+      var footerLeft = document.querySelector(".footer span:first-child");
+      var footerRight = document.querySelector(".footer span:last-child");
+      if (footerLeft && data.site.footer_left) footerLeft.textContent = data.site.footer_left;
+      if (footerRight && data.site.footer_right) footerRight.textContent = data.site.footer_right;
+    }
+
+    /* ── Resume headline ── */
+    var resumeTitleEl = document.querySelector(".resume-title");
+    if (resumeTitleEl && data.resume && data.resume.headline) {
+      resumeTitleEl.textContent = data.resume.headline;
+    }
+
+    /* ── Resume summary ── */
+    if (data.resume && data.resume.summary) {
+      var summaryEl = document.querySelector(".resume-section p");
+      if (summaryEl) summaryEl.textContent = data.resume.summary;
+    }
+
+    /* ── Skills hero quote ── */
+    var skillsQuoteEl = document.querySelector(".skills-hero-quote");
+    if (skillsQuoteEl && data.skills && data.skills.quote) {
+      skillsQuoteEl.textContent = '"' + data.skills.quote + '"';
+    }
+
+    /* ── Contact intro ── */
+    var contactIntroEl = document.querySelector(".contact-intro");
+    if (contactIntroEl && data.contact && data.contact.intro) {
+      contactIntroEl.textContent = data.contact.intro;
+    }
+
+    /* ── Birthday details ── */
+    if (data.birthday) {
+      var dobEl = document.querySelector("#bday-secret-info p:nth-child(1)");
+      var timeEl = document.querySelector("#bday-secret-info p:nth-child(2)");
+      var placeEl = document.querySelector("#bday-secret-info p:nth-child(3)");
+      if (dobEl && data.birthday.dob_display) {
+        dobEl.innerHTML = '<strong style="color:var(--text);">Date of Birth:</strong> ' + data.birthday.dob_display;
       }
-    ],
-
-    society: [
-      {
-        title: "Culture",
-        content: "Modernity moves fast. Tradition keeps identity alive."
+      if (timeEl && data.birthday.time_display) {
+        timeEl.innerHTML = '<strong style="color:var(--text);">Time:</strong> Approximately ' + data.birthday.time_display + ' IST';
       }
-    ],
-
-    tech: [
-      {
-        title: "AI Future",
-        content: "AI will reward creators faster than institutions can react."
+      if (placeEl && data.birthday.place_display) {
+        placeEl.innerHTML = '<strong style="color:var(--text);">Place:</strong> ' + data.birthday.place_display;
       }
-    ]
-  },
+    }
 
-  passwords: {
-    global: "msm2008",
-    photos: "memories",
-    journey: "legacy",
-    birthday: "29082008",
-    lists: "culture",
-    about: "identity",
-    games: "play"
-  },
+    /* ── Journey secret text ── */
+    var journeySecretEl = document.querySelector("#secret-journey p");
+    if (journeySecretEl && data.journey && data.journey.secret_text) {
+      journeySecretEl.textContent = data.journey.secret_text;
+    }
 
-  profiles: {
-    linkedin: "https://linkedin.com/in/YOUR-LINKEDIN",
-    instagram: "https://instagram.com/YOUR-INSTAGRAM",
-    resume: "manomay-cv.pdf"
-  },
-
-  skills: [
-    "Public Speaking",
-    "Leadership",
-    "Entrepreneurship",
-    "Photography",
-    "Storytelling",
-    "Branding",
-    "AI Tools",
-    "Design Thinking"
-  ]
-};
+  })
+  .catch(function (err) {
+    console.warn("data.json could not be loaded:", err);
+    /* Site still works — all content has fallbacks in HTML */
+  });
