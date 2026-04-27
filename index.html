@@ -84,13 +84,13 @@
     <li><a href="#" onclick="navigateTo('contact'); return false;">Contact</a></li>
     <li><a href="#" onclick="navigateTo('lists'); return false;">Lists</a></li>
     <li><a href="#" onclick="navigateTo('skills'); return false;">Traits</a></li>
-    <li><a href="#" onclick="tryLockedPage('games'); return false;">Games <span class="lock-icon"></span></a></li>
+    <li><a href="#" onclick="navigateTo('games'); return false;">Games</a></li>
     <li><a href="#" onclick="navigateTo('social'); return false;">Social</a></li>
   </ul>
 
   <div class="nav-right">
-    <!-- Single music toggle — this is the real one with id="music-toggle" -->
-    <button class="music-toggle muted" id="music-toggle">
+    <!-- Music toggle — inline in nav, near theme dots. Controls play/pause ONLY. -->
+    <button class="music-toggle muted" id="music-toggle" title="Play / Pause music">
       <div class="sound-bars">
         <span></span>
         <span></span>
@@ -125,7 +125,7 @@
   <a href="#" onclick="navigateTo('contact'); toggleMobileNav(); return false;">Contact</a>
   <a href="#" onclick="navigateTo('lists');   toggleMobileNav(); return false;">Lists</a>
   <a href="#" onclick="navigateTo('skills');  toggleMobileNav(); return false;">Traits</a>
-  <a href="#" onclick="tryLockedPage('games');toggleMobileNav(); return false;">Games 🔒</a>
+  <a href="#" onclick="navigateTo('games');   toggleMobileNav(); return false;">Games</a>
   <a href="#" onclick="navigateTo('social');  toggleMobileNav(); return false;">Social</a>
 </div>
 
@@ -841,12 +841,14 @@
 </section>
 
 <!-- ─── PAGE: GAMES ─── -->
+<!-- ALL 5 PUBLIC — no password. Private section below with password. -->
 <section id="page-games" class="page">
   <div class="page-inner">
     <div class="container section">
       <div class="section-label reveal">12 — Games</div>
       <h2 class="section-title reveal reveal-d1">Take a break.<br>Play something.</h2>
 
+      <!-- Public games — all free, no password required -->
       <div class="games-grid reveal reveal-d2">
         <div class="game-card" onclick="openGame('snake')">
           <div class="game-icon">🐍</div>
@@ -879,6 +881,46 @@
           <div class="game-play-btn">▶ &nbsp; Play</div>
         </div>
       </div>
+
+      <!-- Private games — password protected, family only, external links -->
+      <div class="divider reveal" style="margin-top:3rem;"></div>
+
+      <div class="section-label reveal" style="margin-top:0;">
+        Private Games · Family Only <span class="locked-badge" style="margin-left:0.5rem;">🔒</span>
+      </div>
+      <p style="font-size:0.8rem;color:var(--text3);margin-bottom:1.5rem;line-height:1.6;" class="reveal reveal-d1">
+        Personal games built exclusively for family. Not playable on this site — access the links below after unlocking.
+      </p>
+      <div class="inline-password-form reveal reveal-d2">
+        <input type="password" id="private-games-pw" placeholder="password" autocomplete="off"
+          onkeydown="if(event.key==='Enter')unlockSection('private-games-pw','private-games-content')" />
+        <button onclick="unlockSection('private-games-pw','private-games-content')">Unlock</button>
+      </div>
+
+      <div class="secret-content" id="private-games-content">
+        <div class="games-grid" style="margin-top:1.5rem;">
+          <!-- REPLACE: Add your actual game links below -->
+          <div class="game-card">
+            <div class="game-icon">🎮</div>
+            <div class="game-name">Private Game 1 — REPLACE</div>
+            <div class="game-desc">A personal game for family only. Replace this description — REPLACE.</div>
+            <a href="YOUR_GITHUB_LINK_HERE" target="_blank" rel="noopener"
+              class="game-play-btn" style="text-decoration:none;margin-top:auto;">
+              🔗 &nbsp; Play on GitHub
+            </a>
+          </div>
+          <div class="game-card">
+            <div class="game-icon">📱</div>
+            <div class="game-name">Private Game 2 — REPLACE</div>
+            <div class="game-desc">Download the APK and install to play. Replace this description — REPLACE.</div>
+            <a href="YOUR_APK_LINK_HERE" target="_blank" rel="noopener"
+              class="game-play-btn" style="text-decoration:none;margin-top:auto;">
+              ↓ &nbsp; Download APK
+            </a>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -958,9 +1000,39 @@
   <source src="songs/SONG1.mp3" type="audio/mpeg">
 </audio>
 
-<!-- Vinyl Record -->
-<div class="vinyl-player paused" id="vinyl-player">
+<!-- ═══════════════════════════════════════════════════════════
+     VINYL RECORD — hidden until easter egg (7 name clicks)
+     "hidden" class = display:none — JS removes it on egg trigger
+═══════════════════════════════════════════════════════════ -->
+<div class="vinyl-player paused hidden" id="vinyl-player">
   <div class="vinyl-disc"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MUSIC PANEL — appears when vinyl is clicked (quarter screen)
+     Hidden by CSS transform/opacity — no .hidden class needed
+═══════════════════════════════════════════════════════════ -->
+<div id="music-panel" class="music-panel">
+  <div class="music-panel-inner">
+    <div class="music-panel-header">
+      <span class="music-panel-title">Now Playing</span>
+      <button class="music-panel-close" onclick="closeMusicPanel()">✕</button>
+    </div>
+    <div class="music-panel-now" id="music-panel-now">—</div>
+    <div class="music-panel-list">
+      <div class="music-option" data-song="bg" onclick="playFromPanel('bg')">
+        <div class="music-option-name">Background Ambience</div>
+        <div class="music-option-sub">Loop · Ambient</div>
+      </div>
+      <div class="music-option" data-song="easter" onclick="playFromPanel('easter')">
+        <div class="music-option-name">Rimjhim Gire Sawan</div>
+        <div class="music-option-sub">Easter Egg Song</div>
+      </div>
+    </div>
+    <div class="music-panel-footer">
+      <button class="music-hide-btn" onclick="hideVinyl()">Hide Record</button>
+    </div>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
@@ -970,7 +1042,6 @@
 <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
-<script src="js/music.js"></script>
 
 </body>
 </html>
