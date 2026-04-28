@@ -27,24 +27,33 @@ if (window.netlifyIdentity) {
 /* ═══════════════════════════════════════════════════════════
    LOADING SCREEN
 ═══════════════════════════════════════════════════════════ */
-(function () {
-  const bar = document.getElementById('loading-bar');
-  const pct = document.getElementById('loading-pct');
+window.addEventListener("load", () => {
+  const loadingScreen = document.getElementById("loading-screen");
+  const bar = document.getElementById("loading-bar");
+  const pct = document.getElementById("loading-pct");
+
+  /* First reveal all splash elements together */
+  loadingScreen.classList.add("ready");
+
   let progress = 0;
+
   const interval = setInterval(() => {
     progress += Math.random() * 15;
+
     if (progress >= 100) {
       progress = 100;
       clearInterval(interval);
+
       setTimeout(() => {
-        document.getElementById('loading-screen').classList.add('done');
+        loadingScreen.classList.add("done");
         startHeroAnimations();
       }, 300);
     }
-    bar.style.width = progress + '%';
-    pct.textContent = Math.floor(progress) + '%';
+
+    bar.style.width = progress + "%";
+    pct.textContent = Math.floor(progress) + "%";
   }, 80);
-})();
+});
 
 /* ═══════════════════════════════════════════════════════════
    HERO ANIMATIONS
