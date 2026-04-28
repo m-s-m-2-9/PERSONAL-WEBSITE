@@ -10,7 +10,7 @@
 (function () {
   'use strict';
 
-  const IDLE_DELAY = 10 * 60 * 1000; /* 10 minutes in ms */
+  const IDLE_DELAY = 1 * 60 * 1000; /* 10 minutes in ms */
   let idleTimer   = null;
   let robotActive = false;
 
