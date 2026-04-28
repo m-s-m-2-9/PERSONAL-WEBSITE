@@ -57,29 +57,35 @@ function startHeroAnimations() {
   ];
 
   /* Get current cycle index from localStorage */
-  let currentHighlight = parseInt(localStorage.getItem("heroHighlightIndex")) || 0;
+  let currentHighlight =
+    parseInt(localStorage.getItem("heroHighlightIndex")) || 0;
 
-/* Reset all highlights first */
-nameParts.forEach(el => {
-  if (el) el.classList.remove("highlight");
-});
+  /* Reset all highlights */
+  nameParts.forEach(el => {
+    if (el) el.classList.remove("highlight");
+  });
 
-/* Animate names appearing one by one */
-nameParts.forEach((el, i) => {
-  setTimeout(() => {
-    if (el) el.classList.add("visible");
-  }, i * 150 + 200);
-});
+  /* Animate names appearing one by one */
+  nameParts.forEach((el, i) => {
+    setTimeout(() => {
+      if (!el) return;
 
-/* After names appear → highlight one word */
-setTimeout(() => {
-  if (nameParts[currentHighlight]) {
-    nameParts[currentHighlight].classList.add("highlight");
-  }
+      /* Apply highlight BEFORE animation starts */
+      if (i === currentHighlight) {
+        el.classList.add("highlight");
+      }
 
+      /* Then animate upward reveal */
+      requestAnimationFrame(() => {
+        el.classList.add("visible");
+      });
+
+    }, i * 150 + 200);
+  });
+
+  /* Save next cycle */
   let nextIndex = (currentHighlight + 1) % 3;
   localStorage.setItem("heroHighlightIndex", nextIndex);
-}, 700);
 
   /* Remaining hero animations */
   setTimeout(() => {
@@ -94,6 +100,7 @@ setTimeout(() => {
     document.getElementById('scroll-indicator')?.classList.add('visible');
   }, 1200);
 }
+
 /* ═══════════════════════════════════════════════════════════
    CUSTOM CURSOR
    FIX: use (pointer: coarse) media query — more reliable than
