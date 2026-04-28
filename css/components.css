@@ -232,11 +232,58 @@ body.cursor-text #cursor-dot {
   transition: opacity 0.8s ease, transform 0.8s ease;
 }
 
-#loading-screen.done { opacity: 0; pointer-events: none; transform: translateY(-100%); }
-.loading-name     { font-family: var(--ff-display); font-size: 1.5rem; font-weight: 300; color: var(--text); letter-spacing: 0.15em; }
-.loading-bar-wrap { width: 200px; height: 1px; background: var(--border2); }
-.loading-bar      { height: 100%; background: var(--accent); width: 0; transition: width 1.5s cubic-bezier(0.16,1,0.3,1); }
-.loading-pct      { font-family: var(--ff-mono); font-size: 0.65rem; color: var(--text3); letter-spacing: 0.15em; }
+/* Exit animation */
+#loading-screen.done {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-100%);
+}
+
+/* Hidden initially so everything appears together */
+.loading-name,
+.loading-bar-wrap,
+.loading-pct {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* Reveal all splash elements together */
+#loading-screen.ready .loading-name,
+#loading-screen.ready .loading-bar-wrap,
+#loading-screen.ready .loading-pct {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.loading-name {
+  font-family: var(--ff-display);
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: var(--text);
+  letter-spacing: 0.15em;
+}
+
+.loading-bar-wrap {
+  width: 200px;
+  height: 1px;
+  background: var(--border2);
+}
+
+.loading-bar {
+  height: 100%;
+  background: var(--accent);
+  width: 0;
+  transition: width 1.5s cubic-bezier(0.16,1,0.3,1);
+}
+
+.loading-pct {
+  font-family: var(--ff-mono);
+  font-size: 0.65rem;
+  color: var(--text3);
+  letter-spacing: 0.15em;
+}
+
 
 /* ─── EASTER EGGS ─── */
 #konami-egg {
