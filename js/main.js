@@ -52,7 +52,7 @@ window.addEventListener("load", () => {
 
     bar.style.width = progress + "%";
     pct.textContent = Math.floor(progress) + "%";
-  }, 80);
+  }, 160);
 });
 
 /* ═══════════════════════════════════════════════════════════
