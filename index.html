@@ -167,8 +167,9 @@
         <span class="link-label">Thoughts</span>
         <span class="link-arrow">→</span>
       </a>
-      <a class="hero-link-item" href="#" onclick="tryLockedPage('photos'); return false;">
-        <span class="link-label">Photos <span class="locked-badge">🔒 some locked</span></span>
+      <!-- FIX 3: removed locked-badge and tryLockedPage, now opens photos directly -->
+      <a class="hero-link-item" href="#" onclick="navigateTo('photos'); return false;">
+        <span class="link-label">Photos</span>
         <span class="link-arrow">→</span>
       </a>
       <a class="hero-link-item" href="#" onclick="navigateTo('contact'); return false;">
@@ -177,9 +178,16 @@
       </a>
     </div>
 
+    <!-- FIX 4: footer restructured for mobile/desktop split -->
     <footer class="footer">
-      <span>© 2026 Manomay Shailendra Misra</span>
-      <span>Built with intention, not a template.</span>
+      <div class="footer-left">
+        <span class="footer-desktop-only">© 2026 Manomay Shailendra Misra</span>
+        <span class="footer-mobile-only">Manomay<br>Shailendra Misra</span>
+      </div>
+      <div class="footer-right">
+        <span class="footer-desktop-only">Built with intention, not a template.</span>
+        <span class="footer-mobile-only">Built with intention,<br>not a template.</span>
+      </div>
     </footer>
   </div>
 </section>
@@ -946,8 +954,7 @@
   </div>
 </section>
 
-<!-- EASTER EGG POPUP -->
-<div id="konami-egg">🎮 You found it! Konami code unlocked. You're clearly one of us.</div>
+<!-- FIX 1: konami-egg div REMOVED entirely -->
 
 <!-- AUDIO -->
 <audio id="rain-song">
@@ -1009,8 +1016,8 @@
 <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
+<!-- idle-bot easter egg — separate file, no coupling to main.js needed -->
 <script src="js/idle-bot.js"></script>
-
 
 </body>
 </html>
