@@ -334,14 +334,14 @@ body.cursor-text #cursor-dot {
   bottom: 50px;
   left: 50%;
   transform: translateX(-50%);
-  width: 250px; /* Large enough to cover significant space */
+  width: 250px; 
   height: 300px;
   z-index: 10000;
   pointer-events: none;
-  display: none; /* Controlled by JS */
+  display: none; 
 }
 
-/* Bot Body - Uses theme accent colors */
+/* Bot Body - Automatically matches your --accent variable */
 .bot-body {
   width: 120px;
   height: 140px;
@@ -364,12 +364,8 @@ body.cursor-text #cursor-dot {
 .bot-eye.left { left: 30px; }
 .bot-eye.right { right: 30px; }
 
-/* The Nervous State */
-.is-nervous .bot-eye {
-  animation: eyes-nervous 4s infinite;
-}
+.is-nervous .bot-eye { animation: eyes-nervous 4s infinite; }
 
-/* The Knocking Hand */
 .bot-hand {
   position: absolute;
   top: 30%;
@@ -382,10 +378,6 @@ body.cursor-text #cursor-dot {
   opacity: 0;
 }
 
-.is-knocking .bot-hand {
-  animation: knock-hand 0.8s ease-out;
-}
-
-/* Appearance Classes */
+.is-knocking .bot-hand { animation: knock-hand 0.8s ease-out; }
 .bot-appearing { display: block; animation: bot-stumble-in 1.2s ease-out forwards; }
 .bot-fleeing { animation: flee-away 1s ease-in forwards; }
