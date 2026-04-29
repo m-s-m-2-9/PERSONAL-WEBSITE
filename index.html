@@ -4,9 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manomay Shailendra Misra</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400&display=block" rel="stylesheet" />
+
   <link rel="stylesheet" href="css/tokens.css" />
   <link rel="stylesheet" href="css/animations.css" />
   <link rel="stylesheet" href="css/components.css" />
@@ -30,7 +32,7 @@
 <div id="cursor-dot"></div>
 <div id="cursor-ring"></div>
 
-<!-- TRANSITION OVERLAY -->
+<!-- FULL-PAGE TRANSITION OVERLAY -->
 <div id="transition-overlay"></div>
 
 <!-- PASSWORD GATE -->
@@ -71,7 +73,7 @@
   </ul>
 
   <div class="nav-right">
-    <!-- Music toggle — inline in nav near theme dots -->
+    <!-- Music toggle — inline in nav near theme dots. Play/pause ONLY. -->
     <button class="music-toggle muted" id="music-toggle" title="Play / Pause music">
       <div class="sound-bars">
         <span></span>
@@ -79,6 +81,7 @@
         <span></span>
       </div>
     </button>
+
     <div class="theme-switcher">
       <div class="theme-dot active" data-t="dark"   title="Noir"   onclick="setTheme('dark')"></div>
       <div class="theme-dot"        data-t="light"  title="Ivory"  onclick="setTheme('light')"></div>
@@ -86,12 +89,14 @@
       <div class="theme-dot"        data-t="forest" title="Forest" onclick="setTheme('forest')"></div>
     </div>
     <div class="hamburger" id="hamburger" onclick="toggleMobileNav()">
-      <span></span><span></span><span></span>
+      <span></span>
+      <span></span>
+      <span></span>
     </div>
   </div>
 </nav>
 
-<!-- Mobile Nav -->
+<!-- Mobile Nav Menu -->
 <div id="mobile-nav">
   <a href="#" onclick="navigateTo('home');    toggleMobileNav(); return false;">Home</a>
   <a href="#" onclick="navigateTo('about');   toggleMobileNav(); return false;">Identity</a>
@@ -108,27 +113,37 @@
   <a href="#" onclick="navigateTo('social');  toggleMobileNav(); return false;">Social</a>
 </div>
 
+<!-- ALL PAGES -->
+
 <!-- PAGE: HOME -->
 <section id="page-home" class="page active">
   <div class="page-inner" style="padding:0;">
     <div class="hero">
       <div class="hero-grid"></div>
+
       <div class="hero-photo-wrap">
-        <img src="photos/whatsapp-image-2026-02-12-at-1.38.25-pm.jpeg" alt="Manomay" class="hero-photo">
+        <img src="assets/photos/profilepic.jpeg" alt="Manomay" class="hero-photo">
         <div class="hero-photo-ring"></div>
       </div>
+
       <h1 class="hero-name" id="hero-name" onclick="nameclickHandler()">
         <span class="word"><span id="name-part-1">Manomay</span></span>
         <span class="word"><span id="name-part-2">Shailendra</span></span>
         <span class="word"><span id="name-part-3">Misra</span></span>
       </h1>
+
       <div class="name-click-hint" id="name-click-hint"></div>
-      <p class="hero-tagline" id="hero-tagline">Born 2008 · Mumbai · Making something of it all</p>
+
+      <p class="hero-tagline" id="hero-tagline">
+        Born 2008 · Mumbai · Making something of it all
+      </p>
+
       <p class="hero-nav-hint" id="hero-nav-hint">
         Navigate using the links above. Some sections are protected —
         <a href="#" onclick="navigateTo('contact'); return false;">contact Manomay Shailendra Misra</a>
         for the password.
       </p>
+
       <div class="scroll-indicator" id="scroll-indicator">
         <div class="scroll-line"></div>
         <span>Explore</span>
@@ -152,9 +167,8 @@
         <span class="link-label">Thoughts</span>
         <span class="link-arrow">→</span>
       </a>
-      <!-- FIX 3: removed locked-badge from photos, changed to navigateTo -->
-      <a class="hero-link-item" href="#" onclick="navigateTo('photos'); return false;">
-        <span class="link-label">Photos</span>
+      <a class="hero-link-item" href="#" onclick="tryLockedPage('photos'); return false;">
+        <span class="link-label">Photos <span class="locked-badge">🔒 some locked</span></span>
         <span class="link-arrow">→</span>
       </a>
       <a class="hero-link-item" href="#" onclick="navigateTo('contact'); return false;">
@@ -163,16 +177,9 @@
       </a>
     </div>
 
-    <!-- FIX 4: Footer restructured for mobile -->
     <footer class="footer">
-      <div class="footer-left">
-        <span class="footer-desktop-only">© 2026 Manomay Shailendra Misra</span>
-        <span class="footer-mobile-only">Manomay<br>Shailendra Misra</span>
-      </div>
-      <div class="footer-right">
-        <span class="footer-desktop-only">Built with intention, not a template.</span>
-        <span class="footer-mobile-only">Built with intention,<br>not a template.</span>
-      </div>
+      <span>© 2026 Manomay Shailendra Misra</span>
+      <span>Built with intention, not a template.</span>
     </footer>
   </div>
 </section>
@@ -183,19 +190,32 @@
     <div class="container section">
       <div class="section-label reveal">01 — Identity</div>
       <div class="about-grid">
+
         <div class="about-photo-col reveal">
           <div class="about-photo-wrap">
-            <img src="photos/whatsapp-image-2026-04-21-at-6.27.56-pm.jpeg" alt="Manomay" class="about-photo">
+            <img src="assets/photos/stagepic.jpeg" alt="Manomay" class="about-photo">
             <div class="about-photo-label">Manomay — 2024</div>
           </div>
         </div>
+
         <div class="about-text-col">
-          <p class="about-intro reveal reveal-d1">"Building legacy without losing softness."</p>
-          <p class="about-body reveal reveal-d2" id="about-text">Loading about section...</p>
-          <div class="word-limit-note reveal reveal-d4">📝 &nbsp; Recommended: 150–200 words total for this section</div>
+          <p class="about-intro reveal reveal-d1">
+            "Building legacy without losing softness."
+          </p>
+
+          <p class="about-body reveal reveal-d2" id="about-text">
+            Loading about section...
+          </p>
+
+          <div class="word-limit-note reveal reveal-d4">
+            📝 &nbsp; Recommended: 150–200 words total for this section
+          </div>
+
           <div class="secret-section reveal reveal-d5">
             <div class="secret-label">⬡ More · Private</div>
-            <p style="font-size:0.8rem;color:var(--text3);margin-bottom:1rem;">There's a hidden layer here. Enter the password to read the real story.</p>
+            <p style="font-size:0.8rem;color:var(--text3);margin-bottom:1rem;">
+              There's a hidden layer here. Enter the password to read the real story.
+            </p>
             <div class="inline-password-form">
               <input type="password" id="about-pw" placeholder="password" autocomplete="off"
                 onkeydown="if(event.key==='Enter')unlockSection('about-pw','secret-about-content')" />
@@ -218,8 +238,11 @@
       <div class="photos-header">
         <div class="section-label reveal">02 — Photos</div>
         <h2 class="section-title reveal reveal-d1">Captured moments.</h2>
-        <p style="font-size:0.85rem;color:var(--text3);max-width:400px;" class="reveal reveal-d2">Click any album to browse. Some collections are private.</p>
+        <p style="font-size:0.85rem;color:var(--text3);max-width:400px;" class="reveal reveal-d2">
+          Click any album to browse. Some collections are private.
+        </p>
       </div>
+
       <div class="section-label" style="margin-bottom:1rem;">Public Albums</div>
       <div class="albums-grid" id="public-albums">
         <div class="album-card" onclick="openAlbum('album1')">
@@ -247,11 +270,15 @@
           </div>
         </div>
       </div>
+
       <div class="divider"></div>
+
       <div class="section-label" style="margin-bottom:1rem;">
         Private Albums <span class="locked-badge" style="margin-left:0.5rem;">🔒 locked</span>
       </div>
-      <p style="font-size:0.8rem;color:var(--text3);margin-bottom:1.5rem;">These albums are private. Enter the password to view them.</p>
+      <p style="font-size:0.8rem;color:var(--text3);margin-bottom:1.5rem;">
+        These albums are private. Enter the password to view them.
+      </p>
       <div class="inline-password-form" style="margin-bottom:2rem;">
         <input type="password" id="photos-pw" placeholder="password" autocomplete="off"
           onkeydown="if(event.key==='Enter')unlockSection('photos-pw','secret-albums')" />
@@ -304,13 +331,20 @@
           <div class="resume-title">· Replace with your title ·</div>
         </div>
         <div class="resume-contact-col">
-          youremail@gmail.com<br>+91 00000 00000<br>Mumbai, Maharashtra<br>manomay.com
+          youremail@gmail.com<br>
+          +91 00000 00000<br>
+          Mumbai, Maharashtra<br>
+          manomay.com
         </div>
       </div>
+
       <div class="resume-section reveal reveal-d1">
         <div class="resume-section-title">Summary</div>
-        <p style="font-size:0.9rem;color:var(--text2);line-height:1.8;">xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz.</p>
+        <p style="font-size:0.9rem;color:var(--text2);line-height:1.8;">
+          xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz.
+        </p>
       </div>
+
       <div class="resume-section reveal reveal-d2">
         <div class="resume-section-title">Experience</div>
         <div class="resume-entry">
@@ -330,6 +364,7 @@
           <div class="resume-entry-date">2024 – 2025</div>
         </div>
       </div>
+
       <div class="resume-section reveal reveal-d3">
         <div class="resume-section-title">Education</div>
         <div class="resume-entry">
@@ -340,14 +375,19 @@
           <div class="resume-entry-date">2008 – Present</div>
         </div>
       </div>
+
       <div class="resume-section reveal reveal-d4">
         <div class="resume-section-title">Skills</div>
         <div class="resume-skills">
-          <span class="skill-tag">xyz Skill</span><span class="skill-tag">xyz Skill</span>
-          <span class="skill-tag">xyz Skill</span><span class="skill-tag">xyz Skill</span>
-          <span class="skill-tag">xyz Skill</span><span class="skill-tag">xyz Skill</span>
+          <span class="skill-tag">xyz Skill</span>
+          <span class="skill-tag">xyz Skill</span>
+          <span class="skill-tag">xyz Skill</span>
+          <span class="skill-tag">xyz Skill</span>
+          <span class="skill-tag">xyz Skill</span>
+          <span class="skill-tag">xyz Skill</span>
         </div>
       </div>
+
       <div class="resume-download reveal reveal-d5">
         <a href="manomay-cv.pdf" download class="btn btn-accent">↓ &nbsp; Download PDF</a>
       </div>
@@ -361,6 +401,7 @@
     <div class="container section">
       <div class="section-label reveal">04 — Digital Presence</div>
       <h2 class="section-title reveal reveal-d1">Find me around<br>the internet.</h2>
+
       <div class="profiles-grid reveal reveal-d2">
         <a class="profile-item" id="linkedin-link" href="#" target="_blank">
           <div class="profile-icon">💼</div>
@@ -389,12 +430,16 @@
       <div class="container">
         <div class="section-label reveal">05 — Journey</div>
         <h2 class="section-title reveal reveal-d1">2008 to present.</h2>
-        <p style="font-size:0.85rem;color:var(--text3);" class="reveal reveal-d2">Click a year on the timeline to explore that chapter.</p>
+        <p style="font-size:0.85rem;color:var(--text3);" class="reveal reveal-d2">
+          Click a year on the timeline to explore that chapter.
+        </p>
       </div>
     </div>
+
     <div class="years-mindmap">
       <div class="years-track" id="years-track"></div>
     </div>
+
     <div class="year-detail" id="year-detail">
       <div class="year-detail-header">
         <div class="year-detail-year" id="detail-year">—</div>
@@ -402,19 +447,24 @@
       </div>
       <div class="year-detail-body" id="detail-body"></div>
     </div>
+
     <div class="container" style="margin-top:4rem;">
       <div class="divider"></div>
       <div class="section-label" style="margin-bottom:1rem;">
         Private Entries <span class="locked-badge" style="margin-left:0.5rem;">🔒 locked</span>
       </div>
-      <p style="font-size:0.8rem;color:var(--text3);margin-bottom:1.5rem;">Certain chapters are private. Enter password to read.</p>
+      <p style="font-size:0.8rem;color:var(--text3);margin-bottom:1.5rem;">
+        Certain chapters are private. Enter password to read.
+      </p>
       <div class="inline-password-form" style="margin-bottom:2rem;">
         <input type="password" id="journey-pw" placeholder="password" autocomplete="off"
           onkeydown="if(event.key==='Enter')unlockSection('journey-pw','secret-journey')" />
         <button onclick="unlockSection('journey-pw','secret-journey')">Unlock</button>
       </div>
       <div class="secret-content" id="secret-journey">
-        <p style="font-size:0.9rem;color:var(--text2);line-height:1.8;">xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz.</p>
+        <p style="font-size:0.9rem;color:var(--text2);line-height:1.8;">
+          xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz.
+        </p>
       </div>
     </div>
     <div style="height:4rem;"></div>
@@ -427,16 +477,31 @@
     <div class="birthday-hero">
       <div class="section-label" style="margin-bottom:2rem;">06 — Clock</div>
       <h2 class="bday-title">Next birthday in...</h2>
+
       <div class="bday-timer" id="bday-timer">
-        <div class="bday-unit"><div class="bday-value" id="bd-days">--</div><div class="bday-label">Days</div></div>
+        <div class="bday-unit">
+          <div class="bday-value" id="bd-days">--</div>
+          <div class="bday-label">Days</div>
+        </div>
         <div class="bday-separator">:</div>
-        <div class="bday-unit"><div class="bday-value" id="bd-hours">--</div><div class="bday-label">Hours</div></div>
+        <div class="bday-unit">
+          <div class="bday-value" id="bd-hours">--</div>
+          <div class="bday-label">Hours</div>
+        </div>
         <div class="bday-separator">:</div>
-        <div class="bday-unit"><div class="bday-value" id="bd-mins">--</div><div class="bday-label">Minutes</div></div>
+        <div class="bday-unit">
+          <div class="bday-value" id="bd-mins">--</div>
+          <div class="bday-label">Minutes</div>
+        </div>
         <div class="bday-separator">:</div>
-        <div class="bday-unit"><div class="bday-value" id="bd-secs">--</div><div class="bday-label">Seconds</div></div>
+        <div class="bday-unit">
+          <div class="bday-value" id="bd-secs">--</div>
+          <div class="bday-label">Seconds</div>
+        </div>
       </div>
+
       <div class="bday-ms" id="bd-ms">000 ms</div>
+
       <div style="margin-top:3rem;">
         <div class="section-label" style="margin-bottom:1rem;justify-content:center;">
           Birth details <span class="locked-badge" style="margin-left:0.5rem;">🔒</span>
@@ -446,6 +511,7 @@
             onkeydown="if(event.key==='Enter')unlockSection('bday-pw','bday-secret-info')" />
           <button onclick="unlockSection('bday-pw','bday-secret-info')">Unlock</button>
         </div>
+
         <div class="bday-date-info unlocked" id="bday-secret-info" style="display:none;max-width:400px;margin:2rem auto 0;text-align:left;">
           <p><strong style="color:var(--text);">Date of Birth:</strong> 29 August 2008</p>
           <p><strong style="color:var(--text);">Time:</strong> Approximately 1:00 – 1:30 PM IST</p>
@@ -463,16 +529,48 @@
     <div class="container section">
       <div class="section-label reveal">07 — Thoughts</div>
       <h2 class="section-title reveal reveal-d1">On everything that matters.</h2>
+
       <div id="beliefs-overview">
         <div class="beliefs-grid reveal reveal-d2">
-          <div class="belief-card" onclick="openBelief('politics')"><div class="belief-icon">🏛️</div><div class="belief-title">Politics</div><div class="belief-preview">Power, governance, and what it means to be Indian in 2026.</div><div class="belief-count">3 posts</div></div>
-          <div class="belief-card" onclick="openBelief('god')"><div class="belief-icon">✦</div><div class="belief-title">God & Faith</div><div class="belief-preview">Questions I sit with. Answers I'm still finding.</div><div class="belief-count">2 posts</div></div>
-          <div class="belief-card" onclick="openBelief('science')"><div class="belief-icon">🔬</div><div class="belief-title">Science</div><div class="belief-preview">The universe doesn't care. And somehow that's beautiful.</div><div class="belief-count">2 posts</div></div>
-          <div class="belief-card" onclick="openBelief('life')"><div class="belief-icon">◎</div><div class="belief-title">Life & Philosophy</div><div class="belief-preview">Why we're here, how to live well, and the rest of it.</div><div class="belief-count">4 posts</div></div>
-          <div class="belief-card" onclick="openBelief('society')"><div class="belief-icon">🌐</div><div class="belief-title">Society & Culture</div><div class="belief-preview">Patterns in people. What we celebrate. What we should question.</div><div class="belief-count">3 posts</div></div>
-          <div class="belief-card" onclick="openBelief('tech')"><div class="belief-icon">⌬</div><div class="belief-title">Technology</div><div class="belief-preview">AI, the internet, attention — and what it's doing to us.</div><div class="belief-count">2 posts</div></div>
+          <div class="belief-card" onclick="openBelief('politics')">
+            <div class="belief-icon">🏛️</div>
+            <div class="belief-title">Politics</div>
+            <div class="belief-preview">Power, governance, and what it means to be Indian in 2026.</div>
+            <div class="belief-count">3 posts</div>
+          </div>
+          <div class="belief-card" onclick="openBelief('god')">
+            <div class="belief-icon">✦</div>
+            <div class="belief-title">God & Faith</div>
+            <div class="belief-preview">Questions I sit with. Answers I'm still finding.</div>
+            <div class="belief-count">2 posts</div>
+          </div>
+          <div class="belief-card" onclick="openBelief('science')">
+            <div class="belief-icon">🔬</div>
+            <div class="belief-title">Science</div>
+            <div class="belief-preview">The universe doesn't care. And somehow that's beautiful.</div>
+            <div class="belief-count">2 posts</div>
+          </div>
+          <div class="belief-card" onclick="openBelief('life')">
+            <div class="belief-icon">◎</div>
+            <div class="belief-title">Life & Philosophy</div>
+            <div class="belief-preview">Why we're here, how to live well, and the rest of it.</div>
+            <div class="belief-count">4 posts</div>
+          </div>
+          <div class="belief-card" onclick="openBelief('society')">
+            <div class="belief-icon">🌐</div>
+            <div class="belief-title">Society & Culture</div>
+            <div class="belief-preview">Patterns in people. What we celebrate. What we should question.</div>
+            <div class="belief-count">3 posts</div>
+          </div>
+          <div class="belief-card" onclick="openBelief('tech')">
+            <div class="belief-icon">⌬</div>
+            <div class="belief-title">Technology</div>
+            <div class="belief-preview">AI, the internet, attention — and what it's doing to us.</div>
+            <div class="belief-count">2 posts</div>
+          </div>
         </div>
       </div>
+
       <div class="belief-post-view" id="belief-post-view">
         <button class="btn" onclick="closeBelief()" style="margin-bottom:2rem;">← Back</button>
         <div class="section-label" id="belief-view-label"></div>
@@ -488,7 +586,11 @@
     <div class="contact-wrap">
       <div class="section-label reveal">08 — Contact</div>
       <h2 class="section-title reveal reveal-d1">Say something<br>worth saying.</h2>
-      <p class="contact-intro reveal reveal-d2">I read every message. I reply to the ones that make me think. If you're reaching out for the password — tell me why.</p>
+      <p class="contact-intro reveal reveal-d2">
+        I read every message. I reply to the ones that make me think.
+        If you're reaching out for the password — tell me why.
+      </p>
+
       <form id="contact-form" onsubmit="submitContactForm(event)">
         <div class="form-group reveal reveal-d3">
           <label class="form-label">Your name</label>
@@ -521,14 +623,18 @@
     <div class="container section">
       <div class="section-label reveal">09 — Curations</div>
       <h2 class="section-title reveal reveal-d1">Things worth<br>experiencing.</h2>
+
       <div style="margin-bottom:2rem;" class="reveal reveal-d2">
-        <div class="section-label" style="margin-bottom:0.75rem;">Full list is private <span class="locked-badge" style="margin-left:0.5rem;">🔒</span></div>
+        <div class="section-label" style="margin-bottom:0.75rem;">
+          Full list is private <span class="locked-badge" style="margin-left:0.5rem;">🔒</span>
+        </div>
         <div class="inline-password-form">
           <input type="password" id="lists-pw" placeholder="password" autocomplete="off"
             onkeydown="if(event.key==='Enter')unlockSection('lists-pw','lists-content')" />
           <button onclick="unlockSection('lists-pw','lists-content')">Unlock</button>
         </div>
       </div>
+
       <div class="secret-content" id="lists-content" style="display:block;">
         <div class="lists-tabs">
           <div class="list-tab active" onclick="switchListTab('series', this)">Web Series</div>
@@ -536,22 +642,89 @@
           <div class="list-tab" onclick="switchListTab('places', this)">Places</div>
           <div class="list-tab" onclick="switchListTab('movies', this)">Movies</div>
         </div>
+
         <div class="list-panel active" id="list-series">
-          <div class="list-item"><div class="list-item-num">01</div><div class="list-item-info"><div class="list-item-title">Breaking Bad</div><div class="list-item-meta">Drama · 2008–2013</div></div><span class="list-item-status status-seen">Watched</span></div>
-          <div class="list-item"><div class="list-item-num">02</div><div class="list-item-info"><div class="list-item-title">xyz Series Title — REPLACE</div><div class="list-item-meta">Genre · Year</div></div><span class="list-item-status status-want">Want to watch</span></div>
-          <div class="list-item"><div class="list-item-num">03</div><div class="list-item-info"><div class="list-item-title">xyz Series Title — REPLACE</div><div class="list-item-meta">Genre · Year</div></div><span class="list-item-status status-want">Want to watch</span></div>
+          <div class="list-item">
+            <div class="list-item-num">01</div>
+            <div class="list-item-info">
+              <div class="list-item-title">Breaking Bad</div>
+              <div class="list-item-meta">Drama · 2008–2013</div>
+            </div>
+            <span class="list-item-status status-seen">Watched</span>
+          </div>
+          <div class="list-item">
+            <div class="list-item-num">02</div>
+            <div class="list-item-info">
+              <div class="list-item-title">xyz Series Title — REPLACE</div>
+              <div class="list-item-meta">Genre · Year</div>
+            </div>
+            <span class="list-item-status status-want">Want to watch</span>
+          </div>
+          <div class="list-item">
+            <div class="list-item-num">03</div>
+            <div class="list-item-info">
+              <div class="list-item-title">xyz Series Title — REPLACE</div>
+              <div class="list-item-meta">Genre · Year</div>
+            </div>
+            <span class="list-item-status status-want">Want to watch</span>
+          </div>
         </div>
+
         <div class="list-panel" id="list-books">
-          <div class="list-item"><div class="list-item-num">01</div><div class="list-item-info"><div class="list-item-title">xyz Book Title — REPLACE</div><div class="list-item-meta">Author · Year</div></div><span class="list-item-status status-reading">Reading</span></div>
-          <div class="list-item"><div class="list-item-num">02</div><div class="list-item-info"><div class="list-item-title">xyz Book Title — REPLACE</div><div class="list-item-meta">Author · Year</div></div><span class="list-item-status status-want">Want to read</span></div>
+          <div class="list-item">
+            <div class="list-item-num">01</div>
+            <div class="list-item-info">
+              <div class="list-item-title">xyz Book Title — REPLACE</div>
+              <div class="list-item-meta">Author · Year</div>
+            </div>
+            <span class="list-item-status status-reading">Reading</span>
+          </div>
+          <div class="list-item">
+            <div class="list-item-num">02</div>
+            <div class="list-item-info">
+              <div class="list-item-title">xyz Book Title — REPLACE</div>
+              <div class="list-item-meta">Author · Year</div>
+            </div>
+            <span class="list-item-status status-want">Want to read</span>
+          </div>
         </div>
+
         <div class="list-panel" id="list-places">
-          <div class="list-item"><div class="list-item-num">01</div><div class="list-item-info"><div class="list-item-title">Tokyo, Japan</div><div class="list-item-meta">Asia · Someday</div></div><span class="list-item-status status-want">Bucket list</span></div>
-          <div class="list-item"><div class="list-item-num">02</div><div class="list-item-info"><div class="list-item-title">xyz Place — REPLACE</div><div class="list-item-meta">Region · Country</div></div><span class="list-item-status status-seen">Visited</span></div>
+          <div class="list-item">
+            <div class="list-item-num">01</div>
+            <div class="list-item-info">
+              <div class="list-item-title">Tokyo, Japan</div>
+              <div class="list-item-meta">Asia · Someday</div>
+            </div>
+            <span class="list-item-status status-want">Bucket list</span>
+          </div>
+          <div class="list-item">
+            <div class="list-item-num">02</div>
+            <div class="list-item-info">
+              <div class="list-item-title">xyz Place — REPLACE</div>
+              <div class="list-item-meta">Region · Country</div>
+            </div>
+            <span class="list-item-status status-seen">Visited</span>
+          </div>
         </div>
+
         <div class="list-panel" id="list-movies">
-          <div class="list-item"><div class="list-item-num">01</div><div class="list-item-info"><div class="list-item-title">xyz Movie — REPLACE</div><div class="list-item-meta">Director · Year</div></div><span class="list-item-status status-seen">Watched</span></div>
-          <div class="list-item"><div class="list-item-num">02</div><div class="list-item-info"><div class="list-item-title">xyz Movie — REPLACE</div><div class="list-item-meta">Director · Year</div></div><span class="list-item-status status-want">Want to watch</span></div>
+          <div class="list-item">
+            <div class="list-item-num">01</div>
+            <div class="list-item-info">
+              <div class="list-item-title">xyz Movie — REPLACE</div>
+              <div class="list-item-meta">Director · Year</div>
+            </div>
+            <span class="list-item-status status-seen">Watched</span>
+          </div>
+          <div class="list-item">
+            <div class="list-item-num">02</div>
+            <div class="list-item-info">
+              <div class="list-item-title">xyz Movie — REPLACE</div>
+              <div class="list-item-meta">Director · Year</div>
+            </div>
+            <span class="list-item-status status-want">Want to watch</span>
+          </div>
         </div>
       </div>
     </div>
@@ -564,7 +737,11 @@
     <div class="container section">
       <div class="section-label reveal">10 — Traits</div>
       <h2 class="section-title reveal reveal-d1">Jack of all trades,<br>master of none — and that's the point.</h2>
-      <p class="skills-hero-quote reveal reveal-d2">"xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz."</p>
+
+      <p class="skills-hero-quote reveal reveal-d2">
+        "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz."
+      </p>
+
       <div class="skills-marquee reveal reveal-d3">
         <div class="marquee-track" id="skills-marquee-track">
           <span class="marquee-item">xyz Skill<span class="marquee-dot">·</span></span>
@@ -585,16 +762,37 @@
           <span class="marquee-item">xyz Interest<span class="marquee-dot">·</span></span>
         </div>
       </div>
+
       <div class="skills-section-title reveal">Skills</div>
       <div class="skills-grid reveal reveal-d1" id="skills-grid">
-        <div class="skill-item" style="--skill-pct: 85%"><div class="skill-item-name">xyz Skill — REPLACE</div><div class="skill-bar"><div class="skill-bar-fill"></div></div></div>
-        <div class="skill-item" style="--skill-pct: 70%"><div class="skill-item-name">xyz Skill — REPLACE</div><div class="skill-bar"><div class="skill-bar-fill"></div></div></div>
-        <div class="skill-item" style="--skill-pct: 60%"><div class="skill-item-name">xyz Skill — REPLACE</div><div class="skill-bar"><div class="skill-bar-fill"></div></div></div>
-        <div class="skill-item" style="--skill-pct: 90%"><div class="skill-item-name">xyz Skill — REPLACE</div><div class="skill-bar"><div class="skill-bar-fill"></div></div></div>
-        <div class="skill-item" style="--skill-pct: 75%"><div class="skill-item-name">xyz Skill — REPLACE</div><div class="skill-bar"><div class="skill-bar-fill"></div></div></div>
-        <div class="skill-item" style="--skill-pct: 55%"><div class="skill-item-name">xyz Skill — REPLACE</div><div class="skill-bar"><div class="skill-bar-fill"></div></div></div>
+        <div class="skill-item" style="--skill-pct: 85%">
+          <div class="skill-item-name">xyz Skill — REPLACE</div>
+          <div class="skill-bar"><div class="skill-bar-fill"></div></div>
+        </div>
+        <div class="skill-item" style="--skill-pct: 70%">
+          <div class="skill-item-name">xyz Skill — REPLACE</div>
+          <div class="skill-bar"><div class="skill-bar-fill"></div></div>
+        </div>
+        <div class="skill-item" style="--skill-pct: 60%">
+          <div class="skill-item-name">xyz Skill — REPLACE</div>
+          <div class="skill-bar"><div class="skill-bar-fill"></div></div>
+        </div>
+        <div class="skill-item" style="--skill-pct: 90%">
+          <div class="skill-item-name">xyz Skill — REPLACE</div>
+          <div class="skill-bar"><div class="skill-bar-fill"></div></div>
+        </div>
+        <div class="skill-item" style="--skill-pct: 75%">
+          <div class="skill-item-name">xyz Skill — REPLACE</div>
+          <div class="skill-bar"><div class="skill-bar-fill"></div></div>
+        </div>
+        <div class="skill-item" style="--skill-pct: 55%">
+          <div class="skill-item-name">xyz Skill — REPLACE</div>
+          <div class="skill-bar"><div class="skill-bar-fill"></div></div>
+        </div>
       </div>
+
       <div class="divider"></div>
+
       <div class="skills-section-title reveal">Hobbies & Interests</div>
       <div class="skills-grid reveal reveal-d2">
         <div class="skill-item"><div class="skill-item-name">🎵 &nbsp; xyz Hobby — REPLACE</div></div>
@@ -608,31 +806,81 @@
   </div>
 </section>
 
-<!-- PAGE: GAMES — ALL 5 PUBLIC -->
+<!-- PAGE: GAMES — ALL 5 PUBLIC, private section below -->
 <section id="page-games" class="page">
   <div class="page-inner">
     <div class="container section">
       <div class="section-label reveal">12 — Games</div>
       <h2 class="section-title reveal reveal-d1">Take a break.<br>Play something.</h2>
+
       <div class="games-grid reveal reveal-d2">
-        <div class="game-card" onclick="openGame('snake')"><div class="game-icon">🐍</div><div class="game-name">Snake</div><div class="game-desc">Classic snake. Arrow keys or WASD. Eat, grow, don't die.</div><div class="game-play-btn">▶ &nbsp; Play</div></div>
-        <div class="game-card" onclick="openGame('memory')"><div class="game-icon">🧠</div><div class="game-name">Memory Match</div><div class="game-desc">Flip cards and find matching pairs. How fast can you clear the board?</div><div class="game-play-btn">▶ &nbsp; Play</div></div>
-        <div class="game-card" onclick="openGame('2048')"><div class="game-icon">🔢</div><div class="game-name">2048</div><div class="game-desc">Slide tiles, combine numbers, reach 2048. Sounds easy. It's not.</div><div class="game-play-btn">▶ &nbsp; Play</div></div>
-        <div class="game-card" onclick="openGame('reaction')"><div class="game-icon">⚡</div><div class="game-name">Reaction Time</div><div class="game-desc">Wait for the flash. Click as fast as you can. Test your reflexes.</div><div class="game-play-btn">▶ &nbsp; Play</div></div>
-        <div class="game-card" onclick="openGame('word')"><div class="game-icon">📝</div><div class="game-name">Word Scramble</div><div class="game-desc">Unscramble the letters. Vocab meets speed. Can you crack them all?</div><div class="game-play-btn">▶ &nbsp; Play</div></div>
+        <div class="game-card" onclick="openGame('snake')">
+          <div class="game-icon">🐍</div>
+          <div class="game-name">Snake</div>
+          <div class="game-desc">Classic snake. Arrow keys or WASD. Eat, grow, don't die.</div>
+          <div class="game-play-btn">▶ &nbsp; Play</div>
+        </div>
+        <div class="game-card" onclick="openGame('memory')">
+          <div class="game-icon">🧠</div>
+          <div class="game-name">Memory Match</div>
+          <div class="game-desc">Flip cards and find matching pairs. How fast can you clear the board?</div>
+          <div class="game-play-btn">▶ &nbsp; Play</div>
+        </div>
+        <div class="game-card" onclick="openGame('2048')">
+          <div class="game-icon">🔢</div>
+          <div class="game-name">2048</div>
+          <div class="game-desc">Slide tiles, combine numbers, reach 2048. Sounds easy. It's not.</div>
+          <div class="game-play-btn">▶ &nbsp; Play</div>
+        </div>
+        <div class="game-card" onclick="openGame('reaction')">
+          <div class="game-icon">⚡</div>
+          <div class="game-name">Reaction Time</div>
+          <div class="game-desc">Wait for the flash. Click as fast as you can. Test your reflexes.</div>
+          <div class="game-play-btn">▶ &nbsp; Play</div>
+        </div>
+        <div class="game-card" onclick="openGame('word')">
+          <div class="game-icon">📝</div>
+          <div class="game-name">Word Scramble</div>
+          <div class="game-desc">Unscramble the letters. Vocab meets speed. Can you crack them all?</div>
+          <div class="game-play-btn">▶ &nbsp; Play</div>
+        </div>
       </div>
+
+      <!-- Private games — family only, external links -->
       <div class="divider reveal" style="margin-top:3rem;"></div>
-      <div class="section-label reveal" style="margin-top:0;">Private Games · Family Only <span class="locked-badge" style="margin-left:0.5rem;">🔒</span></div>
-      <p style="font-size:0.8rem;color:var(--text3);margin-bottom:1.5rem;line-height:1.6;" class="reveal reveal-d1">Personal games built exclusively for family. Not playable on this site — access links below after unlocking.</p>
+
+      <div class="section-label reveal" style="margin-top:0;">
+        Private Games · Family Only <span class="locked-badge" style="margin-left:0.5rem;">🔒</span>
+      </div>
+      <p style="font-size:0.8rem;color:var(--text3);margin-bottom:1.5rem;line-height:1.6;" class="reveal reveal-d1">
+        Personal games built exclusively for family. Not playable on this site — access links below after unlocking.
+      </p>
       <div class="inline-password-form reveal reveal-d2">
         <input type="password" id="private-games-pw" placeholder="password" autocomplete="off"
           onkeydown="if(event.key==='Enter')unlockSection('private-games-pw','private-games-content')" />
         <button onclick="unlockSection('private-games-pw','private-games-content')">Unlock</button>
       </div>
+
       <div class="secret-content" id="private-games-content">
         <div class="games-grid" style="margin-top:1.5rem;">
-          <div class="game-card"><div class="game-icon">🎮</div><div class="game-name">Private Game 1 — REPLACE</div><div class="game-desc">A personal game for family only. Replace this description — REPLACE.</div><a href="YOUR_GITHUB_LINK_HERE" target="_blank" rel="noopener" class="game-play-btn" style="text-decoration:none;margin-top:auto;">🔗 &nbsp; Play on GitHub</a></div>
-          <div class="game-card"><div class="game-icon">📱</div><div class="game-name">Private Game 2 — REPLACE</div><div class="game-desc">Download the APK and install to play. Replace this description — REPLACE.</div><a href="YOUR_APK_LINK_HERE" target="_blank" rel="noopener" class="game-play-btn" style="text-decoration:none;margin-top:auto;">↓ &nbsp; Download APK</a></div>
+          <div class="game-card">
+            <div class="game-icon">🎮</div>
+            <div class="game-name">Private Game 1 — REPLACE</div>
+            <div class="game-desc">A personal game for family only. Replace this description — REPLACE.</div>
+            <a href="YOUR_GITHUB_LINK_HERE" target="_blank" rel="noopener"
+              class="game-play-btn" style="text-decoration:none;margin-top:auto;">
+              🔗 &nbsp; Play on GitHub
+            </a>
+          </div>
+          <div class="game-card">
+            <div class="game-icon">📱</div>
+            <div class="game-name">Private Game 2 — REPLACE</div>
+            <div class="game-desc">Download the APK and install to play. Replace this description — REPLACE.</div>
+            <a href="YOUR_APK_LINK_HERE" target="_blank" rel="noopener"
+              class="game-play-btn" style="text-decoration:none;margin-top:auto;">
+              ↓ &nbsp; Download APK
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -651,44 +899,73 @@
     <div class="container section">
       <div class="section-label reveal">13 — Social Proof</div>
       <h2 class="section-title reveal reveal-d1">People & places<br>I've worked with.</h2>
+
       <div class="logos-marquee reveal reveal-d2">
         <div class="logos-track">
-          <span class="logo-item">Company Name</span><span class="logo-item">·</span>
-          <span class="logo-item">Brand Name</span><span class="logo-item">·</span>
-          <span class="logo-item">Organization</span><span class="logo-item">·</span>
-          <span class="logo-item">Studio Name</span><span class="logo-item">·</span>
-          <span class="logo-item">Agency Name</span><span class="logo-item">·</span>
-          <span class="logo-item">Company Name</span><span class="logo-item">·</span>
-          <span class="logo-item">Brand Name</span><span class="logo-item">·</span>
-          <span class="logo-item">Organization</span><span class="logo-item">·</span>
-          <span class="logo-item">Studio Name</span><span class="logo-item">·</span>
-          <span class="logo-item">Agency Name</span><span class="logo-item">·</span>
+          <span class="logo-item">Company Name</span>
+          <span class="logo-item">·</span>
+          <span class="logo-item">Brand Name</span>
+          <span class="logo-item">·</span>
+          <span class="logo-item">Organization</span>
+          <span class="logo-item">·</span>
+          <span class="logo-item">Studio Name</span>
+          <span class="logo-item">·</span>
+          <span class="logo-item">Agency Name</span>
+          <span class="logo-item">·</span>
+          <span class="logo-item">Company Name</span>
+          <span class="logo-item">·</span>
+          <span class="logo-item">Brand Name</span>
+          <span class="logo-item">·</span>
+          <span class="logo-item">Organization</span>
+          <span class="logo-item">·</span>
+          <span class="logo-item">Studio Name</span>
+          <span class="logo-item">·</span>
+          <span class="logo-item">Agency Name</span>
+          <span class="logo-item">·</span>
         </div>
       </div>
+
       <div class="testimonials-grid reveal reveal-d3">
-        <div class="testimonial-card"><div class="stars">★★★★★</div><div class="testimonial-text">"xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz testimonial — REPLACE"</div><div class="testimonial-author">— Name, Role @ Company</div></div>
-        <div class="testimonial-card"><div class="stars">★★★★★</div><div class="testimonial-text">"xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz testimonial — REPLACE"</div><div class="testimonial-author">— Name, Role @ Company</div></div>
-        <div class="testimonial-card"><div class="stars">★★★★★</div><div class="testimonial-text">"xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz testimonial — REPLACE"</div><div class="testimonial-author">— Name, Role @ Company</div></div>
+        <div class="testimonial-card">
+          <div class="stars">★★★★★</div>
+          <div class="testimonial-text">"xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz testimonial — REPLACE"</div>
+          <div class="testimonial-author">— Name, Role @ Company</div>
+        </div>
+        <div class="testimonial-card">
+          <div class="stars">★★★★★</div>
+          <div class="testimonial-text">"xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz testimonial — REPLACE"</div>
+          <div class="testimonial-author">— Name, Role @ Company</div>
+        </div>
+        <div class="testimonial-card">
+          <div class="stars">★★★★★</div>
+          <div class="testimonial-text">"xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz testimonial — REPLACE"</div>
+          <div class="testimonial-author">— Name, Role @ Company</div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- FIX 1: konami-egg div REMOVED entirely -->
+<!-- EASTER EGG POPUP -->
+<div id="konami-egg">🎮 You found it! Konami code unlocked. You're clearly one of us.</div>
 
 <!-- AUDIO -->
-<audio id="rain-song"><source src="songs/rimjhim.mp3" type="audio/mpeg"></audio>
-<audio id="bg-music" loop><source src="songs/SONG1.mp3" type="audio/mpeg"></audio>
+<audio id="rain-song">
+  <source src="songs/rimjhim.mp3" type="audio/mpeg">
+</audio>
+<audio id="bg-music" loop>
+  <source src="songs/SONG1.mp3" type="audio/mpeg">
+</audio>
 
-<!-- VINYL RECORD — hidden until easter egg -->
+<!-- VINYL RECORD — hidden until 7 name clicks (easter egg) -->
 <div class="vinyl-player paused hidden" id="vinyl-player">
   <div class="vinyl-disc"></div>
 </div>
 
-<!-- MUSIC PANEL BACKDROP -->
+<!-- MUSIC PANEL BACKDROP — click here to close panel, music keeps playing -->
 <div id="music-backdrop"></div>
 
-<!-- MUSIC PANEL -->
+<!-- MUSIC PANEL — Spotify-like, quarter screen, hidden by default via CSS -->
 <div id="music-panel" class="music-panel">
   <div class="music-panel-inner">
     <div class="music-panel-header">
@@ -702,20 +979,26 @@
       <div class="music-option" data-song="bg" onclick="playFromPanel('bg')">
         <div class="music-option-left">
           <div class="music-option-icon">🌙</div>
-          <div><div class="music-option-name">Background Ambience</div><div class="music-option-sub">Loop · Ambient</div></div>
+          <div>
+            <div class="music-option-name">Background Ambience</div>
+            <div class="music-option-sub">Loop · Ambient · SONG1.mp3</div>
+          </div>
         </div>
         <div class="music-option-indicator" id="indicator-bg"></div>
       </div>
       <div class="music-option" data-song="easter" onclick="playFromPanel('easter')">
         <div class="music-option-left">
           <div class="music-option-icon">🌧️</div>
-          <div><div class="music-option-name">Rimjhim Gire Sawan</div><div class="music-option-sub">Easter Egg Song</div></div>
+          <div>
+            <div class="music-option-name">Rimjhim Gire Sawan</div>
+            <div class="music-option-sub">Easter Egg Song</div>
+          </div>
         </div>
         <div class="music-option-indicator" id="indicator-easter"></div>
       </div>
     </div>
     <div class="music-panel-footer">
-      <p class="music-panel-tip">Click outside to close · Music keeps playing</p>
+      <p class="music-panel-tip">Click outside to close panel · Music keeps playing</p>
       <button class="music-hide-btn" onclick="hideVinyl()">Hide Vinyl Record</button>
     </div>
   </div>
@@ -727,6 +1010,7 @@
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
 <script src="js/idle-bot.js"></script>
+
 
 </body>
 </html>
