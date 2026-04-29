@@ -1,486 +1,274 @@
 /* ═══════════════════════════════════════════════════════════
-   idle-bot.js — Idle Robot Easter Egg
-   Triggers after 10 minutes of zero user activity.
-   Self-contained: injects its own CSS, builds its own DOM.
-   No external files needed.
-   
-   To test faster: change IDLE_DELAY to 5000 (5 seconds)
+   ASTRO-BOT IDLE SCREENSAVER (PRO VERSION)
+   - Larger Scale (Astro Bot Proportions)
+   - Dynamic LED Eyes (Astro Style)
+   - Premium White/Gold/Blue Palette
+   - Physics-based stumbling animation
 ═══════════════════════════════════════════════════════════ */
 
 (function () {
   'use strict';
 
-  const IDLE_DELAY = 1 * 60 * 1000; /* 10 minutes in ms */
+  const IDLE_DELAY = 1 * 60 * 1000; // 1 Minute for testing (Change to 10 * 60 * 1000 for 10 mins)
   let idleTimer   = null;
   let robotActive = false;
 
   /* ─────────────────────────────────────────────────────
-     INJECT CSS
+      INJECT PREMIUM ASTRO CSS
   ───────────────────────────────────────────────────── */
   const styleEl = document.createElement('style');
   styleEl.textContent = `
-
-    #idle-robot {
+    #astro-bot {
       position: fixed;
-      bottom: 0;
-      z-index: 99995;
+      bottom: 20px;
+      z-index: 100000;
       pointer-events: none;
       display: flex;
       flex-direction: column;
       align-items: center;
-      width: 80px;
+      width: 140px; /* Increased size */
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
     }
 
-    #idle-robot * { box-sizing: border-box; }
-
-    /* Antenna */
-    .ir-antenna-stem {
-      width: 3px;
-      height: 16px;
-      background: linear-gradient(#4a7a9b, #2a5a7b);
-      border-radius: 2px;
-      margin-left: 8px;
+    /* Astro Bot Body Parts */
+    .astro-head {
+      width: 100px; height: 85px;
+      background: #ffffff;
+      border-radius: 40px 40px 30px 30px;
       position: relative;
-    }
-    .ir-antenna-ball {
-      width: 11px; height: 11px;
-      background: radial-gradient(circle at 35% 35%, #6ef, #0af);
-      border-radius: 50%;
-      position: absolute;
-      top: -8px; left: 50%;
-      transform: translateX(-50%);
-      box-shadow: 0 0 8px #0af, 0 0 16px rgba(0,170,255,0.4);
-      animation: irAntBlink 2s ease-in-out infinite;
-    }
-    @keyframes irAntBlink {
-      0%, 88%, 100% { opacity: 1; }
-      94%            { opacity: 0.15; }
-    }
-
-    /* Head */
-    .ir-head {
-      width: 62px; height: 50px;
-      background: linear-gradient(160deg, #1a2a3f 0%, #0f1c2e 100%);
-      border-radius: 14px 14px 10px 10px;
-      border: 1.5px solid #2a4a6a;
-      position: relative;
+      border: 2px solid #e0e0e0;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset, 0 4px 12px rgba(0,0,0,0.5);
-      transition: transform 0.3s ease;
+      z-index: 2;
     }
-    /* ear nubs */
-    .ir-head::before, .ir-head::after {
-      content: '';
-      position: absolute;
-      top: 14px;
-      width: 9px; height: 14px;
-      background: #0f1c2e;
-      border: 1.5px solid #2a4a6a;
-      border-radius: 3px;
-    }
-    .ir-head::before { left: -9px; }
-    .ir-head::after  { right: -9px; }
 
-    /* Visor */
-    .ir-visor {
-      width: 46px; height: 21px;
-      background: linear-gradient(135deg, #001428, #002a55, #001428);
-      border-radius: 7px;
-      border: 1px solid rgba(0,180,255,0.35);
-      display: flex; align-items: center; justify-content: space-around;
-      padding: 0 7px;
+    .astro-visor {
+      width: 85%; height: 60%;
+      background: #050505;
+      border-radius: 20px;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 0 10px rgba(0,170,255,0.2) inset;
-    }
-    .ir-visor::after {
-      content: '';
-      position: absolute;
-      top: 3px; left: 5px; right: 18px; height: 2px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 2px;
+      display: flex; justify-content: space-around; align-items: center;
+      padding: 0 10px;
+      border: 1px solid #333;
     }
 
-    /* Eyes */
-    .ir-eye {
-      width: 13px; height: 13px;
-      background: radial-gradient(circle at 35% 35%, #7ef, #0af 55%, #006b99);
+    /* THE EYES (Astro Style LED) */
+    .astro-eye {
+      width: 22px; height: 22px;
+      background: #00d2ff;
       border-radius: 50%;
-      box-shadow: 0 0 8px #0af, 0 0 14px rgba(0,150,255,0.5);
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      box-shadow: 0 0 15px #00d2ff, 0 0 30px rgba(0,210,255,0.6);
+      transition: all 0.2s ease;
+      position: relative;
     }
 
-    /* Neck */
-    .ir-neck {
-      width: 18px; height: 5px;
-      background: #0a1525;
-      border-left: 1.5px solid #2a4a6a;
-      border-right: 1.5px solid #2a4a6a;
+    /* Body & Limbs */
+    .astro-body {
+      width: 70px; height: 75px;
+      background: #ffffff;
+      border-radius: 25px;
+      margin-top: -10px;
+      border: 2px solid #e0e0e0;
+      position: relative;
+      display: flex; justify-content: center;
     }
 
-    /* Body */
-    .ir-body {
-      width: 54px; height: 46px;
-      background: linear-gradient(160deg, #1a2a3f, #0f1c2e);
+    .astro-chest-core {
+      width: 25px; height: 25px;
+      background: #00d2ff;
+      border-radius: 50%;
+      margin-top: 15px;
+      box-shadow: 0 0 10px #00d2ff;
+      animation: corePulse 2s infinite;
+    }
+
+    .astro-arm {
+      width: 18px; height: 45px;
+      background: #ffffff;
+      border: 2px solid #e0e0e0;
       border-radius: 10px;
-      border: 1.5px solid #2a4a6a;
-      position: relative;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.03) inset, 0 4px 12px rgba(0,0,0,0.4);
-    }
-    /* shoulder pads */
-    .ir-body::before, .ir-body::after {
-      content: '';
       position: absolute;
-      top: -5px;
-      width: 16px; height: 10px;
-      background: #1a2a3f;
-      border: 1.5px solid #2a4a6a;
-      border-radius: 4px 4px 0 0;
-    }
-    .ir-body::before { left: 4px; }
-    .ir-body::after  { right: 4px; }
-
-    /* Chest light */
-    .ir-chest {
-      width: 22px; height: 14px;
-      background: linear-gradient(135deg, #0af, #07c);
-      border-radius: 5px;
-      box-shadow: 0 0 10px #0af, 0 0 20px rgba(0,170,255,0.3);
-      animation: irChestPulse 2.5s ease-in-out infinite;
-    }
-    @keyframes irChestPulse {
-      0%, 100% { opacity: 0.7; }
-      50%       { opacity: 1; box-shadow: 0 0 16px #0af, 0 0 30px rgba(0,170,255,0.5); }
-    }
-
-    /* Arms wrapper */
-    .ir-arms-wrap {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      pointer-events: none;
-    }
-
-    /* Individual arms */
-    .ir-arm {
-      position: absolute;
-      top: 8px;
-      width: 11px; height: 26px;
-      background: linear-gradient(180deg, #1e3a5a, #0f1c2e);
-      border: 1.5px solid #2a4a6a;
-      border-radius: 5px;
+      top: 10px;
       transform-origin: top center;
     }
-    .ir-arm-l { left: -12px; }
-    .ir-arm-r { right: -12px; }
-    .ir-arm::after {
-      content: '';
-      position: absolute; bottom: -7px; left: 50%;
-      transform: translateX(-50%);
-      width: 13px; height: 13px;
-      background: #1a2a3f;
-      border: 1.5px solid #2a4a6a;
-      border-radius: 50%;
+    .arm-l { left: -22px; }
+    .arm-r { right: -22px; }
+
+    .astro-leg {
+      width: 22px; height: 30px;
+      background: #ffffff;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      position: absolute;
+      bottom: -20px;
+    }
+    .leg-l { left: 10px; }
+    .leg-r { right: 10px; }
+
+    /* Jetpack (Luxury Gold/Blue Detail) */
+    .astro-pack {
+      position: absolute;
+      width: 50px; height: 40px;
+      background: #0046ad;
+      border-radius: 10px;
+      z-index: -1;
+      top: 10px;
+      border: 2px solid #00d2ff;
     }
 
-    /* Legs wrapper */
-    .ir-legs-wrap {
-      display: flex;
-      gap: 6px;
-    }
-    .ir-leg {
-      width: 16px; height: 22px;
-      background: linear-gradient(180deg, #1a2a3f, #0f1c2e);
-      border: 1.5px solid #2a4a6a;
-      border-radius: 5px;
-      position: relative;
-      transform-origin: top center;
-    }
-    .ir-leg::after {
-      content: '';
-      position: absolute; bottom: -6px; left: 50%;
-      transform: translateX(-50%);
-      width: 22px; height: 9px;
-      background: #1a2a3f;
-      border: 1.5px solid #2a4a6a;
-      border-radius: 3px;
+    /* ─────────────────────────────────────────────────────
+        ANIMATION STATES
+    ───────────────────────────────────────────────────── */
+    
+    @keyframes corePulse {
+      0%, 100% { opacity: 0.5; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.1); }
     }
 
-    /* ════════════════════════════════
-       ANIMATION STATES
-    ════════════════════════════════ */
+    .state-look-right .astro-eye { transform: translateX(8px); }
+    .state-look-left .astro-eye { transform: translateX(-8px); }
+    .state-wide-eyes .astro-eye { transform: scale(1.3); height: 25px; }
+    .state-squint .astro-eye { height: 4px; border-radius: 2px; }
 
-    /* Eyes look right */
-    .ir-state-look-right .ir-eye { transform: translateX(3px); }
+    .state-panic .arm-l { animation: panicArm 0.1s infinite alternate; }
+    .state-panic .arm-r { animation: panicArm 0.1s infinite alternate-reverse; }
+    @keyframes panicArm { from { transform: rotate(-140deg); } to { transform: rotate(-180deg); } }
 
-    /* Eyes wide (scared) */
-    .ir-state-wide-eyes .ir-eye {
-      box-shadow: 0 0 14px #0af, 0 0 24px rgba(0,150,255,0.7);
-      transform: scale(1.18);
+    .state-walking .leg-l { animation: walk 0.2s infinite alternate; }
+    .state-walking .leg-r { animation: walk 0.2s infinite alternate-reverse; }
+    @keyframes walk { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+
+    .state-knock .arm-r { animation: knock 0.4s 3 ease-in-out; }
+    @keyframes knock {
+      0%, 100% { transform: rotate(0); }
+      50% { transform: rotate(-90deg) translateX(-10px); }
     }
 
-    /* Head tilt right */
-    .ir-state-head-right .ir-head { transform: rotate(16deg); }
-
-    /* Head center */
-    .ir-state-head-center .ir-head { transform: rotate(0deg); }
-
-    /* Walking legs */
-    .ir-state-walking .ir-leg-l { animation: irLegL 0.28s ease-in-out infinite alternate; }
-    .ir-state-walking .ir-leg-r { animation: irLegR 0.28s ease-in-out infinite alternate; }
-
-    /* Fast running legs */
-    .ir-state-running .ir-leg-l { animation: irLegL 0.11s ease-in-out infinite alternate; }
-    .ir-state-running .ir-leg-r { animation: irLegR 0.11s ease-in-out infinite alternate; }
-
-    @keyframes irLegL { from { transform: rotate(-20deg); } to { transform: rotate(16deg); } }
-    @keyframes irLegR { from { transform: rotate(16deg);  } to { transform: rotate(-20deg); } }
-
-    /* Arms up panic */
-    .ir-state-panic .ir-arm-l { animation: irPanicL 0.2s ease forwards; }
-    .ir-state-panic .ir-arm-r { animation: irPanicR 0.2s 0.06s ease forwards; }
-    @keyframes irPanicL { from { transform: rotate(0deg); } to { transform: rotate(-155deg); } }
-    @keyframes irPanicR { from { transform: rotate(0deg); } to { transform: rotate(155deg);  } }
-
-    /* Knocking (right arm taps) */
-    .ir-state-knock .ir-arm-r {
-      animation: irKnock 0.36s ease-in-out 3;
+    .state-stumble { animation: stumble 0.6s ease; }
+    @keyframes stumble {
+      0% { transform: rotate(0); }
+      30% { transform: rotate(-20deg) translateX(-20px); }
+      70% { transform: rotate(10deg); }
+      100% { transform: rotate(0); }
     }
-    @keyframes irKnock {
-      0%   { transform: rotate(0deg); }
-      40%  { transform: rotate(-68deg); }
-      70%  { transform: rotate(-58deg); }
-      100% { transform: rotate(0deg); }
-    }
-
-    /* Nervous full-body shake */
-    .ir-state-nervous { animation: irNervShake 0.3s ease-in-out infinite; }
-    @keyframes irNervShake {
-      0%, 100% { transform: translateX(0); }
-      33%       { transform: translateX(-2px); }
-      66%       { transform: translateX(2px); }
-    }
-
-    /* Stumble on entry */
-    .ir-state-stumble {
-      animation: irStumble 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
-    }
-    @keyframes irStumble {
-      0%   { transform: rotate(0deg) translateX(0); }
-      18%  { transform: rotate(-15deg) translateX(-9px); }
-      52%  { transform: rotate(11deg) translateX(5px); }
-      78%  { transform: rotate(-4deg) translateX(-1px); }
-      100% { transform: rotate(0deg) translateX(0); }
-    }
-
   `;
   document.head.appendChild(styleEl);
 
   /* ─────────────────────────────────────────────────────
-     BUILD ROBOT DOM
+      ROBOT BUILDER
   ───────────────────────────────────────────────────── */
-  function buildRobot() {
+  function buildAstro() {
     const el = document.createElement('div');
-    el.id = 'idle-robot';
+    el.id = 'astro-bot';
     el.innerHTML = `
-      <div class="ir-antenna-stem">
-        <div class="ir-antenna-ball"></div>
-      </div>
-      <div class="ir-head-wrap">
-        <div class="ir-head">
-          <div class="ir-visor">
-            <div class="ir-eye ir-eye-l"></div>
-            <div class="ir-eye ir-eye-r"></div>
-          </div>
+      <div class="astro-head">
+        <div class="astro-visor">
+          <div class="astro-eye eye-l"></div>
+          <div class="astro-eye eye-r"></div>
         </div>
       </div>
-      <div class="ir-neck"></div>
-      <div class="ir-body-wrap" style="position:relative;">
-        <div class="ir-body">
-          <div class="ir-arms-wrap">
-            <div class="ir-arm ir-arm-l"></div>
-            <div class="ir-arm ir-arm-r"></div>
-          </div>
-          <div class="ir-chest"></div>
-        </div>
-      </div>
-      <div class="ir-legs-wrap">
-        <div class="ir-leg ir-leg-l"></div>
-        <div class="ir-leg ir-leg-r"></div>
+      <div class="astro-body">
+        <div class="astro-pack"></div>
+        <div class="astro-arm arm-l"></div>
+        <div class="astro-arm arm-r"></div>
+        <div class="astro-chest-core"></div>
+        <div class="astro-leg leg-l"></div>
+        <div class="astro-leg leg-r"></div>
       </div>
     `;
     document.body.appendChild(el);
     return el;
   }
 
-  /* ─────────────────────────────────────────────────────
-     KNOCK SOUND — Web Audio API, no audio file needed
-  ───────────────────────────────────────────────────── */
   function playKnock() {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      [0, 0.22, 0.44].forEach(function(t) {
-        var buf  = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.06), ctx.sampleRate);
-        var data = buf.getChannelData(0);
-        for (var i = 0; i < data.length; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2.5);
-        }
-        var src    = ctx.createBufferSource();
-        var gain   = ctx.createGain();
-        var filter = ctx.createBiquadFilter();
-        src.buffer = buf;
-        gain.gain.value = 0.5;
-        filter.type = 'lowpass';
-        filter.frequency.value = 480;
-        src.connect(filter);
-        filter.connect(gain);
-        gain.connect(ctx.destination);
-        src.start(ctx.currentTime + t);
-      });
-    } catch (e) {
-      /* silently fail if Web Audio not available */
-    }
+      const play = (t) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(150, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + t); osc.stop(ctx.currentTime + t + 0.1);
+      };
+      [0, 0.2, 0.4].forEach(play);
+    } catch (e) {}
   }
 
   /* ─────────────────────────────────────────────────────
-     UTILITIES
+      SEQUENCE LOGIC
   ───────────────────────────────────────────────────── */
-  function sleep(ms) {
-    return new Promise(function(resolve) { setTimeout(resolve, ms); });
-  }
-
-  /* Apply a list of state classes to a target element
-     Removes any previously applied ir-state-* classes first */
-  function setState(el, states) {
-    var classes = Array.from(el.classList);
-    classes.forEach(function(c) {
-      if (c.startsWith('ir-state-')) el.classList.remove(c);
-    });
-    states.forEach(function(s) {
-      if (s) el.classList.add(s);
-    });
-  }
-
-  /* ─────────────────────────────────────────────────────
-     MAIN ROBOT SEQUENCE
-  ───────────────────────────────────────────────────── */
-  async function runRobot() {
+  async function runSequence() {
     if (robotActive) return;
     robotActive = true;
 
-    var W     = window.innerWidth;
-    var robot = buildRobot();
-    var headWrap = robot.querySelector('.ir-head-wrap');
-    var visor    = robot.querySelector('.ir-visor');
-    var bodyWrap = robot.querySelector('.ir-body-wrap');
-    var legsWrap = robot.querySelector('.ir-legs-wrap');
+    const bot = buildAstro();
+    const W = window.innerWidth;
 
-    /* ── Start: off-screen right, no transition ── */
-    robot.style.left       = (W + 140) + 'px';
-    robot.style.bottom     = '0px';
-    robot.style.transition = 'none';
-    robot.style.transform  = 'none';
+    // 1. Enter and Stumble
+    bot.style.left = W + 'px';
+    bot.style.transition = 'left 0.8s cubic-bezier(0.2, 0, 0.2, 1)';
+    await new Promise(r => setTimeout(r, 100));
+    bot.style.left = (W - 180) + 'px';
+    bot.classList.add('state-walking');
+    
+    await new Promise(r => setTimeout(r, 800));
+    bot.classList.remove('state-walking');
+    bot.classList.add('state-stumble');
+    await new Promise(r => setTimeout(r, 600));
 
-    await sleep(100);
+    // 2. Nervous Glances
+    bot.classList.add('state-look-right', 'state-wide-eyes');
+    await new Promise(r => setTimeout(r, 800));
+    bot.classList.remove('state-look-right');
+    await new Promise(r => setTimeout(r, 400));
+    bot.classList.add('state-look-right');
+    await new Promise(r => setTimeout(r, 600));
 
-    /* ── Phase 1: Slide in from right ── */
-    setState(legsWrap, ['ir-state-walking']);
-    robot.style.transition = 'left 1.0s cubic-bezier(0.16, 1, 0.3, 1)';
-    robot.style.left       = (W - 150) + 'px';
-    await sleep(1100);
+    // 3. Walk to center
+    bot.classList.remove('state-look-right', 'state-wide-eyes');
+    bot.classList.add('state-walking');
+    bot.style.transition = 'left 1.5s ease-in-out';
+    bot.style.left = (W/2 - 70) + 'px';
+    await new Promise(r => setTimeout(r, 1500));
+    bot.classList.remove('state-walking');
 
-    setState(legsWrap, []);
-
-    /* ── Phase 2: Stumble (someone shoved him in) ── */
-    setState(robot, ['ir-state-stumble']);
-    await sleep(600);
-    setState(robot, []);
-    robot.style.transform = '';
-    await sleep(250);
-
-    /* ── Phase 3: Look nervous, glance back right ── */
-    setState(robot,    ['ir-state-nervous']);
-    setState(headWrap, ['ir-state-head-right']);
-    setState(visor,    ['ir-state-look-right', 'ir-state-wide-eyes']);
-    await sleep(650);
-
-    setState(headWrap, ['ir-state-head-center']);
-    setState(visor,    ['ir-state-wide-eyes']);
-    await sleep(400);
-
-    /* glance right again */
-    setState(headWrap, ['ir-state-head-right']);
-    setState(visor,    ['ir-state-look-right', 'ir-state-wide-eyes']);
-    await sleep(550);
-
-    setState(headWrap, ['ir-state-head-center']);
-    setState(visor,    []);
-    setState(robot,    []);
-    await sleep(300);
-
-    /* ── Phase 4: Walk toward center of screen ── */
-    setState(legsWrap, ['ir-state-walking']);
-    robot.style.transition = 'left 1.3s cubic-bezier(0.16, 1, 0.3, 1)';
-    robot.style.left       = (W / 2 - 40) + 'px';
-    await sleep(1400);
-    setState(legsWrap, []);
-    await sleep(350);
-
-    /* ── Phase 5: Knock 3 times + play sound ── */
-    setState(bodyWrap, ['ir-state-knock']);
+    // 4. Knock
+    await new Promise(r => setTimeout(r, 500));
+    bot.classList.add('state-knock');
     playKnock();
-    await sleep(1200);
-    setState(bodyWrap, []);
-    await sleep(350);
+    await new Promise(r => setTimeout(r, 1500));
 
-    /* ── Phase 6: Look at user (camera) ── */
-    setState(headWrap, ['ir-state-head-center']);
-    setState(visor,    []);
-    await sleep(800);
+    // 5. Look at user
+    bot.classList.remove('state-knock');
+    bot.classList.add('state-squint'); // Adorable squinting
+    await new Promise(r => setTimeout(r, 1000));
+    bot.classList.remove('state-squint');
+    bot.classList.add('state-wide-eyes');
+    await new Promise(r => setTimeout(r, 500));
 
-    /* ── Phase 7: One more nervous glance right ── */
-    setState(robot,    ['ir-state-nervous']);
-    setState(headWrap, ['ir-state-head-right']);
-    setState(visor,    ['ir-state-look-right', 'ir-state-wide-eyes']);
-    await sleep(500);
-    setState(robot,    []);
-    setState(headWrap, ['ir-state-head-center']);
-    setState(visor,    []);
-    await sleep(250);
-
-    /* ── Phase 8: Panic — arms up, sprint off left ── */
-    setState(bodyWrap, ['ir-state-panic']);
-    await sleep(150);
-    setState(legsWrap, ['ir-state-running']);
-    robot.style.transition = 'left 0.65s cubic-bezier(0.76, 0, 0.24, 1)';
-    robot.style.left       = (-200) + 'px';
-    await sleep(700);
-
-    /* ── Cleanup ── */
-    robot.remove();
+    // 6. PANIC and RUN
+    bot.classList.add('state-panic', 'state-walking');
+    bot.style.transition = 'left 0.6s cubic-bezier(0.7, 0, 0.3, 1)';
+    bot.style.left = '-200px';
+    
+    await new Promise(r => setTimeout(r, 800));
+    bot.remove();
     robotActive = false;
   }
 
-  /* ─────────────────────────────────────────────────────
-     IDLE DETECTION
-     Resets the timer on ANY user interaction
-  ───────────────────────────────────────────────────── */
-  function resetIdleTimer() {
+  /* IDLE MONITOR */
+  function resetTimer() {
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(runRobot, IDLE_DELAY);
+    idleTimer = setTimeout(runSequence, IDLE_DELAY);
   }
 
-  var activityEvents = [
-    'mousemove', 'mousedown', 'keydown',
-    'touchstart', 'touchmove',
-    'scroll', 'wheel', 'click'
-  ];
-
-  activityEvents.forEach(function(ev) {
-    document.addEventListener(ev, resetIdleTimer, { passive: true });
+  ['mousemove', 'scroll', 'keydown', 'click', 'touchstart'].forEach(ev => {
+    document.addEventListener(ev, resetTimer, { passive: true });
   });
 
-  /* Kick off the first timer */
-  resetIdleTimer();
-
+  resetTimer();
 })();
