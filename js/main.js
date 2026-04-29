@@ -2,18 +2,15 @@
    main.js — Core site logic
 ═══════════════════════════════════════════════════════════ */
 
-/* ─── CONFIGURATION ─── */
 const CONFIG = {
-  MASTER_PASSWORD:    "manomay2026",         // REPLACE
-  EMAILJS_PUBLIC_KEY: "YOUR_PUBLIC_KEY",     // REPLACE
-  EMAILJS_SERVICE_ID: "YOUR_SERVICE_ID",     // REPLACE
-  EMAILJS_TEMPLATE_ID:"YOUR_TEMPLATE_ID",   // REPLACE
+  MASTER_PASSWORD:    "manomay2026",
+  EMAILJS_PUBLIC_KEY: "YOUR_PUBLIC_KEY",
+  EMAILJS_SERVICE_ID: "YOUR_SERVICE_ID",
+  EMAILJS_TEMPLATE_ID:"YOUR_TEMPLATE_ID",
 };
 
-/* ─── EMAILJS INIT ─── */
 emailjs.init(CONFIG.EMAILJS_PUBLIC_KEY);
 
-/* ─── NETLIFY IDENTITY ─── */
 if (window.netlifyIdentity) {
   window.netlifyIdentity.on("init", user => {
     if (!user) {
@@ -32,7 +29,6 @@ window.addEventListener("load", () => {
   const bar = document.getElementById("loading-bar");
   const pct = document.getElementById("loading-pct");
 
-  /* First reveal all splash elements together */
   loadingScreen.classList.add("ready");
 
   let progress = 0;
@@ -65,38 +61,27 @@ function startHeroAnimations() {
     document.getElementById('name-part-3')
   ];
 
-  /* Get current cycle index from localStorage */
-  let currentHighlight =
-    parseInt(localStorage.getItem("heroHighlightIndex")) || 0;
+  let currentHighlight = parseInt(localStorage.getItem("heroHighlightIndex")) || 0;
 
-  /* Reset all highlights */
   nameParts.forEach(el => {
     if (el) el.classList.remove("highlight");
   });
 
-  /* Animate names appearing one by one */
   nameParts.forEach((el, i) => {
     setTimeout(() => {
       if (!el) return;
-
-      /* Apply highlight BEFORE animation starts */
       if (i === currentHighlight) {
         el.classList.add("highlight");
       }
-
-      /* Then animate upward reveal */
       requestAnimationFrame(() => {
         el.classList.add("visible");
       });
-
     }, i * 150 + 200);
   });
 
-  /* Save next cycle */
   let nextIndex = (currentHighlight + 1) % 3;
   localStorage.setItem("heroHighlightIndex", nextIndex);
 
-  /* Remaining hero animations */
   setTimeout(() => {
     document.getElementById('hero-tagline')?.classList.add('visible');
   }, 800);
@@ -112,24 +97,16 @@ function startHeroAnimations() {
 
 /* ═══════════════════════════════════════════════════════════
    CUSTOM CURSOR
-   FIX: use (pointer: coarse) media query — more reliable than
-   ontouchstart which false-positives on touch-capable laptops.
-   On mobile (coarse pointer): restore native cursor, hide custom.
-   On desktop (fine pointer): run custom cursor.
 ═══════════════════════════════════════════════════════════ */
 const dot  = document.getElementById('cursor-dot');
 const ring = document.getElementById('cursor-ring');
-
-/* pointer:coarse = touch screen | pointer:fine = mouse/trackpad */
 const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 
 if (isTouchDevice) {
-  /* Mobile — restore native cursor, hide custom elements */
   document.body.style.cursor = 'auto';
   if (dot)  { dot.style.display  = 'none'; }
   if (ring) { ring.style.display = 'none'; }
 } else {
-  /* Desktop — run custom cursor */
   let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
 
   document.addEventListener('mousemove', (e) => {
@@ -190,7 +167,7 @@ document.querySelectorAll('.page').forEach(page => {
 });
 
 /* ═══════════════════════════════════════════════════════════
-   PAGE NAVIGATION — games now open freely, no nav-level lock
+   PAGE NAVIGATION
 ═══════════════════════════════════════════════════════════ */
 let currentPage = 'home';
 const overlay   = document.getElementById('transition-overlay');
@@ -266,7 +243,6 @@ setTimeout(() => triggerPageReveals('home'), 1500);
 
 /* ═══════════════════════════════════════════════════════════
    PASSWORD SYSTEM
-   submitGate: saves target BEFORE closeGate nullifies gateTargetPage
 ═══════════════════════════════════════════════════════════ */
 let gateTargetPage = null;
 
@@ -306,7 +282,7 @@ function closeGate() {
 
 function submitGate() {
   const input  = document.getElementById('gate-input');
-  const target = gateTargetPage; /* save BEFORE closeGate nullifies it */
+  const target = gateTargetPage;
   if (input.value === CONFIG.MASTER_PASSWORD) {
     closeGate();
     if (target) doTransition(target);
@@ -323,7 +299,7 @@ document.getElementById('gate-input').addEventListener('keydown', (e) => {
 });
 
 /* ═══════════════════════════════════════════════════════════
-   MOBILE NAV — hamburger uses classList so CSS handles X animation
+   MOBILE NAV
 ═══════════════════════════════════════════════════════════ */
 let mobileNavOpen = false;
 function toggleMobileNav() {
@@ -369,10 +345,10 @@ updateBirthdayTimer();
 ═══════════════════════════════════════════════════════════ */
 const yearData = {
   2008: { title: "The Beginning", body: "The story begins in the humid, electric atmosphere of Maharashtra, my entry into the world was marked by a setting defined by contrast—where the old soul of India meets the relentless ambition of its financial heart. From the very first day, my life was positioned at the intersection of diverse cultures and high expectations. Even though these early months are a blur of sensory memories, they established the -Nomadic- blueprint of my life. I was born into a family that valued education and presence, setting the stage for a boy who would eventually grow to command rooms and lead institutions." },
-  2009: { title: "Year One", body: "Before the constant moves and the changing cities, 2009 was a year of profound, silent growth. This was the period where my internal world began to synthesize the environment around me. Living in the wake of the vibrant energy of Mumbai and Lucknow, I was a child developing an early sense of observation—the -Old Soul- beginning to peak through. While most children at this age are simply reacting to stimuli, I was absorbing the rhythms of a household that valued structure and discipline. This year was the silent foundation; it was the quiet before the journey of moving across India began. I was learning the nuances of human interaction before I could even speak, watching the leadership styles of the adults around me. It was a year of -Poetry- before the -Boardrooms- took over, filled with the vintage simplicity of a life that hadn't yet been complicated by the responsibilities I would later carry. It remains a placeholder for the peace I still chase today—a mind that feels calm amidst a world of noise." },
-  2010: { title: "Growing Up", body: "In 2010, the nomadic cycle that would define my childhood truly began with a significant move to Jaipur, the Pink City. This was my first major geographical shift, triggered by my father's transfer, and it marked the beginning of my deep connection with the regal aesthetics of Rajasthan. Joining Star Kids Pre-school in the playgroup section was my first introduction to a social ecosystem outside of my family. Jaipur, with its symmetrical architecture and history of royalty, likely influenced my early appreciation for luxury and structure. I remember the transition from the familiar comfort of home to the structured chaos of a classroom. It was here that I first learned the art of real presence. I wasn't just another face in the playgroup; I was a child who teachers and peers naturally noticed. I began to navigate group dynamics for the first time, an early prototype of the student leader who would one day win elections through memorable speeches and strategic campaigning." },
-  2011: { title: "Discovery", body: "2011 was the year I proved that the -Standard Path- was never meant for me. Entering Junior KG, I quickly realized that I was processing information and navigating social hierarchies at a different velocity than those around me. My teachers at the time recognized a rare combination of discipline, high IQ, and a raw, intrinsic motivation to excel that was far beyond my years. This led to a double promotion—an academic leap that saw me move from LKG to UKG in a mere six months. This wasn't just about finishing school faster; it was a psychological milestone. It taught me at the age of three that if you demonstrate mastery and maintain a -Boardroom- level of focus, the system will adapt to you. I began to view education as a game of strategy where excellence is the only currency that matters. While others were learning to follow rules, I was learning how to master them so I could eventually rewrite them." },
-  2012: { title: "Early Years", body: "By 2012, I had solidified my position as the -Gold Standard- of my peer group. Completing my half-promotion into UKG, I secured the 1st Rank for outstanding academic and behavioral performance. However, the true significance of this year—the event that truly fits the -Luxury and Legacy- theme of my life—was my father being honored with the -Best Father Award- by the entire school community. This was a moment of immense pride, reinforcing the idea that my name was attached to impact and excellence. It taught me that real power is not just about individual success, but about the respect you command from your community. My life felt perfectly balanced during this period: I was the top student, my family was being recognized for its values, and the future felt like a straight line toward greatness. This year represents the peak of stability before the nomadic shifts became more frequent, serving as the benchmark for the -extraordinary life- I am currently building." },
+  2009: { title: "Year One", body: "Before the constant moves and the changing cities, 2009 was a year of profound, silent growth. This was the period where my internal world began to synthesize the environment around me. Living in the wake of the vibrant energy of Mumbai and Lucknow, I was a child developing an early sense of observation—the -Old Soul- beginning to peak through. While most children at this age are simply reacting to stimuli, I was absorbing the rhythms of a household that valued structure and discipline. This year was the silent foundation; it was the quiet before the journey of moving across India began." },
+  2010: { title: "Growing Up", body: "In 2010, the nomadic cycle that would define my childhood truly began with a significant move to Jaipur, the Pink City. This was my first major geographical shift, triggered by my father's transfer, and it marked the beginning of my deep connection with the regal aesthetics of Rajasthan. Joining Star Kids Pre-school in the playgroup section was my first introduction to a social ecosystem outside of my family. It was here that I first learned the art of real presence." },
+  2011: { title: "Discovery", body: "2011 was the year I proved that the -Standard Path- was never meant for me. Entering Junior KG, I quickly realized that I was processing information and navigating social hierarchies at a different velocity than those around me. My teachers at the time recognized a rare combination of discipline, high IQ, and a raw, intrinsic motivation to excel that was far beyond my years. This led to a double promotion—an academic leap that saw me move from LKG to UKG in a mere six months." },
+  2012: { title: "Early Years", body: "By 2012, I had solidified my position as the -Gold Standard- of my peer group. Completing my half-promotion into UKG, I secured the 1st Rank for outstanding academic and behavioral performance. However, the true significance of this year was my father being honored with the -Best Father Award- by the entire school community. This was a moment of immense pride, reinforcing the idea that my name was attached to impact and excellence." },
   2013: { title: "Shifting",       body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
   2014: { title: "New Ground",     body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
   2015: { title: "The Turn",       body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
@@ -404,12 +380,10 @@ const yearData = {
 function showYear(year, nodeEl) {
   document.querySelectorAll('.year-node').forEach(n => n.classList.remove('active'));
   nodeEl.classList.add('active');
-
   const data = yearData[year] || { title: 'Year ' + year, body: 'Details coming soon.' };
   document.getElementById('detail-year').textContent  = year;
   document.getElementById('detail-title').textContent = data.title;
   document.getElementById('detail-body').textContent  = data.body;
-
   const detail = document.getElementById('year-detail');
   detail.classList.remove('visible');
   setTimeout(() => detail.classList.add('visible'), 50);
@@ -425,7 +399,7 @@ const beliefPosts = {
     { date: "January 2026", title: "xyz Politics post title — REPLACE", body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. REPLACE." },
   ],
   god: [
-    { date: "March 2026",    title: "xyz Faith post title — REPLACE", body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. REPLACE with your thoughts on god/faith." },
+    { date: "March 2026",    title: "xyz Faith post title — REPLACE", body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. REPLACE." },
     { date: "February 2026", title: "xyz Faith post title — REPLACE", body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. REPLACE." },
   ],
   science: [
@@ -452,11 +426,9 @@ const beliefPosts = {
 function openBelief(category) {
   const posts = beliefPosts[category] || [];
   document.getElementById('beliefs-overview').style.display = 'none';
-
   const view  = document.getElementById('belief-post-view');
   const label = document.getElementById('belief-view-label');
   const list  = document.getElementById('belief-posts-list');
-
   label.textContent = category.charAt(0).toUpperCase() + category.slice(1);
   list.innerHTML = posts.map(p => `
     <div class="belief-post">
@@ -465,7 +437,6 @@ function openBelief(category) {
       <div class="belief-post-body">${p.body}</div>
     </div>
   `).join('');
-
   view.classList.add('active');
 }
 
@@ -482,11 +453,9 @@ async function submitContactForm(e) {
   const form   = document.getElementById('contact-form');
   const status = document.getElementById('form-status');
   const btn    = form.querySelector('button[type=submit]');
-
-  btn.textContent    = 'Sending...';
-  btn.disabled       = true;
+  btn.textContent = 'Sending...';
+  btn.disabled    = true;
   status.textContent = '';
-
   try {
     await emailjs.sendForm(CONFIG.EMAILJS_SERVICE_ID, CONFIG.EMAILJS_TEMPLATE_ID, form);
     status.textContent = '✓ Message sent. I\'ll be in touch.';
@@ -497,7 +466,6 @@ async function submitContactForm(e) {
     status.className   = 'form-status error';
     console.error('EmailJS error:', err);
   }
-
   btn.textContent = 'Send →';
   btn.disabled    = false;
 }
@@ -523,7 +491,7 @@ const albumData = {
   secret2: { photos: [{ src:'', title:'xyz Private Photo — REPLACE', desc:'xyz description — REPLACE' }] },
 };
 
-let currentAlbum     = null;
+let currentAlbum      = null;
 let currentPhotoIndex = 0;
 
 function openAlbum(albumId) {
@@ -556,16 +524,14 @@ document.addEventListener('keydown', e => {
 });
 
 /* ═══════════════════════════════════════════════════════════
-   GAMES — all 5 are public, no password gate
-   Private games (family only, external links) are in HTML
-   behind unlockSection password — handled separately
+   GAMES
 ═══════════════════════════════════════════════════════════ */
 let activeGame = null;
 
 function openGame(gameId) {
   activeGame = gameId;
   document.getElementById('game-modal').classList.add('open');
-  renderGame(gameId); /* directly open — no password */
+  renderGame(gameId);
 }
 
 function closeGame() {
@@ -591,7 +557,7 @@ function renderSnake(container) {
   container.innerHTML = `
     <h3 style="font-family:var(--ff-display);font-size:1.5rem;color:var(--text);text-align:center;margin-bottom:1rem;">Snake</h3>
     <p style="text-align:center;font-size:0.75rem;color:var(--text3);margin-bottom:1rem;">Arrow keys or WASD · Score: <span id="snake-score">0</span></p>
-    <canvas id="snake-canvas" width="400" height="400" style="border:1px solid var(--border2);background:var(--bg2);display:block;margin:0 auto;"></canvas>
+    <canvas id="snake-canvas" width="400" height="400" style="border:1px solid var(--border2);background:var(--bg2);display:block;margin:0 auto;max-width:100%;"></canvas>
     <p style="text-align:center;font-size:0.75rem;color:var(--text3);margin-top:1rem;" id="snake-msg">Press any arrow key to start</p>
   `;
 
@@ -849,19 +815,10 @@ function renderWordScramble(container) {
 
 /* ═══════════════════════════════════════════════════════════
    EASTER EGGS
+   FIX 1: Konami code listener REMOVED entirely
 ═══════════════════════════════════════════════════════════ */
 
-/* 1. Konami Code */
-(function () {
-  const konami = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
-  let idx = 0;
-  document.addEventListener('keydown', e => {
-    if (e.key === konami[idx]) { idx++; if (idx === konami.length) { const egg = document.getElementById('konami-egg'); egg.classList.add('show'); setTimeout(() => egg.classList.remove('show'), 3500); idx = 0; } }
-    else { idx = 0; }
-  });
-})();
-
-/* 2. Name click counter */
+/* Name click counter */
 let nameClicks = 0;
 const nameClickMessages = [
   "", "", "", "", "",
@@ -870,7 +827,7 @@ const nameClickMessages = [
   "7 clicks! You found the easter egg. Hello, persistent human. Here is your reward — lean back and calm down.",
 ];
 
-/* 3. Type "manomay" anywhere */
+/* Type "manomay" anywhere */
 (function () {
   let typed = '';
   document.addEventListener('keypress', e => {
@@ -888,70 +845,50 @@ const nameClickMessages = [
 window.addEventListener('load', () => {
   updateNavActive('home');
   setTimeout(() => triggerPageReveals('home'), 2000);
-
-  /* Backdrop click closes panel — music keeps playing */
   const backdrop = document.getElementById('music-backdrop');
   if (backdrop) backdrop.addEventListener('click', closeMusicPanel);
 });
 
 /* ═══════════════════════════════════════════════════════════
    MUSIC SYSTEM
-   Music bar (nav) = play/pause toggle only
-   Vinyl record (bottom-left) = separate easter egg, panel control
-   They are completely independent
 ═══════════════════════════════════════════════════════════ */
-
 const bgMusic    = document.getElementById("bg-music");
 const rainSong   = document.getElementById("rain-song");
-const songBar    = document.getElementById("music-toggle"); /* nav button */
+const songBar    = document.getElementById("music-toggle");
 const vinylEl    = document.getElementById("vinyl-player");
 const musicPanel = document.getElementById("music-panel");
 
 let easterUnlocked = false;
 let musicStarted   = false;
-let userPaused     = false;   /* true when user manually paused via toggle */
-let currentSongId  = 'bg';   /* 'bg' | 'easter' */
+let userPaused     = false;
+let currentSongId  = 'bg';
 
-/* ─── updateMusicUI ───
-   ONLY toggles .muted class on the nav bar button.
-   NEVER sets innerHTML — that would destroy the sound-bars spans. */
 function updateMusicUI() {
   const isPlaying = (bgMusic && !bgMusic.paused && !bgMusic.ended) ||
                     (rainSong && !rainSong.paused && !rainSong.ended);
-
-  /* Toggle muted on nav button — CSS animations handle the bars */
   if (isPlaying) {
     songBar.classList.remove("muted");
   } else {
     songBar.classList.add("muted");
   }
-
-  /* Vinyl rotation — only if vinyl is visible */
   if (vinylEl) {
     if (isPlaying) { vinylEl.classList.remove("paused"); }
     else           { vinylEl.classList.add("paused"); }
   }
-
-  /* Animated bars inside the panel */
   const panelBars = document.getElementById('music-panel-bars');
   if (panelBars) {
     if (isPlaying) { panelBars.classList.add('playing'); }
     else           { panelBars.classList.remove('playing'); }
   }
-
   updateMusicPanelState();
 }
 
-/* ─── updateMusicPanelState ─── */
 function updateMusicPanelState() {
   const nowEl = document.getElementById('music-panel-now');
   if (!nowEl) return;
-
   const isPlaying = (bgMusic && !bgMusic.paused) || (rainSong && !rainSong.paused);
-
   document.querySelectorAll('.music-option').forEach(o => o.classList.remove('active'));
   document.querySelectorAll('.music-option-indicator').forEach(ind => ind.classList.remove('playing'));
-
   if (!isPlaying) {
     nowEl.textContent = '— paused —';
   } else if (currentSongId === 'easter') {
@@ -965,20 +902,15 @@ function updateMusicPanelState() {
   }
 }
 
-/* ─── MUSIC TOGGLE CLICK (nav bar button) ───
-   ONLY pauses/resumes. Resumes from exact timestamp. No reset. */
 songBar.addEventListener("click", () => {
   const isPlaying = (bgMusic && !bgMusic.paused && !bgMusic.ended) ||
                     (rainSong && !rainSong.paused && !rainSong.ended);
-
   if (isPlaying) {
-    /* Pause without resetting currentTime — resume will continue from here */
     bgMusic.pause();
     rainSong.pause();
     userPaused = true;
   } else {
     userPaused = false;
-    /* Resume the correct song from where it stopped */
     if (currentSongId === 'easter' && rainSong.currentTime > 0 && !rainSong.ended) {
       rainSong.play().catch(() => {});
     } else {
@@ -989,7 +921,6 @@ songBar.addEventListener("click", () => {
   updateMusicUI();
 });
 
-/* ─── When rain song ends: auto-resume bgMusic (if user hasn't paused) ─── */
 rainSong.addEventListener("ended", () => {
   currentSongId = 'bg';
   if (!userPaused) {
@@ -999,13 +930,11 @@ rainSong.addEventListener("ended", () => {
   updateMusicUI();
 });
 
-/* Keep UI synced when browser changes audio state */
 bgMusic.addEventListener("play",  updateMusicUI);
 bgMusic.addEventListener("pause", updateMusicUI);
 rainSong.addEventListener("play",  updateMusicUI);
 rainSong.addEventListener("pause", updateMusicUI);
 
-/* ─── Autoplay bgMusic on first user interaction ─── */
 function tryStartBgMusic() {
   if (musicStarted || userPaused) return;
   bgMusic.play()
@@ -1014,15 +943,12 @@ function tryStartBgMusic() {
       currentSongId = 'bg';
       updateMusicUI();
     })
-    .catch(() => { /* browser blocked — user must click toggle to start */ });
+    .catch(() => {});
 }
 
-/* Start on ANY interaction — mousemove, click, scroll */
 document.addEventListener("mousemove", tryStartBgMusic, { once: true });
 document.addEventListener("click",     tryStartBgMusic, { once: true });
 document.addEventListener("scroll",    tryStartBgMusic, { once: true, capture: true });
-
-/* ─── VINYL PANEL FUNCTIONS ─── */
 
 function openMusicPanel() {
   if (!musicPanel) return;
@@ -1037,7 +963,6 @@ function closeMusicPanel() {
   musicPanel.classList.remove('open');
   const backdrop = document.getElementById('music-backdrop');
   if (backdrop) backdrop.classList.remove('open');
-  /* music continues playing — do NOT pause here */
 }
 
 function toggleMusicPanel() {
@@ -1049,14 +974,11 @@ function toggleMusicPanel() {
   }
 }
 
-/* Vinyl click → open/close panel. Does NOT control music. */
 if (vinylEl) {
   vinylEl.addEventListener("click", () => {
     toggleMusicPanel();
   });
 }
-
-/* ─── SHOW/HIDE VINYL ─── */
 
 function showVinyl() {
   if (!vinylEl) return;
@@ -1064,24 +986,20 @@ function showVinyl() {
   easterUnlocked = true;
 }
 
-/* Called by "Hide Vinyl Record" button inside panel */
 function hideVinyl() {
   if (!vinylEl) return;
   closeMusicPanel();
-  /* Small delay so panel closes before vinyl disappears */
   setTimeout(() => {
     vinylEl.classList.add("hidden");
     easterUnlocked = false;
   }, 200);
 }
 
-/* ─── PLAY FROM PANEL ─── */
 function playFromPanel(songId) {
   bgMusic.pause();
   rainSong.pause();
   userPaused    = false;
   currentSongId = songId;
-
   if (songId === 'bg') {
     bgMusic.currentTime = 0;
     bgMusic.play().catch(() => {});
@@ -1089,23 +1007,18 @@ function playFromPanel(songId) {
     rainSong.currentTime = 0;
     rainSong.play().catch(() => {});
   }
-
   musicStarted = true;
   updateMusicUI();
 }
 
-/* ─── NAME CLICK EASTER EGG ─── */
 function nameclickHandler() {
   nameClicks++;
   const hint = document.getElementById("name-click-hint");
-
   if (nameClicks >= 5) {
     hint.textContent = nameClickMessages[Math.min(nameClicks, 7)];
     hint.classList.add("show");
   }
-
   if (nameClicks >= 7) {
-    /* If vinyl already visible → show "already enabled" message, do NOT hide vinyl */
     if (easterUnlocked) {
       hint.textContent = "Easter egg already enabled! Check the bottom-left corner 🎵";
       hint.classList.add("show");
@@ -1113,10 +1026,8 @@ function nameclickHandler() {
         nameClicks = 0;
         hint.classList.remove("show");
       }, 3000);
-      return; /* exit early — do not re-trigger */
+      return;
     }
-
-    /* First time — show vinyl, play rain song */
     showVinyl();
     bgMusic.pause();
     currentSongId = 'easter';
@@ -1125,7 +1036,6 @@ function nameclickHandler() {
     rainSong.play().catch(() => {});
     musicStarted  = true;
     updateMusicUI();
-
     setTimeout(() => {
       nameClicks = 0;
       hint.classList.remove("show");
