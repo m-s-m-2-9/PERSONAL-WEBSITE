@@ -21,7 +21,7 @@
   'use strict';
 
   /* ── CONFIG ── */
-  const IDLE_DELAY = 10 * 60 * 1000; /* 10 minutes. Set to e.g. 8000 to test */
+  const IDLE_DELAY = 10 * 1000; /* 10 minutes. Set to e.g. 8000 to test */
 
   /* ── STATE ── */
   let idleTimer    = null;
