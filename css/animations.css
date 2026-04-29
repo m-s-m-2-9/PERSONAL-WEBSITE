@@ -42,3 +42,37 @@
   0%,100% { transform: scaleY(0.5); }
   50%     { transform: scaleY(1.4); }
 }
+
+
+/* Realistic Stumble/Fall Physics */
+@keyframes bot-stumble-in {
+  0% { transform: translate(-100vw, 20px) rotate(-30deg); opacity: 0; }
+  60% { transform: translate(-10%, -15px) rotate(10deg); opacity: 1; }
+  80% { transform: translate(0, 10px) rotate(-5deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+/* Nervous Eye Darting */
+@keyframes eyes-nervous {
+  0%, 10%, 100% { transform: translateX(0); }
+  15%, 45% { transform: translateX(-6px); } /* Looking back where he came from */
+  50%, 55% { transform: translateX(4px); }
+  60%, 90% { transform: translateX(-8px); }
+}
+
+/* Hand Enlarging & Realistic Knocking */
+@keyframes knock-hand {
+  0% { transform: scale(1) translate(0,0); opacity: 0; }
+  20% { transform: scale(3.5) translate(-10px, -10px); opacity: 1; } /* Hand gets huge and approaches screen */
+  35% { transform: scale(3.5) translate(2px, 2px); } /* Impact! */
+  45% { transform: scale(3.5) translate(-2px, -2px); } /* Vibration */
+  60% { transform: scale(3.5) translate(0, 0); }
+  100% { transform: scale(1) translate(0,0); opacity: 0; }
+}
+
+/* Fleeing: Not too fast, looks like running */
+@keyframes flee-away {
+  0% { transform: scale(1) translateX(0); opacity: 1; }
+  20% { transform: scale(0.9) translateY(-10px) rotate(10deg); }
+  100% { transform: scale(0.2) translateX(120vw) rotate(45deg); opacity: 0; }
+}
