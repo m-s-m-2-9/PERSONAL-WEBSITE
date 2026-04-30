@@ -11,7 +11,7 @@
 (function () {
   'use strict';
 
-  const IDLE_DELAY = 10 * 60 * 1000;
+  const IDLE_DELAY = 10 * 1000;
 
   /* ── State ── */
   let isActive = false, interacted = false;
