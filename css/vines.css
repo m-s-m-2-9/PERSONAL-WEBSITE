@@ -1,55 +1,99 @@
 /* ══════════════════════════════════════════════════════════
-   RESCUE VINES - CINEMATIC RUINS STYLE
+   RUINS ENGINE - CORE STYLES
    ══════════════════════════════════════════════════════════ */
 
-.ruins-vine-stem {
-    fill: none;
-    stroke: #1a3a14; /* Deep Forest Green */
-    stroke-width: 3.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.6));
-    transition: stroke-dashoffset 3s ease-in-out;
+:root {
+    --vine-stroke: #1a3a14;
+    --leaf-main: #2d5a27;
+    --moss-glow: rgba(76, 175, 80, 0.3);
 }
 
-/* Make the flowers look like glowing clusters, not dots */
+/* Procedural Vine Animation */
+.ruins-vine-stem {
+    fill: none;
+    stroke: var(--vine-stroke);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+}
+
+@keyframes ruins-grow {
+    from { stroke-dashoffset: 100%; }
+    to { stroke-dashoffset: 0; }
+}
+
+/* High-Fidelity Flora */
 .ruins-flower {
-    filter: blur(0.5px) drop-shadow(0 0 8px var(--flower-color));
+    filter: blur(0.3px) drop-shadow(0 0 10px var(--flower-color));
     transform-origin: center;
-    transition: transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    scale: 0;
+    animation: ruins-bloom 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes ruins-bloom {
+    to { scale: 1; }
 }
 
 .ruins-leaf {
-    fill: #2d5a27;
-    stroke: #152b12;
+    fill: var(--leaf-main);
+    stroke: #0d1a0a;
     stroke-width: 0.5;
+    opacity: 0;
+    animation: ruins-fade-in 1s ease forwards;
 }
 
-/* The Cracks: Soft, etched-glass white (No more scary black lines) */
+@keyframes ruins-fade-in {
+    to { opacity: 1; }
+}
+
+/* Glass Cracks - Etched Look */
 .ruins-crack-canvas {
     mix-blend-mode: screen; 
-    filter: blur(0.2px) brightness(1.1);
-    opacity: 0.7;
+    filter: contrast(1.2) brightness(1.1);
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99980;
 }
 
-/* Restore Button - Glassmorphism */
+/* Cinematic Overlay */
+.ruins-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99960;
+    background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.4) 100%);
+    backdrop-filter: sepia(20%) brightness(90%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 5s ease;
+}
+
+/* The Restore Button - Premium Glassmorphism */
 .ruins-restore-btn {
     position: fixed;
-    bottom: 30px;
+    bottom: 40px;
     left: 50%;
     transform: translateX(-50%) translateY(100px);
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(15px);
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
-    padding: 12px 35px;
-    border-radius: 40px;
-    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.8);
+    padding: 14px 40px;
+    border-radius: 2px;
+    letter-spacing: 0.3em;
     text-transform: uppercase;
-    font-size: 11px;
+    font-size: 10px;
+    font-weight: 300;
     cursor: pointer;
     z-index: 99999;
-    transition: all 0.5s ease;
+    transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.ruins-restore-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    box-shadow: 0 0 30px rgba(255,255,255,0.05);
 }
 
 .ruins-restore-visible {
