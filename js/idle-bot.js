@@ -1,1313 +1,1211 @@
 /* ═══════════════════════════════════════════════════════════
-   idle-bot.js — Astro Bot Idle Easter Egg
-   Self-contained. Injects its own CSS. No external files.
-   Triggers after IDLE_DELAY ms of zero user activity.
-
-   PHASES:
-   1. Forced entry — shoved from right, tumbles, hits floor
-   2. Recovery — gets up, dusts off
-   3. Walk to center — nervous tiptoe, glances back
-   4. Look at user
-   5. Screen knock x3 — crack effects build up
-   6. Fourth wall break — head pokes through
-   7. Loop until interaction
-
-   USER INTERACTION:
-   - Before knock phase → !! panic eyes, flee left
-   - After glass breaks → tiny dot eyes, panic flee left
+   idle-bot.js — Astro Bot Idle Easter Egg (Three.js 3D)
+   Loads Three.js from CDN. Fully self-contained.
+   Renders a premium 3D robot matching Astro Bot reference.
+   
+   PHASES: Entry → Recovery → Walk → Look → Knock x3 →
+           Glass Break → Peek Loop → Flee on interaction
+   
+   Set IDLE_DELAY to 8000 for testing, 600000 for 10 min.
 ═══════════════════════════════════════════════════════════ */
-
 (function () {
   'use strict';
 
-  /* ── CONFIG ── */
-  const IDLE_DELAY = 10 * 1000; /* 10 minutes. Set to e.g. 8000 to test */
+  const IDLE_DELAY = 10 * 60 * 1000;
 
-  /* ── STATE ── */
-  let idleTimer    = null;
-  let botActive    = false;
-  let phase        = 'none'; /* none | entry | recovery | walking | looking | knocking | peeking | fleeing */
-  let glassShattered = false;
-  let interacted   = false;
-  let phaseTimers  = [];
+  /* ── State ── */
+  let isActive = false, interacted = false;
+  let currentPhase = 'none';
+  let idleTimer = null, rafId = null;
+  const pendingTimers = [];
 
-  /* ════════════════════════════════════════════════════════
-     INJECT CSS
-  ════════════════════════════════════════════════════════ */
-  const CSS = `
-    /* ── SCENE CONTAINER ── */
-    #ibot-scene {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 100vh;
-      pointer-events: none;
-      z-index: 999990;
-      overflow: hidden;
+  /* ── Three.js refs ── */
+  let scene, camera, renderer, clock;
+  let robotGroup, headGroup, bodyGroup;
+  let armGroupL, armGroupR, legGroupL, legGroupR;
+  let eyeL, eyeR, antOrb, capeMesh;
+  let threeCanvas;
+
+  /* ── Glass refs ── */
+  let glassCanvas, glassCtx;
+  let cracks = [], shards = [], hasHole = false;
+
+  /* ── Walk state ── */
+  let targetX = 8, walkSpeed = 0;
+
+  /* ── Tweens ── */
+  const tweens = [];
+
+  /* ────────────────────────────────────────────────────────
+     UTILS
+  ──────────────────────────────────────────────────────── */
+  function sleep(ms) {
+    return new Promise(r => { const t = setTimeout(r, ms); pendingTimers.push(t); });
+  }
+  function clearPending() {
+    pendingTimers.forEach(clearTimeout);
+    pendingTimers.length = 0;
+  }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+  function easeOut3(t) { return 1 - Math.pow(1-t, 3); }
+
+  function tween(obj, prop, to, dur) {
+    return new Promise(res => {
+      const from = obj[prop], t0 = performance.now();
+      tweens.push({ obj, prop, from, to, dur, t0, res });
+    });
+  }
+  function tickTweens() {
+    const now = performance.now();
+    for (let i = tweens.length - 1; i >= 0; i--) {
+      const tw = tweens[i];
+      const t = clamp((now - tw.t0) / tw.dur, 0, 1);
+      tw.obj[tw.prop] = lerp(tw.from, tw.to, easeInOut(t));
+      if (t >= 1) { tw.res(); tweens.splice(i, 1); }
     }
+  }
 
-    /* ── GLASS OVERLAY (sits on top of scene) ── */
-    #ibot-glass {
-      position: fixed;
-      inset: 0;
-      z-index: 999991;
-      pointer-events: none;
-    }
+  /* ────────────────────────────────────────────────────────
+     SOUND ENGINE
+  ──────────────────────────────────────────────────────── */
+  let ac = null;
+  function getAC() {
+    if (!ac) try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+    return ac;
+  }
 
-    /* ── ROBOT WRAPPER ── */
-    #ibot-robot {
-      position: absolute;
-      bottom: 0;
-      width: 120px;
-      height: 180px;
-      transform-origin: bottom center;
-      pointer-events: none;
-      will-change: transform, left;
-    }
-
-    /* ── SVG fills wrapper ── */
-    #ibot-robot svg {
-      width: 100%;
-      height: 100%;
-      overflow: visible;
-    }
-
-    /* ── ANIMATION KEYFRAMES ── */
-
-    /* Entry tumble in air */
-    @keyframes ibot-tumble {
-      0%   { transform: translateX(0) rotate(0deg); }
-      30%  { transform: translateX(-40px) rotate(180deg) scale(1.05); }
-      60%  { transform: translateX(-10px) rotate(300deg) scale(1.1); }
-      80%  { transform: translateX(5px) rotate(340deg); }
-      100% { transform: translateX(0) rotate(360deg); }
-    }
-
-    /* Hit floor bounce */
-    @keyframes ibot-bounce {
-      0%   { transform: scaleY(1) translateY(0); }
-      10%  { transform: scaleX(1.3) scaleY(0.55) translateY(0); }
-      25%  { transform: scaleX(0.9) scaleY(1.15) translateY(-18px); }
-      45%  { transform: scaleX(1.1) scaleY(0.8) translateY(0); }
-      65%  { transform: scaleX(0.95) scaleY(1.05) translateY(-6px); }
-      80%  { transform: scaleY(1) translateY(0); }
-      100% { transform: scaleY(1) translateY(0); }
-    }
-
-    /* Nervous body tremor */
-    @keyframes ibot-tremor {
-      0%,100% { transform: translateX(0); }
-      25%     { transform: translateX(-2px) rotate(-1deg); }
-      75%     { transform: translateX(2px) rotate(1deg); }
-    }
-
-    /* Leg walk cycle left */
-    @keyframes ibot-walk-l {
-      0%,100% { transform: rotate(0deg); }
-      50%     { transform: rotate(22deg) translateY(-4px); }
-    }
-
-    /* Leg walk cycle right */
-    @keyframes ibot-walk-r {
-      0%,100% { transform: rotate(0deg); }
-      50%     { transform: rotate(-22deg) translateY(-4px); }
-    }
-
-    /* Tiptoe bounce of full body */
-    @keyframes ibot-tiptoe {
-      0%,100% { transform: translateY(0); }
-      50%     { transform: translateY(-5px); }
-    }
-
-    /* Cape flap normal */
-    @keyframes ibot-cape-idle {
-      0%,100% { transform: skewY(0deg) scaleX(1); }
-      50%     { transform: skewY(3deg) scaleX(0.95); }
-    }
-
-    /* Cape flap run */
-    @keyframes ibot-cape-run {
-      0%,100% { transform: skewX(-20deg) scaleX(1.3); }
-      50%     { transform: skewX(-30deg) scaleX(1.5); }
-    }
-
-    /* Arm raise for knock */
-    @keyframes ibot-arm-raise {
-      0%   { transform: rotate(0deg); }
-      100% { transform: rotate(-110deg) translateX(8px); }
-    }
-
-    /* Knock fist tap */
-    @keyframes ibot-knock {
-      0%   { transform: rotate(-110deg) translateX(8px) scale(1); }
-      30%  { transform: rotate(-115deg) translateX(16px) scale(1.15); }
-      55%  { transform: rotate(-108deg) translateX(14px) scale(1.1); }
-      100% { transform: rotate(-110deg) translateX(8px) scale(1); }
-    }
-
-    /* Screen shake */
-    @keyframes ibot-shake {
-      0%,100% { transform: translate(0,0); }
-      20%     { transform: translate(-6px, 3px); }
-      40%     { transform: translate(5px, -4px); }
-      60%     { transform: translate(-4px, 5px); }
-      80%     { transform: translate(6px, -2px); }
-    }
-
-    /* Antenna flicker */
-    @keyframes ibot-ant-flicker {
-      0%,100%  { opacity: 1; }
-      25%      { opacity: 0.2; }
-      50%      { opacity: 0.8; }
-      75%      { opacity: 0.1; }
-    }
-
-    /* Antenna panic flash */
-    @keyframes ibot-ant-panic {
-      0%,100%  { opacity: 1; filter: brightness(1); }
-      50%      { opacity: 0.3; filter: brightness(3); }
-    }
-
-    /* Peek lean */
-    @keyframes ibot-peek-in {
-      0%   { transform: translateX(60px) translateY(-10px) rotate(10deg); }
-      100% { transform: translateX(0px) translateY(0px) rotate(0deg); }
-    }
-    @keyframes ibot-peek-out {
-      0%   { transform: translateX(0px) translateY(0px) rotate(0deg); }
-      100% { transform: translateX(60px) translateY(-10px) rotate(10deg); }
-    }
-
-    /* Panic arm flail */
-    @keyframes ibot-arm-flail-l {
-      0%,100% { transform: rotate(0deg); }
-      50%     { transform: rotate(70deg); }
-    }
-    @keyframes ibot-arm-flail-r {
-      0%,100% { transform: rotate(0deg); }
-      50%     { transform: rotate(-70deg); }
-    }
-
-    /* Run legs */
-    @keyframes ibot-run-l {
-      0%,100% { transform: rotate(-30deg); }
-      50%     { transform: rotate(30deg); }
-    }
-    @keyframes ibot-run-r {
-      0%,100% { transform: rotate(30deg); }
-      50%     { transform: rotate(-30deg); }
-    }
-
-    /* Eye blink */
-    @keyframes ibot-blink {
-      0%,90%,100% { transform: scaleY(1); }
-      95%         { transform: scaleY(0.05); }
-    }
-
-    /* Eye nervous dart */
-    @keyframes ibot-eye-dart {
-      0%,100% { transform: translateX(0); }
-      20%     { transform: translateX(-5px); }
-      40%     { transform: translateX(5px); }
-      60%     { transform: translateX(-3px); }
-      80%     { transform: translateX(3px); }
-    }
-
-    /* Glass crack appearing */
-    @keyframes ibot-crack-appear {
-      0%   { opacity: 0; stroke-dashoffset: 200; }
-      100% { opacity: 1; stroke-dashoffset: 0; }
-    }
-
-    /* Glass shard fall */
-    @keyframes ibot-shard-fall {
-      0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(120px) rotate(45deg); opacity: 0; }
-    }
-  `;
-
-  const styleEl = document.createElement('style');
-  styleEl.textContent = CSS;
-  document.head.appendChild(styleEl);
-
-  /* ════════════════════════════════════════════════════════
-     SOUND ENGINE — Web Audio API, no files needed
-  ════════════════════════════════════════════════════════ */
-  let audioCtx = null;
-
-  function getAudioCtx() {
-    if (!audioCtx) {
-      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-    }
-    return audioCtx;
+  function noise(ctx, dur, freq, decay, vol) {
+    try {
+      const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) {
+        const tt = i / ctx.sampleRate;
+        d[i] = (Math.random() * 2 - 1) * Math.exp(-tt * decay) * vol;
+        if (freq) d[i] += Math.sin(6.283 * freq * tt) * Math.exp(-tt * (decay * 1.4)) * vol * 0.5;
+      }
+      const src = ctx.createBufferSource();
+      const g = ctx.createGain(); g.gain.value = 1;
+      src.buffer = buf; src.connect(g); g.connect(ctx.destination); src.start();
+    } catch (e) {}
   }
 
   function playSound(type) {
-    const ctx = getAudioCtx();
-    if (!ctx) return;
-
-    try {
-      if (type === 'impact') {
-        /* Metal + ceramic thud */
-        const buf  = ctx.createBuffer(1, ctx.sampleRate * 0.3, ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < data.length; i++) {
-          const t = i / ctx.sampleRate;
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 18) * 0.8
-                  + Math.sin(2 * Math.PI * 80 * t) * Math.exp(-t * 12) * 0.5;
-        }
-        const src = ctx.createBufferSource();
-        const gain = ctx.createGain(); gain.gain.value = 0.6;
-        const comp = ctx.createDynamicsCompressor();
-        src.buffer = buf;
-        src.connect(comp); comp.connect(gain); gain.connect(ctx.destination);
-        src.start();
-
-      } else if (type === 'step') {
-        /* Soft robotic tap */
-        const osc = ctx.createOscillator();
-        const g   = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(220, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.06);
-        g.gain.setValueAtTime(0.15, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-        osc.connect(g); g.connect(ctx.destination);
-        osc.start(); osc.stop(ctx.currentTime + 0.08);
-
-      } else if (type === 'knock1') {
-        /* Light tap on glass */
-        const buf  = ctx.createBuffer(1, ctx.sampleRate * 0.15, ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < data.length; i++) {
-          const t = i / ctx.sampleRate;
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 50) * 0.5
-                  + Math.sin(2 * Math.PI * 1200 * t) * Math.exp(-t * 40) * 0.3;
-        }
-        const src = ctx.createBufferSource();
-        const g   = ctx.createGain(); g.gain.value = 0.4;
-        const filt = ctx.createBiquadFilter(); filt.type = 'highpass'; filt.frequency.value = 800;
-        src.buffer = buf; src.connect(filt); filt.connect(g); g.connect(ctx.destination);
-        src.start();
-
-      } else if (type === 'knock2') {
-        /* Harder tap */
-        const buf  = ctx.createBuffer(1, ctx.sampleRate * 0.2, ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < data.length; i++) {
-          const t = i / ctx.sampleRate;
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 35) * 0.7
-                  + Math.sin(2 * Math.PI * 900 * t) * Math.exp(-t * 28) * 0.4;
-        }
-        const src = ctx.createBufferSource();
-        const g   = ctx.createGain(); g.gain.value = 0.55;
-        src.buffer = buf; src.connect(g); g.connect(ctx.destination);
-        src.start();
-
-      } else if (type === 'knock3') {
-        /* Heavy knock + bass */
-        const buf  = ctx.createBuffer(1, ctx.sampleRate * 0.4, ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < data.length; i++) {
-          const t = i / ctx.sampleRate;
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 20) * 0.9
-                  + Math.sin(2 * Math.PI * 60 * t) * Math.exp(-t * 8) * 0.7
-                  + Math.sin(2 * Math.PI * 700 * t) * Math.exp(-t * 25) * 0.3;
-        }
-        const src = ctx.createBufferSource();
-        const g   = ctx.createGain(); g.gain.value = 0.75;
-        const comp = ctx.createDynamicsCompressor();
-        src.buffer = buf; src.connect(comp); comp.connect(g); g.connect(ctx.destination);
-        src.start();
-
-      } else if (type === 'glass') {
-        /* Glass shatter */
-        for (let k = 0; k < 6; k++) {
-          setTimeout(() => {
-            const ctx2 = getAudioCtx();
-            if (!ctx2) return;
-            const buf  = ctx2.createBuffer(1, ctx2.sampleRate * 0.25, ctx2.sampleRate);
-            const data = buf.getChannelData(0);
-            const freq = 800 + Math.random() * 3000;
-            for (let i = 0; i < data.length; i++) {
-              const t = i / ctx2.sampleRate;
-              data[i] = (Math.random() * 2 - 1) * Math.exp(-t * (15 + Math.random() * 30)) * 0.5
-                      + Math.sin(2 * Math.PI * freq * t) * Math.exp(-t * 20) * 0.2;
-            }
-            const src = ctx2.createBufferSource();
-            const g   = ctx2.createGain(); g.gain.value = 0.3 + Math.random() * 0.3;
-            src.buffer = buf; src.connect(g); g.connect(ctx2.destination);
-            src.start();
-          }, k * 30);
-        }
-
-      } else if (type === 'panic_steps') {
-        /* Rapid robotic feet */
-        for (let k = 0; k < 8; k++) {
-          setTimeout(() => {
-            const ctx2 = getAudioCtx(); if (!ctx2) return;
-            const osc = ctx2.createOscillator();
-            const g   = ctx2.createGain();
-            osc.type = 'sine';
-            osc.frequency.value = 180 + Math.random() * 80;
-            g.gain.setValueAtTime(0.12, ctx2.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.001, ctx2.currentTime + 0.05);
-            osc.connect(g); g.connect(ctx2.destination);
-            osc.start(); osc.stop(ctx2.currentTime + 0.05);
-          }, k * 80);
-        }
-      }
-    } catch(e) {}
+    const ctx = getAC(); if (!ctx) return;
+    if (type === 'impact') {
+      noise(ctx, 0.4, 70, 12, 0.7);
+    } else if (type === 'step') {
+      try {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.value = 200; o.type = 'sine';
+        g.gain.setValueAtTime(0.13, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.09);
+        o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.09);
+      } catch (e) {}
+    } else if (type === 'knock1') {
+      noise(ctx, 0.18, 1400, 45, 0.45);
+    } else if (type === 'knock2') {
+      noise(ctx, 0.22, 950, 30, 0.62);
+    } else if (type === 'knock3') {
+      noise(ctx, 0.38, 60, 10, 0.8);
+      setTimeout(() => noise(ctx, 0.25, 800, 22, 0.4), 20);
+    } else if (type === 'glass') {
+      for (let k = 0; k < 9; k++) setTimeout(() => {
+        const ctx2 = getAC(); if (!ctx2) return;
+        noise(ctx2, 0.22, 500 + Math.random() * 3000, 18 + Math.random() * 25, 0.3 + Math.random() * 0.25);
+      }, k * 28);
+    } else if (type === 'panic') {
+      for (let k = 0; k < 12; k++) setTimeout(() => {
+        const ctx2 = getAC(); if (!ctx2) return;
+        try {
+          const o = ctx2.createOscillator(), g = ctx2.createGain();
+          o.frequency.value = 140 + Math.random() * 120;
+          g.gain.setValueAtTime(0.08, ctx2.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.001, ctx2.currentTime + 0.06);
+          o.connect(g); g.connect(ctx2.destination); o.start(); o.stop(ctx2.currentTime + 0.06);
+        } catch (e) {}
+      }, k * 65);
+    }
   }
 
-  /* ════════════════════════════════════════════════════════
-     BUILD ROBOT SVG
-     White ceramic body, black visor, blue LED eyes,
-     blue cape, gold fingertips, chrome joints, antenna
-  ════════════════════════════════════════════════════════ */
-  function buildRobotSVG() {
-    return `
-    <svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg" overflow="visible">
-      <defs>
-        <!-- Glossy white gradient for ceramic parts -->
-        <radialGradient id="ib-ceramic" cx="38%" cy="30%" r="65%">
-          <stop offset="0%"   stop-color="#ffffff"/>
-          <stop offset="60%"  stop-color="#dde8f0"/>
-          <stop offset="100%" stop-color="#b8ccd8"/>
-        </radialGradient>
-        <!-- Blue glow gradient for accents -->
-        <radialGradient id="ib-blue" cx="50%" cy="40%" r="60%">
-          <stop offset="0%"   stop-color="#5dd8ff"/>
-          <stop offset="100%" stop-color="#0077cc"/>
-        </radialGradient>
-        <!-- Visor dark glass -->
-        <radialGradient id="ib-visor" cx="40%" cy="35%" r="65%">
-          <stop offset="0%"   stop-color="#0a1a2e" stop-opacity="1"/>
-          <stop offset="100%" stop-color="#000508" stop-opacity="1"/>
-        </radialGradient>
-        <!-- Gold for fingertips -->
-        <linearGradient id="ib-gold" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%"   stop-color="#ffd700"/>
-          <stop offset="50%"  stop-color="#c8a000"/>
-          <stop offset="100%" stop-color="#a07800"/>
-        </linearGradient>
-        <!-- Chrome for joints -->
-        <linearGradient id="ib-chrome" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%"   stop-color="#e8edf0"/>
-          <stop offset="50%"  stop-color="#9aabba"/>
-          <stop offset="100%" stop-color="#607080"/>
-        </linearGradient>
-        <!-- Blue accent body -->
-        <linearGradient id="ib-bodyblue" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%"   stop-color="#3399ff"/>
-          <stop offset="100%" stop-color="#005ab5"/>
-        </linearGradient>
-        <!-- Eye glow filter -->
-        <filter id="ib-eye-glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="2" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-        <!-- Ant glow -->
-        <filter id="ib-ant-glow" x="-100%" y="-100%" width="300%" height="300%">
-          <feGaussianBlur stdDeviation="3" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-        <!-- Soft shadow -->
-        <filter id="ib-shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.35"/>
-        </filter>
-      </defs>
-
-      <!-- ── CAPE (behind body) ── -->
-      <g id="ibot-cape" transform="translate(60,90)">
-        <path d="M -14,-30 Q -28,0 -22,40 Q -12,50 -2,40 Q 4,20 2,-25 Z"
-              fill="#1a90ff" fill-opacity="0.72" stroke="#0055cc" stroke-width="0.5"/>
-        <path d="M -14,-30 Q -20,0 -16,35"
-              fill="none" stroke="#66bbff" stroke-width="0.8" stroke-opacity="0.5"/>
-      </g>
-
-      <!-- ── LEGS ── -->
-      <!-- Left leg -->
-      <g id="ibot-leg-l" transform="translate(44,140)" transform-origin="44 140">
-        <rect x="-9" y="0" width="18" height="26" rx="9" fill="url(#ib-ceramic)" filter="url(#ib-shadow)"/>
-        <!-- Blue boot -->
-        <ellipse cx="0" cy="28" rx="12" ry="8" fill="url(#ib-blue)"/>
-        <!-- Sole glow -->
-        <ellipse cx="0" cy="30" rx="8" ry="3" fill="#5dd8ff" fill-opacity="0.6"/>
-        <!-- Chrome joint band -->
-        <rect x="-9" y="22" width="18" height="4" rx="2" fill="url(#ib-chrome)"/>
-      </g>
-      <!-- Right leg -->
-      <g id="ibot-leg-r" transform="translate(76,140)" transform-origin="76 140">
-        <rect x="-9" y="0" width="18" height="26" rx="9" fill="url(#ib-ceramic)" filter="url(#ib-shadow)"/>
-        <ellipse cx="0" cy="28" rx="12" ry="8" fill="url(#ib-blue)"/>
-        <ellipse cx="0" cy="30" rx="8" ry="3" fill="#5dd8ff" fill-opacity="0.6"/>
-        <rect x="-9" y="22" width="18" height="4" rx="2" fill="url(#ib-chrome)"/>
-      </g>
-
-      <!-- ── BODY (torso, pear-shaped) ── -->
-      <g id="ibot-body" filter="url(#ib-shadow)">
-        <!-- Lower torso wider -->
-        <ellipse cx="60" cy="130" rx="30" ry="18" fill="url(#ib-ceramic)"/>
-        <!-- Upper torso narrower -->
-        <rect x="34" y="100" width="52" height="38" rx="18" fill="url(#ib-ceramic)"/>
-        <!-- Blue chest panel -->
-        <rect x="44" y="108" width="32" height="22" rx="8" fill="url(#ib-bodyblue)"/>
-        <!-- Chest core light -->
-        <circle cx="60" cy="119" r="7" fill="#33aaff" fill-opacity="0.9"/>
-        <circle cx="60" cy="119" r="4" fill="#99ddff"/>
-        <circle cx="60" cy="119" r="2" fill="#ffffff"/>
-        <!-- Gold shoulder joints -->
-        <circle cx="34" cy="108" r="7" fill="url(#ib-gold)"/>
-        <circle cx="86" cy="108" r="7" fill="url(#ib-gold)"/>
-        <!-- Chrome body rim -->
-        <ellipse cx="60" cy="130" rx="30" ry="18" fill="none" stroke="url(#ib-chrome)" stroke-width="1.5"/>
-      </g>
-
-      <!-- ── ARM LEFT ── -->
-      <g id="ibot-arm-l" transform="translate(34,112)" transform-origin="0 0">
-        <!-- Upper arm -->
-        <rect x="-18" y="-6" width="18" height="28" rx="9" fill="url(#ib-ceramic)" filter="url(#ib-shadow)"/>
-        <!-- Chrome elbow -->
-        <ellipse cx="-9" cy="24" rx="10" ry="8" fill="url(#ib-chrome)"/>
-        <!-- Forearm -->
-        <rect x="-17" y="26" width="16" height="22" rx="8" fill="url(#ib-ceramic)"/>
-        <!-- Hand (fist shape) -->
-        <g id="ibot-hand-l">
-          <rect x="-19" y="46" width="20" height="16" rx="6" fill="url(#ib-ceramic)"/>
-          <!-- Fingers -->
-          <rect x="-19" y="40" width="5" height="12" rx="2.5" fill="url(#ib-ceramic)"/>
-          <rect x="-13" y="38" width="5" height="14" rx="2.5" fill="url(#ib-ceramic)"/>
-          <rect x="-7"  y="38" width="5" height="14" rx="2.5" fill="url(#ib-ceramic)"/>
-          <rect x="-1"  y="40" width="5" height="12" rx="2.5" fill="url(#ib-ceramic)"/>
-          <!-- Gold fingertips -->
-          <rect x="-19" y="40" width="5" height="4" rx="2" fill="url(#ib-gold)"/>
-          <rect x="-13" y="38" width="5" height="4" rx="2" fill="url(#ib-gold)"/>
-          <rect x="-7"  y="38" width="5" height="4" rx="2" fill="url(#ib-gold)"/>
-          <rect x="-1"  y="40" width="5" height="4" rx="2" fill="url(#ib-gold)"/>
-        </g>
-      </g>
-
-      <!-- ── ARM RIGHT ── -->
-      <g id="ibot-arm-r" transform="translate(86,112)" transform-origin="0 0">
-        <rect x="0" y="-6" width="18" height="28" rx="9" fill="url(#ib-ceramic)" filter="url(#ib-shadow)"/>
-        <ellipse cx="9" cy="24" rx="10" ry="8" fill="url(#ib-chrome)"/>
-        <rect x="1" y="26" width="16" height="22" rx="8" fill="url(#ib-ceramic)"/>
-        <g id="ibot-hand-r">
-          <rect x="-1" y="46" width="20" height="16" rx="6" fill="url(#ib-ceramic)"/>
-          <rect x="14" y="40" width="5" height="12" rx="2.5" fill="url(#ib-ceramic)"/>
-          <rect x="8"  y="38" width="5" height="14" rx="2.5" fill="url(#ib-ceramic)"/>
-          <rect x="2"  y="38" width="5" height="14" rx="2.5" fill="url(#ib-ceramic)"/>
-          <rect x="-4" y="40" width="5" height="12" rx="2.5" fill="url(#ib-ceramic)"/>
-          <rect x="14" y="40" width="5" height="4" rx="2" fill="url(#ib-gold)"/>
-          <rect x="8"  y="38" width="5" height="4" rx="2" fill="url(#ib-gold)"/>
-          <rect x="2"  y="38" width="5" height="4" rx="2" fill="url(#ib-gold)"/>
-          <rect x="-4" y="40" width="5" height="4" rx="2" fill="url(#ib-gold)"/>
-        </g>
-      </g>
-
-      <!-- ── NECK ── -->
-      <rect x="52" y="92" width="16" height="12" rx="5" fill="url(#ib-chrome)" filter="url(#ib-shadow)"/>
-
-      <!-- ── HEAD (oversized smooth oval helmet) ── -->
-      <g id="ibot-head">
-        <!-- Helmet white ceramic -->
-        <ellipse cx="60" cy="68" rx="35" ry="34" fill="url(#ib-ceramic)" filter="url(#ib-shadow)"/>
-        <!-- Helmet highlight -->
-        <ellipse cx="48" cy="52" rx="14" ry="10" fill="white" fill-opacity="0.45"/>
-
-        <!-- Visor — black glass curved front -->
-        <rect x="30" y="52" width="60" height="38" rx="12" fill="url(#ib-visor)"/>
-        <!-- Visor glass reflection -->
-        <path d="M 34,56 Q 55,50 82,58" stroke="rgba(255,255,255,0.18)" stroke-width="2" fill="none" stroke-linecap="round"/>
-
-        <!-- ── EYEBROWS (LED strips) ── -->
-        <g id="ibot-eyebrows">
-          <rect id="ibot-brow-l" x="34" y="56" width="20" height="3" rx="1.5"
-                fill="#44aaff" fill-opacity="0.85" filter="url(#ib-eye-glow)"/>
-          <rect id="ibot-brow-r" x="66" y="56" width="20" height="3" rx="1.5"
-                fill="#44aaff" fill-opacity="0.85" filter="url(#ib-eye-glow)"/>
-        </g>
-
-        <!-- ── EYES (LED ovals inside visor) ── -->
-        <g id="ibot-eyes">
-          <!-- Left eye -->
-          <g id="ibot-eye-l" filter="url(#ib-eye-glow)">
-            <ellipse id="ibot-eye-l-shape" cx="44" cy="70" rx="11" ry="9"
-                     fill="#003366" fill-opacity="0.4"/>
-            <ellipse id="ibot-eye-l-led" cx="44" cy="70" rx="8" ry="7"
-                     fill="#1a88ff"/>
-            <!-- LED dot matrix pattern -->
-            <circle cx="40" cy="68" r="1.5" fill="#66ccff" fill-opacity="0.9"/>
-            <circle cx="44" cy="68" r="1.5" fill="#66ccff" fill-opacity="0.9"/>
-            <circle cx="48" cy="68" r="1.5" fill="#66ccff" fill-opacity="0.9"/>
-            <circle cx="40" cy="72" r="1.5" fill="#44aaff" fill-opacity="0.7"/>
-            <circle cx="44" cy="72" r="1.5" fill="#44aaff" fill-opacity="0.7"/>
-            <circle cx="48" cy="72" r="1.5" fill="#44aaff" fill-opacity="0.7"/>
-            <!-- Eye shine -->
-            <ellipse cx="40" cy="66" rx="3" ry="2" fill="white" fill-opacity="0.35"/>
-          </g>
-          <!-- Right eye -->
-          <g id="ibot-eye-r" filter="url(#ib-eye-glow)">
-            <ellipse id="ibot-eye-r-shape" cx="76" cy="70" rx="11" ry="9"
-                     fill="#003366" fill-opacity="0.4"/>
-            <ellipse id="ibot-eye-r-led" cx="76" cy="70" rx="8" ry="7"
-                     fill="#1a88ff"/>
-            <circle cx="72" cy="68" r="1.5" fill="#66ccff" fill-opacity="0.9"/>
-            <circle cx="76" cy="68" r="1.5" fill="#66ccff" fill-opacity="0.9"/>
-            <circle cx="80" cy="68" r="1.5" fill="#66ccff" fill-opacity="0.9"/>
-            <circle cx="72" cy="72" r="1.5" fill="#44aaff" fill-opacity="0.7"/>
-            <circle cx="76" cy="72" r="1.5" fill="#44aaff" fill-opacity="0.7"/>
-            <circle cx="80" cy="72" r="1.5" fill="#44aaff" fill-opacity="0.7"/>
-            <ellipse cx="72" cy="66" rx="3" ry="2" fill="white" fill-opacity="0.35"/>
-          </g>
-        </g>
-
-        <!-- Visor rim -->
-        <rect x="30" y="52" width="60" height="38" rx="12" fill="none"
-              stroke="rgba(100,180,255,0.3)" stroke-width="1.5"/>
-      </g>
-
-      <!-- ── ANTENNA ── -->
-      <g id="ibot-antenna">
-        <path d="M 60,34 Q 64,18 68,10" stroke="#ccdde8" stroke-width="2.5"
-              stroke-linecap="round" fill="none"/>
-        <circle id="ibot-ant-orb" cx="68" cy="10" r="7"
-                fill="#00ccff" filter="url(#ib-ant-glow)"
-                stroke="#00aaee" stroke-width="1"/>
-        <circle cx="68" cy="10" r="3.5" fill="#aaeeff"/>
-      </g>
-
-      <!-- Ground shadow -->
-      <ellipse cx="60" cy="178" rx="36" ry="5" fill="rgba(0,0,0,0.18)"/>
-    </svg>
-    `;
+  /* ────────────────────────────────────────────────────────
+     LOAD THREE.JS
+  ──────────────────────────────────────────────────────── */
+  function loadThree(cb) {
+    if (window.THREE) { cb(window.THREE); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+    s.onload = () => cb(window.THREE);
+    s.onerror = () => console.warn('[IdleBot] Three.js failed to load');
+    document.head.appendChild(s);
   }
 
-  /* ════════════════════════════════════════════════════════
-     BUILD GLASS CANVAS
-  ════════════════════════════════════════════════════════ */
-  let glassCanvas = null;
-  let glassCtx    = null;
-  let cracks      = [];
-  let shards      = [];
+  /* ────────────────────────────────────────────────────────
+     BUILD 3D ROBOT
+     Matches Astro Bot: white ceramic, black visor, LED eyes,
+     blue body panel, gold joints, blue boots, cape.
+  ──────────────────────────────────────────────────────── */
+  function buildRobot(T) {
+    const root = new T.Group();
 
-  function buildGlass() {
+    /* ── Materials ── */
+    const M = {
+      ceramic: new T.MeshPhongMaterial({ color: 0xeef3f9, shininess: 180, specular: new T.Color(0.38,0.5,0.68) }),
+      visor:   new T.MeshPhongMaterial({ color: 0x030c1a, shininess: 300, specular: new T.Color(0.1,0.3,0.65) }),
+      blue:    new T.MeshPhongMaterial({ color: 0x1880d8, shininess: 90, emissive: new T.Color(0.04,0.18,0.44), emissiveIntensity: 0.35 }),
+      blueDeep:new T.MeshPhongMaterial({ color: 0x0f5aa5, shininess: 70, emissive: new T.Color(0.02,0.1,0.28) }),
+      gold:    new T.MeshPhongMaterial({ color: 0xc89400, shininess: 230, specular: new T.Color(1,0.88,0.18) }),
+      chrome:  new T.MeshPhongMaterial({ color: 0x88a0b4, shininess: 270, specular: new T.Color(0.65,0.82,1) }),
+      eyeGlow: new T.MeshBasicMaterial({ color: 0x1188ee }),
+      eyeCtr:  new T.MeshBasicMaterial({ color: 0x77ddff }),
+      antOrb:  new T.MeshBasicMaterial({ color: 0x00eeff }),
+      core:    new T.MeshBasicMaterial({ color: 0x44ccff }),
+      cape:    new T.MeshPhongMaterial({ color: 0x1880ee, transparent: true, opacity: 0.76, side: T.DoubleSide, shininess: 28, emissive: new T.Color(0.03,0.12,0.36) }),
+      bootGlow:new T.MeshBasicMaterial({ color: 0x33ccff, transparent: true, opacity: 0.6 }),
+    };
+
+    /* ── HEAD ── */
+    headGroup = new T.Group();
+    headGroup.position.set(0, 2.12, 0);
+
+    // Helmet shell — Astro Bot has a squarish rounded helmet
+    // Use SphereGeometry scaled to look more like a rounded cube
+    const helmetGeo = new T.SphereGeometry(0.56, 40, 30);
+    const helmet = new T.Mesh(helmetGeo, M.ceramic);
+    helmet.scale.set(1, 0.93, 0.87);
+    headGroup.add(helmet);
+
+    // Helmet highlight strip (ceramic rim around visor)
+    const rimGeo = new T.TorusGeometry(0.44, 0.04, 12, 60);
+    const rim = new T.Mesh(rimGeo, M.ceramic);
+    rim.position.set(0, 0, 0.3);
+    rim.rotation.x = Math.PI / 2;
+    headGroup.add(rim);
+
+    // Visor — large flat black glass, slightly inset
+    const visorGeo = new T.BoxGeometry(0.84, 0.72, 0.07);
+    const visor = new T.Mesh(visorGeo, M.visor);
+    visor.position.set(0, -0.01, 0.44);
+    headGroup.add(visor);
+
+    // Visor chrome bezel
+    const bezelGeo = new T.BoxGeometry(0.88, 0.76, 0.05);
+    const bezel = new T.Mesh(bezelGeo, M.chrome);
+    bezel.position.set(0, -0.01, 0.41);
+    headGroup.add(bezel);
+
+    // Visor glass glare
+    const glareGeo = new T.PlaneGeometry(0.52, 0.12);
+    const glareMat = new T.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.12, side: T.DoubleSide });
+    const glare = new T.Mesh(glareGeo, glareMat);
+    glare.position.set(-0.1, 0.22, 0.48);
+    glare.rotation.z = 0.18;
+    headGroup.add(glare);
+
+    // Eye LEFT — LED oval (Astro Bot has large hexagonal LED eyes)
+    const eyeLGeo = new T.SphereGeometry(0.13, 20, 14);
+    eyeL = new T.Mesh(eyeLGeo, M.eyeGlow);
+    eyeL.scale.set(1.0, 0.70, 0.32);
+    eyeL.position.set(-0.22, 0.04, 0.47);
+    headGroup.add(eyeL);
+    // Eye center (brighter LED core)
+    const eyeLCGeo = new T.SphereGeometry(0.08, 16, 10);
+    const eyeLC = new T.Mesh(eyeLCGeo, M.eyeCtr);
+    eyeLC.scale.set(1.0, 0.68, 0.32);
+    eyeLC.position.set(-0.22, 0.04, 0.49);
+    headGroup.add(eyeLC);
+    // Dot-matrix dots (6 dots per eye)
+    const dotPositionsL = [[-0.26,0.08],[-0.22,0.08],[-0.18,0.08],[-0.26,0.0],[-0.22,0.0],[-0.18,0.0]];
+    dotPositionsL.forEach(([dx,dy]) => {
+      const dg = new T.SphereGeometry(0.02, 8, 6);
+      const dot = new T.Mesh(dg, M.eyeCtr);
+      dot.position.set(dx, dy, 0.495); dot.scale.set(1,1,0.4);
+      headGroup.add(dot);
+    });
+
+    // Eye RIGHT
+    const eyeRGeo = new T.SphereGeometry(0.13, 20, 14);
+    eyeR = new T.Mesh(eyeRGeo, M.eyeGlow);
+    eyeR.scale.set(1.0, 0.70, 0.32);
+    eyeR.position.set(0.22, 0.04, 0.47);
+    headGroup.add(eyeR);
+    const eyeRCGeo = new T.SphereGeometry(0.08, 16, 10);
+    const eyeRC = new T.Mesh(eyeRCGeo, M.eyeCtr);
+    eyeRC.scale.set(1.0, 0.68, 0.32);
+    eyeRC.position.set(0.22, 0.04, 0.49);
+    headGroup.add(eyeRC);
+    const dotPositionsR = [[0.18,0.08],[0.22,0.08],[0.26,0.08],[0.18,0.0],[0.22,0.0],[0.26,0.0]];
+    dotPositionsR.forEach(([dx,dy]) => {
+      const dg = new T.SphereGeometry(0.02, 8, 6);
+      const dot = new T.Mesh(dg, M.eyeCtr);
+      dot.position.set(dx, dy, 0.495); dot.scale.set(1,1,0.4);
+      headGroup.add(dot);
+    });
+
+    // Antenna stem (thin curved wire)
+    const antStemGeo = new T.CylinderGeometry(0.016, 0.022, 0.52, 8);
+    const antStem = new T.Mesh(antStemGeo, M.ceramic);
+    antStem.position.set(0.14, 0.65, -0.06);
+    antStem.rotation.z = 0.22; antStem.rotation.x = -0.06;
+    headGroup.add(antStem);
+
+    // Antenna orb (glowing cyan)
+    const antOrbGeo = new T.SphereGeometry(0.1, 20, 14);
+    antOrb = new T.Mesh(antOrbGeo, M.antOrb);
+    antOrb.position.set(0.25, 0.9, -0.1);
+    headGroup.add(antOrb);
+
+    root.add(headGroup);
+
+    /* ── NECK ── */
+    const neckGeo = new T.CylinderGeometry(0.12, 0.16, 0.2, 14);
+    const neck = new T.Mesh(neckGeo, M.chrome);
+    neck.position.set(0, 1.74, 0);
+    root.add(neck);
+
+    /* ── BODY ── */
+    bodyGroup = new T.Group();
+    bodyGroup.position.set(0, 1.08, 0);
+
+    // Upper chest (smaller)
+    const upperGeo = new T.SphereGeometry(0.38, 28, 20);
+    const upper = new T.Mesh(upperGeo, M.ceramic);
+    upper.position.set(0, 0.28, 0);
+    upper.scale.set(1, 0.78, 0.9);
+    bodyGroup.add(upper);
+
+    // Lower torso (wider — pear shape)
+    const lowerGeo = new T.SphereGeometry(0.47, 28, 20);
+    const lower = new T.Mesh(lowerGeo, M.ceramic);
+    lower.position.set(0, -0.1, 0);
+    lower.scale.set(1, 0.62, 0.9);
+    bodyGroup.add(lower);
+
+    // Blue chest panel (large, like Astro Bot)
+    const chestGeo = new T.BoxGeometry(0.56, 0.48, 0.09);
+    const chest = new T.Mesh(chestGeo, M.blue);
+    chest.position.set(0, 0.2, 0.28);
+    chest.rotation.x = -0.1;
+    bodyGroup.add(chest);
+
+    // Chest panel border
+    const chestBorderGeo = new T.BoxGeometry(0.6, 0.52, 0.06);
+    const chestBorder = new T.Mesh(chestBorderGeo, M.blueDeep);
+    chestBorder.position.set(0, 0.2, 0.25);
+    chestBorder.rotation.x = -0.1;
+    bodyGroup.add(chestBorder);
+
+    // Chest core light (glowing circle)
+    const coreGeo = new T.SphereGeometry(0.088, 16, 12);
+    const core = new T.Mesh(coreGeo, M.core);
+    core.position.set(0, 0.1, 0.36);
+    bodyGroup.add(core);
+    const coreRingGeo = new T.TorusGeometry(0.13, 0.018, 10, 32);
+    const coreRing = new T.Mesh(coreRingGeo, M.blue);
+    coreRing.position.set(0, 0.1, 0.35);
+    coreRing.rotation.x = Math.PI / 2;
+    bodyGroup.add(coreRing);
+
+    root.add(bodyGroup);
+
+    /* ── SHOULDER JOINTS (gold spheres) ── */
+    [-0.52, 0.52].forEach(sx => {
+      const sg = new T.SphereGeometry(0.1, 14, 10);
+      const sm = new T.Mesh(sg, M.gold);
+      sm.position.set(sx, 1.62, 0);
+      root.add(sm);
+    });
+
+    /* ── ARM BUILDER ── */
+    function buildArm(side) {
+      // side = -1 (left) or 1 (right)
+      const ag = new T.Group();
+      ag.position.set(side * 0.52, 1.6, 0);
+
+      // Upper arm
+      const uaGeo = new T.CylinderGeometry(0.1, 0.09, 0.44, 14);
+      const ua = new T.Mesh(uaGeo, M.ceramic);
+      ua.position.set(side * 0.08, -0.24, 0);
+      ua.rotation.z = side * 0.18;
+      ag.add(ua);
+
+      // Blue accent band on upper arm
+      const bandGeo = new T.CylinderGeometry(0.105, 0.105, 0.06, 14);
+      const band = new T.Mesh(bandGeo, M.blue);
+      band.position.set(side * 0.08, -0.14, 0);
+      band.rotation.z = side * 0.18;
+      ag.add(band);
+
+      // Elbow joint (chrome sphere)
+      const ej = new T.SphereGeometry(0.1, 14, 10);
+      const elm = new T.Mesh(ej, M.chrome);
+      elm.position.set(side * 0.16, -0.49, 0);
+      ag.add(elm);
+
+      // Forearm
+      const faGeo = new T.CylinderGeometry(0.09, 0.082, 0.38, 14);
+      const fa = new T.Mesh(faGeo, M.ceramic);
+      fa.position.set(side * 0.17, -0.72, 0.04);
+      fa.rotation.z = side * 0.12; fa.rotation.x = 0.08;
+      ag.add(fa);
+
+      // Wrist chrome band
+      const wristGeo = new T.CylinderGeometry(0.095, 0.095, 0.05, 14);
+      const wrist = new T.Mesh(wristGeo, M.chrome);
+      wrist.position.set(side * 0.17, -0.89, 0.04);
+      wrist.rotation.z = side * 0.12;
+      ag.add(wrist);
+
+      // Hand (white rounded box)
+      const hGeo = new T.BoxGeometry(0.22, 0.18, 0.15);
+      const h = new T.Mesh(hGeo, M.ceramic);
+      h.position.set(side * 0.18, -1.02, 0.05);
+      ag.add(h);
+
+      // 4 fingers with gold tips
+      const fingerXs = side < 0
+        ? [-0.28,-0.21,-0.14,-0.08]
+        : [0.28, 0.21, 0.14, 0.08];
+      fingerXs.forEach((fx, fi) => {
+        const fingerGeo = new T.CylinderGeometry(0.028, 0.024, 0.12, 8);
+        const finger = new T.Mesh(fingerGeo, M.ceramic);
+        finger.position.set(fx, -1.09 - fi*0.005, 0.05);
+        finger.rotation.z = side * (0.18 + fi * 0.04);
+        ag.add(finger);
+        // Gold tip
+        const tipGeo = new T.SphereGeometry(0.032, 8, 6);
+        const tip = new T.Mesh(tipGeo, M.gold);
+        tip.position.set(fx + side*(-0.012), -1.15 - fi*0.005, 0.05);
+        ag.add(tip);
+      });
+
+      // Thumb
+      const thumbGeo = new T.CylinderGeometry(0.025, 0.022, 0.1, 8);
+      const thumb = new T.Mesh(thumbGeo, M.ceramic);
+      thumb.position.set(side * 0.06, -1.01, 0.11);
+      thumb.rotation.x = 0.4; thumb.rotation.z = side * 0.6;
+      ag.add(thumb);
+      const thumbTipGeo = new T.SphereGeometry(0.028, 8, 6);
+      const thumbTip = new T.Mesh(thumbTipGeo, M.gold);
+      thumbTip.position.set(side * 0.07, -1.05, 0.13);
+      ag.add(thumbTip);
+
+      return ag;
+    }
+
+    armGroupL = buildArm(-1); root.add(armGroupL);
+    armGroupR = buildArm( 1); root.add(armGroupR);
+
+    /* ── LEG BUILDER ── */
+    function buildLeg(side) {
+      const lg = new T.Group();
+      lg.position.set(side * 0.23, 0.58, 0);
+
+      // Hip joint (gold)
+      const hipGeo = new T.SphereGeometry(0.1, 14, 10);
+      const hip = new T.Mesh(hipGeo, M.gold);
+      hip.position.set(0, 0.04, 0);
+      lg.add(hip);
+
+      // Thigh
+      const thighGeo = new T.CylinderGeometry(0.14, 0.12, 0.32, 14);
+      const thigh = new T.Mesh(thighGeo, M.ceramic);
+      thigh.position.set(0, -0.14, 0);
+      lg.add(thigh);
+
+      // Knee joint (chrome)
+      const kneeGeo = new T.SphereGeometry(0.12, 14, 10);
+      const knee = new T.Mesh(kneeGeo, M.chrome);
+      knee.position.set(0, -0.33, 0);
+      lg.add(knee);
+
+      // Shin
+      const shinGeo = new T.CylinderGeometry(0.11, 0.13, 0.26, 14);
+      const shin = new T.Mesh(shinGeo, M.ceramic);
+      shin.position.set(0, -0.54, 0);
+      lg.add(shin);
+
+      // Boot (blue, wider than leg — Astro Bot has chunky boots)
+      const bootGeo = new T.BoxGeometry(0.32, 0.22, 0.42);
+      const boot = new T.Mesh(bootGeo, M.blue);
+      boot.position.set(0, -0.76, 0.06);
+      // Round it slightly
+      boot.scale.set(1, 1, 1);
+      lg.add(boot);
+
+      // Boot chrome band (top of boot)
+      const bootBandGeo = new T.BoxGeometry(0.34, 0.05, 0.44);
+      const bootBand = new T.Mesh(bootBandGeo, M.chrome);
+      bootBand.position.set(0, -0.65, 0.06);
+      lg.add(bootBand);
+
+      // Boot toe cap (ceramic)
+      const toeCap = new T.BoxGeometry(0.24, 0.14, 0.12);
+      const toeCapM = new T.Mesh(toeCap, M.ceramic);
+      toeCapM.position.set(0, -0.75, 0.25);
+      lg.add(toeCapM);
+
+      // Sole glow (bottom of boot)
+      const soleGeo = new T.PlaneGeometry(0.24, 0.32);
+      const sole = new T.Mesh(soleGeo, M.bootGlow);
+      sole.position.set(0, -0.875, 0.06);
+      sole.rotation.x = -Math.PI / 2;
+      lg.add(sole);
+
+      return lg;
+    }
+
+    legGroupL = buildLeg(-1); root.add(legGroupL);
+    legGroupR = buildLeg( 1); root.add(legGroupR);
+
+    /* ── CAPE (translucent blue, behind body) ── */
+    // Build from subdivided plane with manual waviness
+    const capeGeo = new T.PlaneGeometry(0.72, 1.0, 6, 12);
+    const capePos = capeGeo.attributes.position;
+    for (let i = 0; i < capePos.count; i++) {
+      const y = capePos.getY(i), x = capePos.getX(i);
+      capePos.setZ(i, Math.sin((y + 0.5) * 2.8) * 0.07 + Math.cos(x * 4.5) * 0.04);
+    }
+    capeGeo.computeVertexNormals();
+    capeMesh = new T.Mesh(capeGeo, M.cape);
+    capeMesh.position.set(-0.06, 1.08, -0.3);
+    capeMesh.rotation.x = 0.07;
+    root.add(capeMesh);
+
+    /* ── Ground shadow ellipse ── */
+    const shadowGeo = new T.CircleGeometry(0.55, 32);
+    const shadowMat = new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false });
+    const shadow = new T.Mesh(shadowGeo, shadowMat);
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.set(0, 0.01, 0);
+    root.add(shadow);
+
+    return root;
+  }
+
+  /* ────────────────────────────────────────────────────────
+     EYE STATE
+  ──────────────────────────────────────────────────────── */
+  function setEyeState(state) {
+    if (!eyeL || !eyeR) return;
+    const states = {
+      calm:    [1.0, 0.70],
+      nervous: [0.78, 0.35],
+      shocked: [1.25, 1.2],
+      panic:   [0.35, 0.35],
+      search:  [1.0, 0.42],
+    };
+    const [sx, sy] = states[state] || states.calm;
+    [eyeL, eyeR].forEach(e => e.scale.set(sx, sy, 0.32));
+
+    // Eye color by state
+    const colors = { calm: 0x1188ee, nervous: 0x0066cc, shocked: 0x22bbff, panic: 0xff4422, search: 0x00aaff };
+    const col = colors[state] || 0x1188ee;
+    [eyeL, eyeR].forEach(e => e.material.color.setHex(col));
+  }
+
+  let eyeDartDir = 0;
+  function doEyeDart(headGrp) {
+    if (!headGrp) return;
+    const seq = [0.08, -0.08, 0.04, -0.04, 0];
+    let i = 0;
+    function next() {
+      if (i >= seq.length) return;
+      headGrp.position.x = seq[i++];
+      setTimeout(next, 180);
+    }
+    next();
+  }
+
+  /* ────────────────────────────────────────────────────────
+     SCREEN SHAKE
+  ──────────────────────────────────────────────────────── */
+  function screenShake(strength, dur) {
+    const t0 = performance.now();
+    function sh() {
+      const el = performance.now() - t0;
+      if (el < dur) {
+        const s = strength * (1 - el / dur);
+        document.body.style.transform = `translate(${(Math.random()-0.5)*s*2}px,${(Math.random()-0.5)*s*2}px)`;
+        requestAnimationFrame(sh);
+      } else { document.body.style.transform = ''; }
+    }
+    sh();
+  }
+
+  /* ────────────────────────────────────────────────────────
+     GLASS CRACK CANVAS
+  ──────────────────────────────────────────────────────── */
+  function initGlass() {
     glassCanvas = document.createElement('canvas');
-    glassCanvas.id = 'ibot-glass';
+    glassCanvas.style.cssText = 'position:fixed;inset:0;z-index:999993;pointer-events:none;';
     glassCanvas.width  = window.innerWidth;
     glassCanvas.height = window.innerHeight;
-    glassCanvas.style.cssText = 'position:fixed;inset:0;z-index:999991;pointer-events:none;';
     document.body.appendChild(glassCanvas);
     glassCtx = glassCanvas.getContext('2d');
   }
 
-  function addCrack(centerX, centerY, severity) {
-    /* Generate realistic spider crack lines */
-    const numLines = 4 + Math.floor(severity * 6);
-    const crack = { lines: [], center: { x: centerX, y: centerY }, alpha: 0 };
-
-    for (let i = 0; i < numLines; i++) {
-      const angle  = (i / numLines) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
-      const length = 40 + Math.random() * (80 * severity);
-      const points = [{ x: centerX, y: centerY }];
-      let cx = centerX, cy = centerY;
-
-      for (let j = 0; j < 4; j++) {
-        const jitter = (Math.random() - 0.5) * 0.4;
-        const dist   = (length / 4) * (0.7 + Math.random() * 0.6);
-        cx += Math.cos(angle + jitter) * dist;
-        cy += Math.sin(angle + jitter) * dist;
-        points.push({ x: cx, y: cy });
-
-        /* Branch cracks */
-        if (severity > 1.5 && Math.random() > 0.5) {
-          const bAngle  = angle + (Math.random() - 0.5) * 1.2;
-          const bLength = dist * 0.5;
-          const bx = cx + Math.cos(bAngle) * bLength;
-          const by = cy + Math.sin(bAngle) * bLength;
-          crack.lines.push([{ x: cx, y: cy }, { x: bx, y: by }]);
+  function addCrack(cx, cy, severity) {
+    const lines = [];
+    const numRays = 5 + Math.floor(severity * 8);
+    for (let i = 0; i < numRays; i++) {
+      const baseAngle = (i / numRays) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+      const len = 30 + Math.random() * 95 * severity;
+      const pts = [{ x: cx, y: cy }];
+      let px = cx, py = cy;
+      for (let j = 0; j < 6; j++) {
+        const jitter = (Math.random() - 0.5) * 0.55;
+        const d = (len / 6) * (0.55 + Math.random() * 0.75);
+        px += Math.cos(baseAngle + jitter) * d;
+        py += Math.sin(baseAngle + jitter) * d;
+        pts.push({ x: px, y: py });
+        // branch cracks
+        if (severity > 1.0 && Math.random() > 0.5) {
+          const ba = baseAngle + (Math.random() - 0.5) * 1.6;
+          const bl = d * 0.45;
+          lines.push([{ x: px, y: py }, { x: px + Math.cos(ba)*bl, y: py + Math.sin(ba)*bl }]);
         }
       }
-      crack.lines.push(points);
+      lines.push(pts);
     }
+    const crack = { cx, cy, lines, alpha: 0 };
     cracks.push(crack);
-
-    /* Animate crack in */
-    let alpha = 0;
+    let a = 0;
     const anim = setInterval(() => {
-      alpha += 0.08;
-      crack.alpha = Math.min(1, alpha);
-      drawGlass();
-      if (alpha >= 1) clearInterval(anim);
+      a += 0.1; crack.alpha = Math.min(1, a); drawGlass();
+      if (a >= 1) clearInterval(anim);
     }, 16);
   }
 
   function spawnShards(cx, cy) {
-    for (let i = 0; i < 18; i++) {
-      const angle  = Math.random() * Math.PI * 2;
-      const speed  = 2 + Math.random() * 5;
-      const size   = 4 + Math.random() * 14;
+    for (let i = 0; i < 24; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const sp  = 1.5 + Math.random() * 7;
       shards.push({
-        x: cx + (Math.random() - 0.5) * 60,
-        y: cy + (Math.random() - 0.5) * 40,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed + 2,
-        rot: Math.random() * Math.PI * 2,
-        rotV: (Math.random() - 0.5) * 0.3,
-        size: size,
-        alpha: 1,
-        life: 1
+        x: cx + (Math.random() - 0.5) * 90, y: cy + (Math.random() - 0.5) * 55,
+        vx: Math.cos(ang)*sp, vy: Math.sin(ang)*sp - 0.5,
+        rot: Math.random() * 6.28, rotV: (Math.random()-0.5)*0.28,
+        size: 3 + Math.random() * 18, alpha: 1, life: 1
       });
     }
-    animateShards();
+    animShards();
   }
 
-  function animateShards() {
-    if (shards.length === 0) return;
+  function animShards() {
     shards.forEach(s => {
-      s.x   += s.vx;
-      s.y   += s.vy;
-      s.vy  += 0.4; /* gravity */
-      s.rot += s.rotV;
-      s.life -= 0.025;
-      s.alpha = Math.max(0, s.life);
+      s.x += s.vx; s.y += s.vy; s.vy += 0.45;
+      s.rot += s.rotV; s.life -= 0.02; s.alpha = Math.max(0, s.life);
     });
     shards = shards.filter(s => s.life > 0);
     drawGlass();
-    if (shards.length > 0) requestAnimationFrame(animateShards);
-    else { drawGlass(); }
-  }
-
-  function drawHole(cx, cy, r) {
-    if (!glassCtx) return;
-    glassCtx.save();
-    /* Dark hole punch */
-    glassCtx.globalCompositeOperation = 'destination-out';
-    const g = glassCtx.createRadialGradient(cx, cy, 0, cx, cy, r);
-    g.addColorStop(0,   'rgba(0,0,0,1)');
-    g.addColorStop(0.6, 'rgba(0,0,0,0.85)');
-    g.addColorStop(1,   'rgba(0,0,0,0)');
-    glassCtx.fillStyle = g;
-    glassCtx.beginPath();
-    glassCtx.arc(cx, cy, r, 0, Math.PI * 2);
-    glassCtx.fill();
-    glassCtx.restore();
+    if (shards.length > 0) requestAnimationFrame(animShards);
+    else drawGlass();
   }
 
   function drawGlass() {
     if (!glassCtx) return;
-    glassCtx.clearRect(0, 0, glassCanvas.width, glassCanvas.height);
+    const W = glassCanvas.width, H = glassCanvas.height;
+    glassCtx.clearRect(0, 0, W, H);
 
-    /* Draw cracks */
-    cracks.forEach(crack => {
-      glassCtx.save();
-      glassCtx.globalAlpha = crack.alpha;
-      crack.lines.forEach(pts => {
-        glassCtx.beginPath();
-        glassCtx.moveTo(pts[0].x, pts[0].y);
-        for (let i = 1; i < pts.length; i++) {
-          glassCtx.lineTo(pts[i].x, pts[i].y);
-        }
-        glassCtx.strokeStyle = 'rgba(200,220,240,0.9)';
-        glassCtx.lineWidth   = 0.8 + Math.random() * 0.4;
-        glassCtx.stroke();
-
-        /* Inner highlight */
-        glassCtx.strokeStyle = 'rgba(255,255,255,0.4)';
-        glassCtx.lineWidth   = 0.3;
-        glassCtx.stroke();
+    cracks.forEach(cr => {
+      glassCtx.save(); glassCtx.globalAlpha = cr.alpha;
+      cr.lines.forEach(pts => {
+        if (pts.length < 2) return;
+        glassCtx.beginPath(); glassCtx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) glassCtx.lineTo(pts[i].x, pts[i].y);
+        glassCtx.strokeStyle = 'rgba(185,215,245,0.94)'; glassCtx.lineWidth = 1; glassCtx.stroke();
+        glassCtx.strokeStyle = 'rgba(255,255,255,0.38)';  glassCtx.lineWidth = 0.3; glassCtx.stroke();
       });
       glassCtx.restore();
     });
 
-    /* Draw shards */
     shards.forEach(s => {
       glassCtx.save();
-      glassCtx.globalAlpha = s.alpha * 0.85;
-      glassCtx.translate(s.x, s.y);
-      glassCtx.rotate(s.rot);
+      glassCtx.globalAlpha = s.alpha * 0.88;
+      glassCtx.translate(s.x, s.y); glassCtx.rotate(s.rot);
       glassCtx.beginPath();
-      /* Irregular triangle shard */
       glassCtx.moveTo(0, -s.size);
-      glassCtx.lineTo(s.size * 0.6,  s.size * 0.5);
-      glassCtx.lineTo(-s.size * 0.5, s.size * 0.4);
+      glassCtx.lineTo(s.size * 0.52, s.size * 0.42);
+      glassCtx.lineTo(-s.size * 0.48, s.size * 0.36);
       glassCtx.closePath();
-      const g = glassCtx.createLinearGradient(0, -s.size, 0, s.size);
-      g.addColorStop(0, 'rgba(200,230,255,0.9)');
-      g.addColorStop(1, 'rgba(150,200,230,0.3)');
-      glassCtx.fillStyle = g;
-      glassCtx.fill();
-      glassCtx.strokeStyle = 'rgba(255,255,255,0.6)';
-      glassCtx.lineWidth   = 0.5;
-      glassCtx.stroke();
+      const gr = glassCtx.createLinearGradient(0, -s.size, 0, s.size);
+      gr.addColorStop(0, 'rgba(195,228,255,0.92)');
+      gr.addColorStop(1, 'rgba(135,188,228,0.28)');
+      glassCtx.fillStyle = gr; glassCtx.fill();
+      glassCtx.strokeStyle = 'rgba(255,255,255,0.7)'; glassCtx.lineWidth = 0.45; glassCtx.stroke();
       glassCtx.restore();
     });
 
-    /* Draw hole if shattered */
-    if (glassShattered && glassCanvas) {
-      const cx = glassCanvas.width / 2;
-      const cy = glassCanvas.height / 2;
-      drawHole(cx, cy, 90);
+    if (hasHole) {
+      const cx = W / 2, cy = H / 2;
+      glassCtx.save();
+      glassCtx.globalCompositeOperation = 'destination-out';
+      const gr = glassCtx.createRadialGradient(cx, cy, 0, cx, cy, 100);
+      gr.addColorStop(0,   'rgba(0,0,0,1)');
+      gr.addColorStop(0.6, 'rgba(0,0,0,0.92)');
+      gr.addColorStop(1,   'rgba(0,0,0,0)');
+      glassCtx.fillStyle = gr;
+      glassCtx.beginPath(); glassCtx.arc(cx, cy, 100, 0, Math.PI*2); glassCtx.fill();
+      glassCtx.restore();
     }
   }
 
-  /* ════════════════════════════════════════════════════════
-     EYE / EYEBROW STATE HELPERS
-  ════════════════════════════════════════════════════════ */
-  function setEyeState(state) {
-    const elL = document.getElementById('ibot-eye-l-led');
-    const elR = document.getElementById('ibot-eye-r-led');
-    const blL = document.getElementById('ibot-brow-l');
-    const blR = document.getElementById('ibot-brow-r');
-    if (!elL || !elR) return;
+  /* ────────────────────────────────────────────────────────
+     THREE.JS SCENE SETUP
+  ──────────────────────────────────────────────────────── */
+  /* Robot animation state flags (read in render loop) */
+  let state = {
+    walking: false,
+    panicking: false,
+    nervousTremor: false,
+    eyeDartActive: false,
+    armRaised: false,       // right arm raised for knocking
+    armKnock: 0,            // 0=rest, >0 = knock anim progress
+    peekIn: 0,              // 0=out 1=in
+    antMode: 'idle',        // 'idle'|'nervous'|'panic'
+    walkT: 0,
+    time: 0,
+  };
 
-    /* Reset */
-    [elL, elR].forEach(e => { e.setAttribute('rx','8'); e.setAttribute('ry','7'); });
-    if (blL) { blL.setAttribute('transform', ''); }
-    if (blR) { blR.setAttribute('transform', ''); }
+  function initScene(T) {
+    threeCanvas = document.createElement('canvas');
+    threeCanvas.style.cssText = 'position:fixed;inset:0;z-index:999990;pointer-events:none;';
+    threeCanvas.width  = window.innerWidth;
+    threeCanvas.height = window.innerHeight;
+    document.body.appendChild(threeCanvas);
 
-    /* Remove any running eye animations */
-    const eyeG = document.getElementById('ibot-eyes');
-    if (eyeG) eyeG.style.animation = '';
+    scene    = new T.Scene();
+    renderer = new T.WebGLRenderer({ canvas: threeCanvas, alpha: true, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    if (state === 'calm') {
-      [elL, elR].forEach(e => { e.setAttribute('rx','8'); e.setAttribute('ry','7'); });
+    const aspect = window.innerWidth / window.innerHeight;
+    camera = new T.PerspectiveCamera(50, aspect, 0.1, 100);
+    camera.position.set(0, 2.5, 8.5);
+    camera.lookAt(0, 1.5, 0);
 
-    } else if (state === 'nervous') {
-      /* Narrow eyes */
-      [elL, elR].forEach(e => { e.setAttribute('rx','7'); e.setAttribute('ry','4'); });
-      /* Brows tilt inward */
-      if (blL) blL.setAttribute('transform', 'rotate(-12, 44, 58)');
-      if (blR) blR.setAttribute('transform', 'rotate(12, 76, 58)');
-      /* Dart animation */
-      if (eyeG) eyeG.style.animation = 'ibot-eye-dart 1.2s ease-in-out infinite';
+    // Lights — match glossy Astro Bot look
+    scene.add(new T.AmbientLight(0xffffff, 0.42));
 
-    } else if (state === 'shocked') {
-      [elL, elR].forEach(e => { e.setAttribute('rx','11'); e.setAttribute('ry','11'); });
-      if (blL) blL.setAttribute('transform', 'translate(0,-4)');
-      if (blR) blR.setAttribute('transform', 'translate(0,-4)');
+    const sun = new T.DirectionalLight(0xffffff, 0.95);
+    sun.position.set(-3, 7, 5); scene.add(sun);
 
-    } else if (state === 'panic') {
-      [elL, elR].forEach(e => { e.setAttribute('rx','3'); e.setAttribute('ry','3'); });
-      if (blL) blL.setAttribute('transform', 'rotate(-25, 44, 58)');
-      if (blR) blR.setAttribute('transform', 'rotate(25, 76, 58)');
+    const fill = new T.DirectionalLight(0x8ab4f8, 0.28);
+    fill.position.set(5, 2, 3); scene.add(fill);
 
-    } else if (state === 'exclaim') {
-      /* Show !! as text inside visor */
-      const visorText = document.getElementById('ibot-exclaim');
-      if (!visorText) {
-        const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        txt.id = 'ibot-exclaim';
-        txt.setAttribute('x', '60');
-        txt.setAttribute('y', '76');
-        txt.setAttribute('text-anchor', 'middle');
-        txt.setAttribute('font-size', '22');
-        txt.setAttribute('font-weight', 'bold');
-        txt.setAttribute('fill', '#ff4444');
-        txt.setAttribute('filter', 'url(#ib-eye-glow)');
-        txt.textContent = '!!';
-        document.getElementById('ibot-eyes')?.appendChild(txt);
+    const blueKey = new T.PointLight(0x2277ff, 0.55, 14);
+    blueKey.position.set(1, 3, 4); scene.add(blueKey);
+
+    const backLight = new T.PointLight(0x4488ff, 0.3, 10);
+    backLight.position.set(0, 2, -5); scene.add(backLight);
+
+    // Build robot
+    robotGroup = buildRobot(T);
+    robotGroup.position.set(8.5, 0, 0);
+    scene.add(robotGroup);
+
+    // Render loop
+    clock = new T.Clock();
+    function renderLoop() {
+      rafId = requestAnimationFrame(renderLoop);
+      const dt = clock.getDelta();
+      state.time += dt;
+      const t = state.time;
+
+      tickTweens();
+
+      /* ── Robot X drift ── */
+      if (robotGroup) {
+        const dx = targetX - robotGroup.position.x;
+        const spd = walkSpeed > 0 ? walkSpeed : 10;
+        robotGroup.position.x += dx * Math.min(dt * spd, 1);
       }
-      [elL, elR].forEach(e => { e.setAttribute('rx','0'); e.setAttribute('ry','0'); });
 
-    } else if (state === 'search') {
-      /* Squint */
-      [elL, elR].forEach(e => { e.setAttribute('rx','8'); e.setAttribute('ry','3.5'); });
-      if (blL) blL.setAttribute('transform', 'translate(0,2)');
-      if (blR) blR.setAttribute('transform', 'translate(0,2)');
+      /* ── Walk animation ── */
+      if (state.walking && robotGroup) {
+        state.walkT += dt * 4.5;
+        const wt = state.walkT;
+        // Leg swing
+        if (legGroupL) legGroupL.rotation.x = Math.sin(wt) * 0.38;
+        if (legGroupR) legGroupR.rotation.x = Math.sin(wt + Math.PI) * 0.38;
+        // Body bob
+        if (bodyGroup) bodyGroup.position.y = 1.08 + Math.abs(Math.sin(wt)) * 0.07;
+        // Head stay level
+        if (headGroup) headGroup.position.y = 2.12 + Math.abs(Math.sin(wt)) * 0.05;
+        // Arm counter swing
+        if (armGroupL) armGroupL.rotation.x = Math.sin(wt + Math.PI) * 0.18;
+        if (armGroupR) armGroupR.rotation.x = Math.sin(wt) * 0.18;
+      } else {
+        // Settle limbs
+        if (legGroupL) legGroupL.rotation.x *= 0.88;
+        if (legGroupR) legGroupR.rotation.x *= 0.88;
+        if (bodyGroup) bodyGroup.position.y = lerp(bodyGroup.position.y, 1.08, dt*5);
+        if (headGroup) headGroup.position.y = lerp(headGroup.position.y, 2.12, dt*4);
+        if (!state.armRaised) {
+          if (armGroupL) armGroupL.rotation.x *= 0.88;
+          if (armGroupR) armGroupR.rotation.x *= 0.88;
+        }
+      }
+
+      /* ── Panic run ── */
+      if (state.panicking && robotGroup) {
+        state.walkT += dt * 12;
+        const wt = state.walkT;
+        if (legGroupL) legGroupL.rotation.x = Math.sin(wt) * 0.65;
+        if (legGroupR) legGroupR.rotation.x = Math.sin(wt + Math.PI) * 0.65;
+        if (armGroupL) armGroupL.rotation.z = lerp(armGroupL.rotation.z, -1.8, dt * 8);
+        if (armGroupR) armGroupR.rotation.z = lerp(armGroupR.rotation.z,  1.8, dt * 8);
+        // Cape flies wildly
+        if (capeMesh) capeMesh.rotation.z = Math.sin(t * 18) * 0.35;
+      }
+
+      /* ── Cape ambient sway ── */
+      if (!state.panicking && capeMesh) {
+        const capeIntensity = state.walking ? 0.1 : 0.03;
+        capeMesh.rotation.z = Math.sin(t * 2.8) * capeIntensity;
+        capeMesh.rotation.x = 0.07 + Math.sin(t * 2.1) * capeIntensity * 0.6;
+      }
+
+      /* ── Antenna orb pulse ── */
+      if (antOrb) {
+        if (state.antMode === 'nervous') {
+          antOrb.material.color.setHex(Math.sin(t*20)>0 ? 0x00eeff : 0x003344);
+        } else if (state.antMode === 'panic') {
+          antOrb.material.color.setHex(Math.sin(t*50)>0 ? 0x00ffff : 0x001111);
+        } else {
+          const pulse = 0.5 + 0.5 * Math.sin(t * 2.8);
+          const g2 = Math.floor(200 + pulse*55), b = Math.floor(230 + pulse*25);
+          antOrb.material.color.setRGB(0.01, g2/255, b/255);
+        }
+      }
+
+      /* ── Nervous tremor ── */
+      if (state.nervousTremor && robotGroup) {
+        robotGroup.rotation.z = Math.sin(t * 24) * 0.02;
+      } else if (robotGroup) {
+        robotGroup.rotation.z *= 0.9;
+      }
+
+      /* ── Arm raised for knock ── */
+      if (state.armRaised && armGroupR) {
+        armGroupR.rotation.z = lerp(armGroupR.rotation.z, -1.35, dt*6);
+        armGroupR.rotation.x = lerp(armGroupR.rotation.x, -0.45, dt*6);
+      }
+
+      renderer.render(scene, camera);
     }
+    renderLoop();
   }
 
-  function clearExclaim() {
-    const v = document.getElementById('ibot-exclaim');
-    if (v) v.remove();
+  /* ────────────────────────────────────────────────────────
+     FLEE HELPERS
+  ──────────────────────────────────────────────────────── */
+  function doFlee(afterGlass) {
+    currentPhase = 'fleeing';
+    clearPending();
+
+    state.walking   = false;
+    state.panicking = false;
+    state.nervousTremor = false;
+    state.antMode   = 'panic';
+
+    setEyeState(afterGlass ? 'panic' : 'shocked');
+
+    setTimeout(() => {
+      if (!afterGlass && armGroupL && armGroupR) {
+        armGroupL.rotation.z = -1.8;
+        armGroupR.rotation.z =  1.8;
+      }
+      state.panicking = true;
+      walkSpeed = 14;
+      targetX   = -10;
+      playSound('panic');
+
+      setTimeout(() => {
+        if (glassCanvas) {
+          glassCanvas.style.transition = 'opacity 1.4s ease';
+          glassCanvas.style.opacity    = '0';
+        }
+        setTimeout(cleanup, 1500);
+      }, 750);
+    }, afterGlass ? 280 : 180);
   }
 
-  function setHeadLook(dir) {
-    /* dir = 'left' | 'right' | 'center' */
-    const head = document.getElementById('ibot-head');
-    const eyes = document.getElementById('ibot-eyes');
-    if (!head) return;
-    head.style.transition = 'transform 0.4s ease';
-    if (dir === 'right') {
-      head.style.transform = 'rotate(18deg)';
-      if (eyes) eyes.style.transform = 'translateX(4px)';
-    } else if (dir === 'left') {
-      head.style.transform = 'rotate(-12deg)';
-      if (eyes) eyes.style.transform = 'translateX(-4px)';
-    } else {
-      head.style.transform = '';
-      if (eyes) eyes.style.transform = '';
+  /* ────────────────────────────────────────────────────────
+     CLEANUP
+  ──────────────────────────────────────────────────────── */
+  function cleanup() {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    if (threeCanvas && threeCanvas.parentNode) threeCanvas.remove();
+    if (glassCanvas && glassCanvas.parentNode) glassCanvas.remove();
+
+    if (scene) { scene.traverse(o => { if(o.geometry) o.geometry.dispose(); }); }
+    if (renderer) renderer.dispose();
+
+    threeCanvas = glassCanvas = glassCtx = null;
+    scene = camera = renderer = clock = null;
+    robotGroup = headGroup = bodyGroup = null;
+    armGroupL = armGroupR = legGroupL = legGroupR = null;
+    eyeL = eyeR = antOrb = capeMesh = null;
+
+    cracks = []; shards = []; hasHole = false;
+    tweens.length = 0;
+    isActive = false; interacted = false;
+    currentPhase = 'none'; walkSpeed = 0; targetX = 8;
+    Object.assign(state, { walking:false, panicking:false, nervousTremor:false,
+      armRaised:false, antMode:'idle', walkT:0, time:0, peekIn:0, eyeDartActive:false });
+
+    resetIdleTimer();
+  }
+
+  /* ────────────────────────────────────────────────────────
+     MAIN SEQUENCE
+  ──────────────────────────────────────────────────────── */
+  async function runSequence() {
+    if (!robotGroup) return;
+    const W = window.innerWidth, H = window.innerHeight;
+    const knockCX = W / 2, knockCY = H / 2;
+
+    // Reset robot
+    robotGroup.position.set(9, 0, 0);
+    robotGroup.rotation.set(0, 0, 0);
+    if (headGroup)  headGroup.position.set(0, 2.12, 0), headGroup.rotation.set(0,0,0);
+    if (bodyGroup)  bodyGroup.position.set(0, 1.08, 0);
+    if (armGroupL)  armGroupL.rotation.set(0,0,0);
+    if (armGroupR)  armGroupR.rotation.set(0,0,0);
+    if (legGroupL)  legGroupL.rotation.set(0,0,0);
+    if (legGroupR)  legGroupR.rotation.set(0,0,0);
+    setEyeState('shocked');
+    state.antMode = 'nervous';
+
+    /* ════ PHASE 1: FORCED ENTRY ════ */
+    currentPhase = 'entry';
+    walkSpeed = 0;
+
+    // Shoved in — tumble with spin
+    const entryDur = 580;
+    const entryT0  = performance.now();
+    await new Promise(resolve => {
+      function entryFrame() {
+        const elapsed = performance.now() - entryT0;
+        const t = Math.min(elapsed / entryDur, 1);
+        const ease = easeOut3(t);
+        if (robotGroup) {
+          robotGroup.position.x = lerp(9, 4.5, ease);
+          robotGroup.position.y = Math.sin(t * Math.PI) * 1.6; // arc
+          robotGroup.rotation.z = lerp(1.8, 0.12, ease); // tumble spin
+          robotGroup.rotation.x = lerp(-0.4, 0, ease);
+        }
+        if (t < 1) requestAnimationFrame(entryFrame); else resolve();
+      }
+      entryFrame();
+    });
+
+    if (interacted) { doFlee(false); return; }
+
+    /* Impact bounce */
+    playSound('impact');
+    screenShake(9, 380);
+    const bounceT0 = performance.now();
+    await new Promise(resolve => {
+      function bounceFrame() {
+        const elapsed = performance.now() - bounceT0;
+        const t = Math.min(elapsed / 750, 1);
+        if (robotGroup) {
+          if      (t < 0.18) { robotGroup.scale.set(1.35,0.55,1); robotGroup.position.y = 0; }
+          else if (t < 0.45) { const s=(t-0.18)/0.27; robotGroup.scale.set(lerp(1.35,0.92,s),lerp(0.55,1.18,s),1); robotGroup.position.y = s*0.42; }
+          else if (t < 0.7)  { const s=(t-0.45)/0.25; robotGroup.scale.set(lerp(0.92,1.08,s),lerp(1.18,0.9,s),1);  robotGroup.position.y = lerp(0.42,0,s); }
+          else               { const s=(t-0.7)/0.3; robotGroup.scale.set(lerp(1.08,1,s),lerp(0.9,1,s),1); robotGroup.rotation.z=lerp(0.12,0,s); }
+        }
+        if (t < 1) requestAnimationFrame(bounceFrame); else resolve();
+      }
+      bounceFrame();
+    });
+    if (interacted) { doFlee(false); return; }
+
+    /* ════ PHASE 2: RECOVERY ════ */
+    currentPhase = 'recovery';
+    state.antMode = 'nervous';
+    setEyeState('nervous');
+
+    // Motionless 0.8s (antenna flickers)
+    await sleep(800);
+    if (interacted) { doFlee(false); return; }
+
+    // Get up
+    const getUpT0 = performance.now();
+    await new Promise(resolve => {
+      function getUpFrame() {
+        const elapsed = performance.now() - getUpT0;
+        const t = Math.min(elapsed / 900, 1);
+        if (robotGroup) {
+          robotGroup.position.y = lerp(-0.25, 0, easeInOut(t));
+          robotGroup.rotation.z = lerp(-0.3, 0.04, easeInOut(t));
+        }
+        if (t < 1) requestAnimationFrame(getUpFrame); else resolve();
+      }
+      getUpFrame();
+    });
+    await sleep(250);
+    if (interacted) { doFlee(false); return; }
+
+    // Dust off (small shake)
+    const dustT0 = performance.now();
+    await new Promise(resolve => {
+      function dustFrame() {
+        const elapsed = performance.now() - dustT0;
+        const t = Math.min(elapsed / 700, 1);
+        if (robotGroup) {
+          robotGroup.rotation.x = Math.sin(elapsed / 70) * 0.04 * (1-t);
+          robotGroup.rotation.z = lerp(0.04, 0, t);
+        }
+        if (t < 1) requestAnimationFrame(dustFrame); else { if(robotGroup) robotGroup.rotation.x=0; resolve(); }
+      }
+      dustFrame();
+    });
+    setEyeState('calm');
+    await sleep(200);
+    if (interacted) { doFlee(false); return; }
+
+    /* ════ PHASE 3: NERVOUS TIPTOE WALK ════ */
+    currentPhase = 'walking';
+    state.nervousTremor = true;
+    state.walking       = true;
+    state.antMode       = 'nervous';
+    setEyeState('nervous');
+
+    // Arms near chest (anxious)
+    if (armGroupL) armGroupL.rotation.z = -0.45;
+    if (armGroupR) armGroupR.rotation.z =  0.45;
+
+    // Walk in segments with nervous glances back
+    async function walkSegment(tx, dur, numSteps) {
+      targetX = tx;
+      for (let i = 0; i < numSteps; i++) {
+        if (interacted) return;
+        playSound('step');
+        await sleep(dur / numSteps);
+      }
     }
-  }
-
-  function antFlicker(mode) {
-    const orb = document.getElementById('ibot-ant-orb');
-    if (!orb) return;
-    if (mode === 'flicker') {
-      orb.style.animation = 'ibot-ant-flicker 0.18s ease-in-out infinite';
-    } else if (mode === 'panic') {
-      orb.style.animation = 'ibot-ant-panic 0.08s ease-in-out infinite';
-    } else {
-      orb.style.animation = '';
+    async function glanceRight() {
+      if (interacted) return;
+      state.walking = false;
+      if (headGroup) headGroup.rotation.y = -0.7;
+      setEyeState('nervous');
+      await sleep(480);
+      if (headGroup) headGroup.rotation.y = 0;
+      await sleep(160);
+      state.walking = true;
     }
+
+    await walkSegment(2.8, 900, 3);
+    if (interacted) { doFlee(false); return; }
+    await glanceRight();
+    if (interacted) { doFlee(false); return; }
+    await walkSegment(1.1, 650, 2);
+    if (interacted) { doFlee(false); return; }
+    await glanceRight();
+    if (interacted) { doFlee(false); return; }
+    await walkSegment(0, 550, 2);
+    if (interacted) { doFlee(false); return; }
+
+    state.walking = false;
+    walkSpeed     = 0;
+    await sleep(200);
+    if (interacted) { doFlee(false); return; }
+
+    /* ════ PHASE 4: LOOK AT USER ════ */
+    currentPhase = 'looking';
+    state.nervousTremor = false;
+    if (armGroupL) armGroupL.rotation.z = 0;
+    if (armGroupR) armGroupR.rotation.z = 0;
+    if (headGroup) headGroup.rotation.y = 0;
+    setEyeState('search');
+
+    // Head tilts slightly toward camera
+    if (headGroup) headGroup.rotation.x = -0.12;
+    await sleep(400);
+    setEyeState('calm');
+    await sleep(1100);
+    if (interacted) { doFlee(false); return; }
+
+    /* ════ PHASE 5: SCREEN KNOCK ════ */
+    currentPhase = 'knocking';
+    if (headGroup) headGroup.rotation.x = 0;
+    setEyeState('search');
+
+    // Raise right arm slowly
+    state.armRaised = true;
+    await sleep(520);
+    if (interacted) { doFlee(false); return; }
+
+    // ── KNOCK 1 (light tap) ──
+    let k1T0 = performance.now();
+    await new Promise(resolve => {
+      function k1() {
+        const t = Math.min((performance.now()-k1T0)/280, 1);
+        if (armGroupR) armGroupR.rotation.z = lerp(-1.35, -1.68, Math.sin(t*Math.PI));
+        if (t < 1) requestAnimationFrame(k1); else resolve();
+      }
+      k1();
+    });
+    playSound('knock1'); screenShake(3, 220);
+    addCrack(knockCX, knockCY, 0.62);
+    await sleep(220);
+    // Peer through crack
+    setEyeState('search');
+    if (headGroup) headGroup.rotation.x = -0.16;
+    await sleep(750);
+    if (headGroup) headGroup.rotation.x = 0;
+    await sleep(200);
+    if (interacted) { doFlee(true); return; }
+
+    // ── KNOCK 2 (harder) ──
+    let k2T0 = performance.now();
+    await new Promise(resolve => {
+      function k2() {
+        const t = Math.min((performance.now()-k2T0)/250, 1);
+        if (armGroupR) armGroupR.rotation.z = lerp(-1.35, -1.72, Math.sin(t*Math.PI));
+        if (t < 1) requestAnimationFrame(k2); else resolve();
+      }
+      k2();
+    });
+    playSound('knock2'); screenShake(5.5, 280);
+    addCrack(knockCX + 28, knockCY - 14, 1.35);
+    addCrack(knockCX - 22, knockCY + 28, 1.05);
+    await sleep(200);
+    setEyeState('shocked');
+    await sleep(600);
+    if (interacted) { doFlee(true); return; }
+
+    // ── KNOCK 3 (heavy blow) ──
+    setEyeState('calm');
+    let k3T0 = performance.now();
+    await new Promise(resolve => {
+      function k3() {
+        const t = Math.min((performance.now()-k3T0)/220, 1);
+        if (armGroupR) armGroupR.rotation.z = lerp(-1.35, -1.78, Math.sin(t*Math.PI));
+        if (t < 1) requestAnimationFrame(k3); else resolve();
+      }
+      k3();
+    });
+    playSound('knock3'); screenShake(11, 480);
+    addCrack(knockCX, knockCY, 2.9);
+    addCrack(knockCX+55, knockCY+38, 2.1);
+    addCrack(knockCX-58, knockCY-22, 1.75);
+    await sleep(190);
+    playSound('glass');
+    hasHole = true;
+    spawnShards(knockCX, knockCY);
+
+    await sleep(420);
+    if (interacted) { doFlee(true); return; }
+
+    // Lower arm
+    state.armRaised = false;
+    await sleep(300);
+    if (armGroupR) {
+      const lowerT0 = performance.now();
+      await new Promise(resolve => {
+        function lowerArm() {
+          const t = Math.min((performance.now()-lowerT0)/400, 1);
+          if (armGroupR) {
+            armGroupR.rotation.z = lerp(-1.35, 0, easeInOut(t));
+            armGroupR.rotation.x = lerp(-0.45, 0, easeInOut(t));
+          }
+          if (t < 1) requestAnimationFrame(lowerArm); else resolve();
+        }
+        lowerArm();
+      });
+    }
+    if (interacted) { doFlee(true); return; }
+
+    /* ════ PHASE 6: FOURTH WALL BREAK — PEEK ════ */
+    currentPhase = 'peeking';
+    await sleep(300);
+    if (interacted) { doFlee(true); return; }
+
+    while (!interacted && currentPhase === 'peeking') {
+      // Lean head through hole
+      setEyeState('search');
+      const leanInT0 = performance.now();
+      await new Promise(resolve => {
+        function leanIn() {
+          const t = Math.min((performance.now()-leanInT0)/520, 1);
+          if (headGroup) {
+            headGroup.position.z = lerp(0, 0.55, easeOut3(t));
+            headGroup.position.y = lerp(2.12, 2.24, t);
+            headGroup.scale.setScalar(lerp(1, 1.1, easeOut3(t)));
+          }
+          if (t < 1) requestAnimationFrame(leanIn); else resolve();
+        }
+        leanIn();
+      });
+      if (interacted) break;
+
+      // Look LEFT
+      if (headGroup) headGroup.rotation.y = 0.55;
+      await sleep(620);
+      if (interacted) break;
+      // Look RIGHT
+      if (headGroup) headGroup.rotation.y = -0.55;
+      await sleep(570);
+      if (interacted) break;
+      // Look CENTER (at user)
+      if (headGroup) headGroup.rotation.y = 0;
+      setEyeState('calm');
+      await sleep(1500);
+      if (interacted) break;
+
+      // Pull head back
+      const leanOutT0 = performance.now();
+      await new Promise(resolve => {
+        function leanOut() {
+          const t = Math.min((performance.now()-leanOutT0)/420, 1);
+          if (headGroup) {
+            headGroup.position.z = lerp(0.55, 0, easeInOut(t));
+            headGroup.position.y = lerp(2.24, 2.12, t);
+            headGroup.scale.setScalar(lerp(1.1, 1, easeInOut(t)));
+          }
+          if (t < 1) requestAnimationFrame(leanOut); else resolve();
+        }
+        leanOut();
+      });
+      if (interacted) break;
+
+      // Nervous glance right (checking if pusher returns)
+      if (headGroup) headGroup.rotation.y = -0.42;
+      setEyeState('nervous');
+      state.nervousTremor = true;
+      await sleep(520);
+      if (headGroup) headGroup.rotation.y = 0;
+      state.nervousTremor = false;
+      await sleep(3600);
+    }
+
+    if (interacted) doFlee(true);
   }
 
-  /* ════════════════════════════════════════════════════════
-     SLEEP UTILITY
-  ════════════════════════════════════════════════════════ */
-  function sleep(ms) {
-    return new Promise(resolve => {
-      const t = setTimeout(resolve, ms);
-      phaseTimers.push(t);
+  /* ────────────────────────────────────────────────────────
+     ENTRY POINT
+  ──────────────────────────────────────────────────────── */
+  function startIdleBot() {
+    if (isActive) return;
+    isActive = true; interacted = false;
+
+    loadThree(T => {
+      initScene(T);
+      initGlass();
+      setTimeout(() => runSequence(), 400);
     });
   }
 
-  function clearAllTimers() {
-    phaseTimers.forEach(t => clearTimeout(t));
-    phaseTimers = [];
-  }
-
-  /* ════════════════════════════════════════════════════════
-     MAIN SCENE — async sequence
-  ════════════════════════════════════════════════════════ */
-  async function runScene() {
-    if (botActive) return;
-    botActive    = true;
-    interacted   = false;
-    glassShattered = false;
-    phase        = 'entry';
-    cracks       = [];
-    shards       = [];
-
-    const W = window.innerWidth;
-    const H = window.innerHeight;
-
-    /* Build scene */
-    const scene = document.createElement('div');
-    scene.id = 'ibot-scene';
-    document.body.appendChild(scene);
-
-    /* Build glass canvas */
-    buildGlass();
-
-    /* Build robot */
-    const robot = document.createElement('div');
-    robot.id    = 'ibot-robot';
-    robot.innerHTML = buildRobotSVG();
-    robot.style.cssText = `
-      position: absolute;
-      bottom: 0;
-      left: ${W + 200}px;
-      width: 120px;
-      height: 180px;
-      transform-origin: bottom center;
-      pointer-events: none;
-      will-change: transform, left;
-    `;
-    scene.appendChild(robot);
-
-    const legL = robot.querySelector('#ibot-leg-l');
-    const legR = robot.querySelector('#ibot-leg-r');
-    const armL = robot.querySelector('#ibot-arm-l');
-    const armR = robot.querySelector('#ibot-arm-r');
-    const cape = robot.querySelector('#ibot-cape');
-
-    /* ────────────────────────────────────────────────────
-       PHASE 1: FORCED ENTRY — shoved from right
-    ──────────────────────────────────────────────────── */
-    phase = 'entry';
-    setEyeState('shocked');
-    antFlicker('flicker');
-
-    /* Arms flailing */
-    if (armL) armL.style.animation = 'ibot-arm-flail-l 0.2s ease-in-out infinite';
-    if (armR) armR.style.animation = 'ibot-arm-flail-r 0.2s ease-in-out 0.1s infinite';
-
-    /* Fly in from right with tumble */
-    robot.style.transition = 'left 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-    robot.style.left       = (W * 0.72) + 'px';
-    robot.style.animation  = 'ibot-tumble 0.55s ease-in forwards';
-
-    await sleep(560);
-    if (interacted) { flee(robot, scene); return; }
-
-    /* Hit floor */
-    playSound('impact');
-    robot.style.animation  = 'ibot-bounce 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards';
-    robot.style.transition = 'none';
-
-    /* Screen shake */
-    document.body.style.animation = 'ibot-shake 0.35s ease forwards';
-    setTimeout(() => { document.body.style.animation = ''; }, 360);
-
-    await sleep(700);
-    if (interacted) { flee(robot, scene); return; }
-
-    /* ────────────────────────────────────────────────────
-       PHASE 2: RECOVERY
-    ──────────────────────────────────────────────────── */
-    phase = 'recovery';
-    antFlicker('');
-    setEyeState('calm');
-
-    /* Arms push off floor */
-    if (armL) armL.style.animation = '';
-    if (armR) armR.style.animation = '';
-    robot.style.animation = '';
-
-    /* Stand up slowly */
-    robot.style.transition = 'transform 0.8s ease';
-    robot.style.transform  = 'scaleY(0.8) translateY(10px)';
-    await sleep(300);
-    robot.style.transform  = 'scaleY(1) translateY(0)';
-    await sleep(600);
-    if (interacted) { flee(robot, scene); return; }
-
-    /* Dust off — slight shake */
-    setEyeState('nervous');
-    for (let i = 0; i < 3; i++) {
-      robot.style.transform = `translateX(${i % 2 === 0 ? -3 : 3}px) rotate(${i % 2 === 0 ? -2 : 2}deg)`;
-      await sleep(120);
-    }
-    robot.style.transform = '';
-    await sleep(300);
-    if (interacted) { flee(robot, scene); return; }
-
-    /* ────────────────────────────────────────────────────
-       PHASE 3: NERVOUS WALK TO CENTER
-    ──────────────────────────────────────────────────── */
-    phase = 'walking';
-    setEyeState('nervous');
-    antFlicker('');
-
-    /* Hands near chest trembling */
-    if (armL) { armL.style.animation = ''; armL.style.transform = 'rotate(35deg)'; }
-    if (armR) { armR.style.animation = ''; armR.style.transform = 'rotate(-35deg)'; }
-
-    const centerX = W / 2 - 60;
-    const startX  = parseFloat(robot.style.left);
-    const steps   = 6;
-    const stepDist = (centerX - startX) / steps;
-
-    for (let s = 0; s < steps; s++) {
-      if (interacted) { flee(robot, scene); return; }
-
-      /* Walk step */
-      const targetX = startX + stepDist * (s + 1);
-      robot.style.transition = 'left 0.45s cubic-bezier(0.4, 0, 0.6, 1)';
-      robot.style.left = targetX + 'px';
-
-      /* Leg cycle */
-      if (legL) legL.style.animation = 'ibot-walk-l 0.45s ease-in-out';
-      if (legR) legR.style.animation = 'ibot-walk-r 0.45s ease-in-out';
-      /* Tiptoe body bounce */
-      robot.style.animation = 'ibot-tiptoe 0.45s ease-in-out';
-
-      playSound('step');
-      await sleep(460);
-      robot.style.animation = '';
-      if (legL) legL.style.animation = '';
-      if (legR) legR.style.animation = '';
-
-      /* Every 2 steps: nervous glance back right */
-      if (s % 2 === 1) {
-        setHeadLook('right');
-        setEyeState('nervous');
-        await sleep(400);
-        if (interacted) { flee(robot, scene); return; }
-        setHeadLook('center');
-        await sleep(200);
-      }
-    }
-
-    await sleep(200);
-    if (interacted) { flee(robot, scene); return; }
-
-    /* ────────────────────────────────────────────────────
-       PHASE 4: LOOK AT USER
-    ──────────────────────────────────────────────────── */
-    phase = 'looking';
-    setHeadLook('center');
-    setEyeState('search');
-
-    /* Head slowly tilts toward "camera" */
-    const head = robot.querySelector('#ibot-head');
-    if (head) {
-      head.style.transition = 'transform 0.6s ease';
-      head.style.transform  = 'translateY(-4px) rotate(-3deg)';
-    }
-
-    await sleep(800);
-    if (interacted) { flee(robot, scene); return; }
-
-    setEyeState('calm');
-    await sleep(1000);
-    if (interacted) { flee(robot, scene); return; }
-
-    /* ────────────────────────────────────────────────────
-       PHASE 5: SCREEN KNOCK x3
-    ──────────────────────────────────────────────────── */
-    phase = 'knocking';
-    if (head) head.style.transform = '';
-
-    /* Raise right arm for knocking */
-    if (armR) {
-      armR.style.animation  = 'ibot-arm-raise 0.5s ease forwards';
-      armR.style.transition = 'transform 0.5s ease';
-    }
-    await sleep(550);
-    if (interacted) { flee(robot, scene); return; }
-
-    const knockCX = W / 2;
-    const knockCY = H / 2;
-
-    /* KNOCK 1 — light tap */
-    if (armR) armR.style.animation = 'ibot-knock 0.35s ease';
-    await sleep(100);
-    playSound('knock1');
-    /* Screen micro-shake */
-    document.body.style.animation = 'ibot-shake 0.2s ease';
-    setTimeout(() => { document.body.style.animation = ''; }, 210);
-    /* Small crack */
-    addCrack(knockCX, knockCY, 0.6);
-    await sleep(500);
-    if (interacted) { fleeAfterGlass(robot, scene); return; }
-
-    /* Look through crack — lean in */
-    setEyeState('search');
-    if (head) { head.style.transition = 'transform 0.4s ease'; head.style.transform = 'translateY(-8px) scale(1.05)'; }
-    await sleep(700);
-    if (head) head.style.transform = '';
-    await sleep(300);
-    if (interacted) { fleeAfterGlass(robot, scene); return; }
-
-    /* KNOCK 2 — harder */
-    if (armR) armR.style.animation = 'ibot-knock 0.32s ease';
-    await sleep(100);
-    playSound('knock2');
-    document.body.style.animation = 'ibot-shake 0.22s ease';
-    setTimeout(() => { document.body.style.animation = ''; }, 230);
-    addCrack(knockCX + 20, knockCY - 10, 1.2);
-    addCrack(knockCX - 15, knockCY + 20, 0.9);
-    await sleep(550);
-    if (interacted) { fleeAfterGlass(robot, scene); return; }
-
-    /* Look excited */
-    setEyeState('shocked');
-    await sleep(600);
-    if (interacted) { fleeAfterGlass(robot, scene); return; }
-
-    /* KNOCK 3 — heavy blow */
-    setEyeState('calm');
-    if (armR) armR.style.animation = 'ibot-knock 0.28s ease';
-    await sleep(80);
-    playSound('knock3');
-    /* Big screen shake */
-    document.body.style.animation = 'ibot-shake 0.45s ease';
-    setTimeout(() => { document.body.style.animation = ''; }, 460);
-    /* Massive cracks */
-    addCrack(knockCX, knockCY, 2.5);
-    addCrack(knockCX + 40, knockCY + 30, 1.8);
-    addCrack(knockCX - 50, knockCY - 20, 1.5);
-    await sleep(200);
-    /* Glass shatter */
-    playSound('glass');
-    glassShattered = true;
-    spawnShards(knockCX, knockCY);
-    drawGlass();
-
-    await sleep(400);
-    if (interacted) { fleeAfterGlass(robot, scene); return; }
-
-    /* Arm down after knocking */
-    if (armR) { armR.style.animation = ''; armR.style.transform = ''; }
-
-    /* ────────────────────────────────────────────────────
-       PHASE 6: FOURTH WALL BREAK — peek through hole
-    ──────────────────────────────────────────────────── */
-    phase = 'peeking';
-
-    /* Robot moves toward center of hole */
-    robot.style.transition = 'left 0.6s ease, bottom 0.6s ease';
-    robot.style.left   = (knockCX - 60) + 'px';
-    robot.style.bottom = '0px';
-    await sleep(650);
-    if (interacted) { fleeAfterGlass(robot, scene); return; }
-
-    /* PEEK LOOP */
-    let peekCount = 0;
-    while (!interacted && phase === 'peeking') {
-      peekCount++;
-      setEyeState('search');
-
-      /* Lean head "through" the hole — scale up head */
-      if (head) {
-        head.style.transition = 'transform 0.5s ease';
-        head.style.transform  = 'translateY(-12px) scale(1.15)';
-      }
-
-      /* Look left */
-      setHeadLook('left');
-      await sleep(700);
-      if (interacted) break;
-
-      /* Look right */
-      setHeadLook('right');
-      await sleep(600);
-      if (interacted) break;
-
-      /* Look center — at user */
-      setHeadLook('center');
-      setEyeState('calm');
-      await sleep(1200);
-      if (interacted) break;
-
-      /* Pull back */
-      if (head) head.style.transform = '';
-      setHeadLook('center');
-      await sleep(400);
-      if (interacted) break;
-
-      /* Glance back right nervously */
-      setHeadLook('right');
-      setEyeState('nervous');
-      await sleep(500);
-      setHeadLook('center');
-      await sleep(300);
-
-      /* Small loop pause */
-      await sleep(3500);
-    }
-
-    /* ────────────────────────────────────────────────────
-       FLEE (triggered by interaction during peeking)
-    ──────────────────────────────────────────────────── */
-    if (interacted) {
-      fleeAfterGlass(robot, scene);
-    }
-  }
-
-  /* ════════════════════════════════════════════════════════
-     FLEE — before glass break
-  ════════════════════════════════════════════════════════ */
-  function flee(robot, scene) {
-    if (!robot || !scene) return;
-    clearAllTimers();
-    phase = 'fleeing';
-
-    const armL = robot.querySelector('#ibot-arm-l');
-    const armR = robot.querySelector('#ibot-arm-r');
-    const legL = robot.querySelector('#ibot-leg-l');
-    const legR = robot.querySelector('#ibot-leg-r');
-    const cape = robot.querySelector('#ibot-cape');
-
-    setEyeState('exclaim');
-    antFlicker('panic');
-
-    /* Arms shoot up */
-    if (armL) armL.style.animation = 'ibot-arm-flail-l 0.12s ease-in-out infinite';
-    if (armR) armR.style.animation = 'ibot-arm-flail-r 0.12s ease-in-out infinite';
-    /* Cape flying */
-    if (cape) cape.style.animation = 'ibot-cape-run 0.2s ease-in-out infinite';
-
-    setTimeout(() => {
-      /* Sprint left */
-      if (legL) legL.style.animation = 'ibot-run-l 0.12s ease-in-out infinite';
-      if (legR) legR.style.animation = 'ibot-run-r 0.12s ease-in-out infinite';
-      playSound('panic_steps');
-
-      robot.style.transition = 'left 0.7s cubic-bezier(0.55, 0, 1, 0.45)';
-      robot.style.left = '-300px';
-
-      setTimeout(() => {
-        cleanup(scene);
-      }, 750);
-    }, 250);
-  }
-
-  /* ════════════════════════════════════════════════════════
-     FLEE AFTER GLASS — tiny panic dots, scramble
-  ════════════════════════════════════════════════════════ */
-  function fleeAfterGlass(robot, scene) {
-    if (!robot || !scene) return;
-    clearAllTimers();
-    phase = 'fleeing';
-
-    const armL = robot.querySelector('#ibot-arm-l');
-    const armR = robot.querySelector('#ibot-arm-r');
-    const legL = robot.querySelector('#ibot-leg-l');
-    const legR = robot.querySelector('#ibot-leg-r');
-    const cape = robot.querySelector('#ibot-cape');
-    const head = robot.querySelector('#ibot-head');
-
-    /* Panic dot eyes */
-    setEyeState('panic');
-    antFlicker('panic');
-
-    /* Drop backward slightly */
-    if (head) { head.style.transition = 'transform 0.2s ease'; head.style.transform = 'rotate(-15deg)'; }
-    robot.style.transition = 'transform 0.2s ease';
-    robot.style.transform  = 'rotate(-8deg) translateY(10px)';
-
-    setTimeout(() => {
-      /* Scramble up */
-      robot.style.transition = 'transform 0.25s ease';
-      robot.style.transform  = '';
-      if (head) head.style.transform = '';
-
-      setTimeout(() => {
-        /* Full sprint left */
-        if (armL) armL.style.animation = 'ibot-arm-flail-l 0.1s ease-in-out infinite';
-        if (armR) armR.style.animation = 'ibot-arm-flail-r 0.1s ease-in-out infinite';
-        if (legL) legL.style.animation = 'ibot-run-l 0.1s ease-in-out infinite';
-        if (legR) legR.style.animation = 'ibot-run-r 0.1s ease-in-out infinite';
-        if (cape) cape.style.animation = 'ibot-cape-run 0.15s ease-in-out infinite';
-        playSound('panic_steps');
-
-        robot.style.transition = 'left 0.65s cubic-bezier(0.55, 0, 1, 0.45)';
-        robot.style.left = '-300px';
-
-        setTimeout(() => {
-          /* Fade out glass */
-          if (glassCanvas) {
-            glassCanvas.style.transition = 'opacity 1.2s ease';
-            glassCanvas.style.opacity    = '0';
-          }
-          cleanup(scene);
-        }, 700);
-      }, 280);
-    }, 220);
-  }
-
-  /* ════════════════════════════════════════════════════════
-     CLEANUP
-  ════════════════════════════════════════════════════════ */
-  function cleanup(scene) {
-    setTimeout(() => {
-      if (scene && scene.parentNode) scene.remove();
-      if (glassCanvas && glassCanvas.parentNode) glassCanvas.remove();
-      glassCanvas    = null;
-      glassCtx       = null;
-      cracks         = [];
-      shards         = [];
-      glassShattered = false;
-      botActive      = false;
-      interacted     = false;
-      phase          = 'none';
-
-      /* Restart idle timer */
-      resetIdleTimer();
-    }, 1300);
-  }
-
-  /* ════════════════════════════════════════════════════════
+  /* ────────────────────────────────────────────────────────
      IDLE DETECTION
-  ════════════════════════════════════════════════════════ */
-  function onUserActivity() {
-    if (botActive && phase !== 'none' && phase !== 'fleeing') {
+  ──────────────────────────────────────────────────────── */
+  function onActivity() {
+    if (isActive && currentPhase !== 'none' && currentPhase !== 'fleeing') {
       interacted = true;
     }
     resetIdleTimer();
@@ -1315,24 +1213,20 @@
 
   function resetIdleTimer() {
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(runScene, IDLE_DELAY);
+    idleTimer = setTimeout(startIdleBot, IDLE_DELAY);
   }
 
-  const activityEvents = [
-    'mousemove', 'mousedown', 'keydown',
-    'touchstart', 'touchmove',
-    'scroll', 'wheel', 'click'
-  ];
+  ['mousemove','mousedown','keydown','touchstart','touchmove','scroll','wheel','click']
+    .forEach(ev => document.addEventListener(ev, onActivity, { passive: true }));
 
-  activityEvents.forEach(ev => {
-    document.addEventListener(ev, onUserActivity, { passive: true });
-  });
-
-  /* Kick off first timer */
   resetIdleTimer();
 
-  /* Handle window resize for glass canvas */
   window.addEventListener('resize', () => {
+    if (camera && renderer) {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
     if (glassCanvas) {
       glassCanvas.width  = window.innerWidth;
       glassCanvas.height = window.innerHeight;
