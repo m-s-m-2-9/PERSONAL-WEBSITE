@@ -1,144 +1,142 @@
+/**
+ * ═══════════════════════════════════════════════════════════
+ * abandoned.js — RECURSIVE DECAY ENGINE
+ * No more straight lines. No more Spirographs.
+ * ═══════════════════════════════════════════════════════════
+ */
+
 (function () {
   'use strict';
 
-  /* ── CONFIG ── */
-  const IDLE_DELAY    = 5000; // Testing speed: 5 seconds
-  const MAX_VINES     = 20;
-  const GROW_INTERVAL = 1500;
+  const CONFIG = {
+    IDLE_TIME: 5000,        // 5s for testing
+    MAX_ROOTS: 12,          // Fewer, higher-quality clusters
+    BRANCH_PROB: 0.25,      // Likelihood of a vine splitting
+    CRACK_COLOR: 'rgba(200, 230, 255, 0.4)',
+    VINE_COLOR: '#142b0f'
+  };
 
-  /* ── STATE ── */
-  let ruinMode     = false;
-  let idleTimer    = null;
-  let growTimer    = null;
-  let activeVines  = [];
-  let crackCanvas  = null;
-  let crackCtx     = null;
-  let restoreBtn   = null;
+  let isRuined = false;
+  let canvas, ctx, idleTimer;
 
-  /* ── FLOWER COLORS ── */
-  const COLORS = ['#9955ff', '#4d88ff', '#22ddff', '#cc44ff'];
-
-  /* ════════════════════════════════════════════════════════
-      GLASS ETCHING ENGINE (The Crack Fix)
-   ════════════════════════════════════════════════════════ */
-  function initCracks() {
-    if (crackCanvas) return;
-    crackCanvas = document.createElement('canvas');
-    crackCanvas.style.cssText = "position:fixed; inset:0; z-index:99980; pointer-events:none; mix-blend-mode:screen; opacity:0; transition:opacity 3s;";
-    crackCanvas.width = window.innerWidth;
-    crackCanvas.height = window.innerHeight;
-    document.body.appendChild(crackCanvas);
-    crackCtx = crackCanvas.getContext('2d');
+  function initCanvas() {
+    if (canvas) return;
+    canvas = document.createElement('canvas');
+    canvas.style.cssText = "position:fixed; inset:0; z-index:99990; pointer-events:none; mix-blend-mode:screen;";
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    document.body.appendChild(canvas);
+    ctx = canvas.getContext('2d');
   }
 
-  function drawFractalCrack(x, y, angle, depth, level) {
-    if (depth <= 0) return;
+  /* ── ORGANIC CREEPER LOGIC ── */
+  function drawCreeper(x, y, angle, length, depth) {
+    if (depth <= 0 || length < 2) return;
 
-    const length = (Math.random() * 30 + 20) * level;
+    // Jittered movement for "crooked" organic growth
     const nx = x + Math.cos(angle) * length;
     const ny = y + Math.sin(angle) * length;
 
-    crackCtx.beginPath();
-    crackCtx.moveTo(x, y);
-    crackCtx.lineTo(nx, ny);
-    crackCtx.strokeStyle = `rgba(220, 240, 255, ${0.4 * level})`;
-    crackCtx.lineWidth = 0.5;
-    crackCtx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(nx, ny);
+    ctx.strokeStyle = CONFIG.VINE_COLOR;
+    ctx.lineWidth = depth * 0.6;
+    ctx.lineCap = 'round';
+    ctx.stroke();
 
-    // Branching
-    if (Math.random() > 0.5) {
-      drawFractalCrack(nx, ny, angle + (Math.random() - 0.5), depth - 1, level);
+    // Occasional tiny "leaves"
+    if (Math.random() > 0.8) {
+      ctx.fillStyle = '#2d5a27';
+      ctx.beginPath();
+      ctx.ellipse(nx, ny, 2, 4, angle, 0, Math.PI * 2);
+      ctx.fill();
     }
-    drawFractalCrack(nx, ny, angle + (Math.random() - 0.5) * 0.5, depth - 1, level);
-  }
 
-  /* ════════════════════════════════════════════════════════
-      ORGANIC VINE ENGINE (The Nature Fix)
-   ════════════════════════════════════════════════════════ */
-  function createOrganicVine(index) {
-    const W = window.innerWidth;
-    const H = window.innerHeight;
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.style.cssText = "position:fixed; inset:0; pointer-events:none; z-index:99970; overflow:visible;";
+    // Recursive branching
+    const nextAngle = angle + (Math.random() - 0.5) * 0.4;
+    const nextLen = length * (0.95 + Math.random() * 0.05);
 
-    // Start from corners/edges
-    const startX = (index % 2 === 0) ? 0 : W;
-    const startY = Math.random() * H;
-    const endX = W / 2 + (Math.random() - 0.5) * (W * 0.4);
-    const endY = H / 2 + (Math.random() - 0.5) * (H * 0.4);
-    const cpX = W / 2;
-    const cpY = startY;
-
-    const color = COLORS[index % COLORS.length];
-    const pathId = `vine-${index}`;
-
-    svg.innerHTML = `
-      <defs>
-        <filter id="glow-${index}"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      </defs>
-      <path id="${pathId}" d="M${startX},${startY} Q${cpX},${cpY} ${endX},${endY}" 
-            fill="none" stroke="#1a3a14" stroke-width="2.5" stroke-linecap="round" 
-            stroke-dasharray="1200" stroke-dashoffset="1200">
-        <animate attributeName="stroke-dashoffset" from="1200" to="0" dur="4s" fill="freeze" />
-      </path>
-      <g filter="url(#glow-${index})">
-        <circle cx="${endX}" cy="${endY}" r="0" fill="${color}">
-          <animate attributeName="r" from="0" to="6" dur="1s" begin="3s" fill="freeze" />
-        </circle>
-        <circle cx="${endX}" cy="${endY}" r="0" fill="${color}" opacity="0.3">
-          <animate attributeName="r" from="0" to="12" dur="1.5s" begin="3.2s" fill="freeze" />
-        </circle>
-      </g>
-    `;
-    return svg;
-  }
-
-  /* ════════════════════════════════════════════════════════
-      CORE ENGINE
-   ════════════════════════════════════════════════════════ */
-  function startRuin() {
-    if (ruinMode) return;
-    ruinMode = true;
-
-    initCracks();
-    crackCanvas.style.opacity = "1";
-
-    let count = 0;
-    growTimer = setInterval(() => {
-      if (count >= MAX_VINES) return clearInterval(growTimer);
-      
-      // Grow Vine
-      const v = createOrganicVine(count);
-      document.body.appendChild(v);
-      activeVines.push(v);
-
-      // Etch Crack
-      if (count % 4 === 0) {
-        drawFractalCrack(Math.random() * window.innerWidth, Math.random() * window.innerHeight, Math.random() * Math.PI * 2, 5, 1);
+    setTimeout(() => {
+      if (Math.random() < CONFIG.BRANCH_PROB) {
+        drawCreeper(nx, ny, angle + 0.5, nextLen * 0.7, depth - 1);
+        drawCreeper(nx, ny, angle - 0.5, nextLen * 0.7, depth - 1);
+      } else {
+        drawCreeper(nx, ny, nextAngle, nextLen, depth);
       }
-
-      count++;
-    }, GROW_INTERVAL);
-
-    showRestore();
+    }, 40); // Animated growth speed
   }
 
-  function showRestore() {
-    if (restoreBtn) return;
-    restoreBtn = document.createElement('button');
-    restoreBtn.innerText = "RESTORE SYSTEM";
-    restoreBtn.style.cssText = "position:fixed; bottom:30px; left:50%; transform:translateX(-50%); z-index:99999; padding:12px 24px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.2); backdrop-filter:blur(10px); cursor:pointer; letter-spacing:2px; font-size:10px;";
-    restoreBtn.onclick = () => location.reload();
-    document.body.appendChild(restoreBtn);
+  /* ── GLASS SHATTER LOGIC ── */
+  function drawCrack(x, y, angle, length, depth) {
+    if (depth <= 0) return;
+
+    const nx = x + Math.cos(angle) * length;
+    const ny = y + Math.sin(angle) * length;
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(nx, ny);
+    ctx.strokeStyle = CONFIG.CRACK_COLOR;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    // Fractal shattering
+    const branches = Math.random() > 0.8 ? 2 : 1;
+    for (let i = 0; i < branches; i++) {
+      drawCrack(nx, ny, angle + (Math.random() - 0.5) * 1.5, length * 0.8, depth - 1);
+    }
   }
 
-  function resetIdle() {
-    if (ruinMode) return;
+  function startDecay() {
+    if (isRuined) return;
+    isRuined = true;
+    initCanvas();
+
+    // 1. Shatter the screen (Instant)
+    for (let i = 0; i < 4; i++) {
+      drawCrack(
+        Math.random() * canvas.width, 
+        Math.random() * canvas.height, 
+        Math.random() * Math.PI * 2, 
+        40, 8
+      );
+    }
+
+    // 2. Grow Vines (Animated)
+    for (let i = 0; i < CONFIG.MAX_ROOTS; i++) {
+      const side = Math.floor(Math.random() * 4);
+      let sx, sy, sa;
+      if (side === 0) { sx = Math.random() * canvas.width; sy = 0; sa = Math.PI / 2; }
+      else if (side === 1) { sx = canvas.width; sy = Math.random() * canvas.height; sa = Math.PI; }
+      else if (side === 2) { sx = Math.random() * canvas.width; sy = canvas.height; sa = -Math.PI / 2; }
+      else { sx = 0; sy = Math.random() * canvas.height; sa = 0; }
+
+      drawCreeper(sx, sy, sa, 15, 15);
+    }
+
+    showRestoreButton();
+  }
+
+  function showRestoreButton() {
+    const btn = document.createElement('button');
+    btn.innerText = "RESTORE SYSTEM";
+    btn.style.cssText = `
+      position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+      z-index: 100000; padding: 10px 30px; background: rgba(0,0,0,0.8);
+      color: #fff; border: 1px solid #444; font-family: monospace; 
+      cursor: pointer; letter-spacing: 2px;
+    `;
+    btn.onclick = () => location.reload();
+    document.body.appendChild(btn);
+  }
+
+  function resetTimer() {
+    if (isRuined) return;
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(startRuin, IDLE_DELAY);
+    idleTimer = setTimeout(startDecay, CONFIG.IDLE_TIME);
   }
 
-  ['mousemove', 'click', 'keydown'].forEach(e => document.addEventListener(e, resetIdle));
-  resetIdle();
-
+  ['mousemove', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, resetTimer));
+  resetTimer();
 })();
