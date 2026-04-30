@@ -8,7 +8,7 @@
   'use strict';
 
   /* ── CONFIG ── */
-  const IDLE_DELAY    = 10 * 1000; /* 10 minutes */
+  const IDLE_DELAY    = 10 * 60 * 1000; /* 10 minutes */
   const GROW_INTERVAL = 1800;           /* ms between vine segment additions */
   const MAX_VINES     = 22;
 
@@ -43,8 +43,8 @@
   }
 
   /* ════════════════════════════════════════════════════════
-     CRACK CANVAS
-  ════════════════════════════════════════════════════════ */
+      CRACK CANVAS
+   ════════════════════════════════════════════════════════ */
   function initCrackCanvas() {
     if (crackCanvas) return;
     crackCanvas = document.createElement('canvas');
@@ -99,8 +99,8 @@
 
           /* Branch */
           if (level > 0.4 && seededRand(c * 300 + r * 20 + s) > 0.6) {
-            const ba  = ang + (seededRand(c * 400 + r + s) - 0.5) * 1.8;
-            const bl  = d * (0.3 + seededRand(c * 500 + r + s) * 0.4);
+            const ba   = ang + (seededRand(c * 400 + r + s) - 0.5) * 1.8;
+            const bl   = d * (0.3 + seededRand(c * 500 + r + s) * 0.4);
             const bx2 = px + Math.cos(ba) * bl;
             const by2 = py + Math.sin(ba) * bl;
             crackCtx.moveTo(px, py);
@@ -109,10 +109,12 @@
           }
         }
 
-        /* Crack line style — thin, stone-like */
-        const alpha = (0.25 + seededRand(c * 100 + r) * 0.45) * level;
-        crackCtx.strokeStyle = `rgba(180,195,210,${alpha})`;
-        crackCtx.lineWidth   = 0.6 + seededRand(c * 100 + r + 5) * 0.8;
+        /* Crack line style — Refined for "Glass" effect */
+        const alpha = (0.3 + seededRand(c * 100 + r) * 0.4) * level;
+        crackCtx.strokeStyle = `rgba(220, 230, 240, ${alpha})`; 
+        crackCtx.shadowBlur = 3;
+        crackCtx.shadowColor = "rgba(255, 255, 255, 0.25)";
+        crackCtx.lineWidth   = 0.5 + seededRand(c * 100 + r + 5) * 0.7;
         crackCtx.stroke();
       }
 
@@ -124,7 +126,7 @@
           const dr = seededRand(c * 600 + d + 2) * 2.5 * level;
           crackCtx.beginPath();
           crackCtx.arc(dx, dy, dr, 0, Math.PI * 2);
-          crackCtx.fillStyle = `rgba(160,180,200,${0.2 * level})`;
+          crackCtx.fillStyle = `rgba(200,210,230,${0.25 * level})`;
           crackCtx.fill();
         }
       }
@@ -157,9 +159,9 @@
   }
 
   /* ════════════════════════════════════════════════════════
-     VINE SVG GENERATOR
-     Each vine = SVG element with animated path growth
-  ════════════════════════════════════════════════════════ */
+      VINE SVG GENERATOR
+      Each vine = SVG element with animated path growth
+   ════════════════════════════════════════════════════════ */
 
   /* Origin positions: corners and edges */
   const VINE_ORIGINS = [
@@ -258,7 +260,8 @@
   function createVineSVG(origin, index, W, H) {
     const ox    = origin.x * W;
     const oy    = origin.y * H;
-    const len   = W * (0.2 + (index / MAX_VINES) * 0.32);
+    /* Refined length to keep edges cinematic */
+    const len   = W * (0.15 + (index / MAX_VINES) * 0.2);
     const seed  = index * 1337 + 7;
     const result = buildVinePath(ox, oy, origin.dx, origin.dy, len, W, H, seed);
     if (!result || !result.d) return null;
@@ -322,9 +325,9 @@
   }
 
   /* ════════════════════════════════════════════════════════
-     MOSS EFFECT
-     Applies .ruins-moss class to site elements gradually
-  ════════════════════════════════════════════════════════ */
+      MOSS EFFECT
+      Applies .ruins-moss class to site elements gradually
+   ════════════════════════════════════════════════════════ */
   const MOSS_TARGETS = [
     '.nav-links a', '.btn', '.game-card', '.album-card',
     '.belief-card', '.profile-item', '.list-item',
@@ -379,8 +382,8 @@
   }
 
   /* ════════════════════════════════════════════════════════
-     RESTORE BUTTON
-  ════════════════════════════════════════════════════════ */
+      RESTORE BUTTON
+   ════════════════════════════════════════════════════════ */
   function showRestoreButton() {
     if (restoreBtn) return;
     restoreBtn = document.createElement('button');
@@ -408,8 +411,8 @@
   }
 
   /* ════════════════════════════════════════════════════════
-     OVERLAY (dim / sepia effect)
-  ════════════════════════════════════════════════════════ */
+      OVERLAY (dim / sepia effect)
+   ════════════════════════════════════════════════════════ */
   function showOverlay() {
     if (ruinOverlay) return;
     ruinOverlay = document.createElement('div');
@@ -419,7 +422,7 @@
       pointer-events: none; opacity: 0;
       background: radial-gradient(ellipse at center,
         rgba(0,0,0,0) 40%,
-        rgba(0,0,0,0.22) 100%);
+        rgba(0,0,0,0.15) 100%);
       transition: opacity 4s ease;
     `;
     document.body.appendChild(ruinOverlay);
@@ -436,8 +439,8 @@
   }
 
   /* ════════════════════════════════════════════════════════
-     GROW VINES
-  ════════════════════════════════════════════════════════ */
+      GROW VINES
+   ════════════════════════════════════════════════════════ */
   function growNextVine() {
     if (!ruinMode || growCount >= MAX_VINES) {
       clearInterval(growTimer);
@@ -484,8 +487,8 @@
   }
 
   /* ════════════════════════════════════════════════════════
-     RUIN MODE ON / OFF
-  ════════════════════════════════════════════════════════ */
+      RUIN MODE ON / OFF
+   ════════════════════════════════════════════════════════ */
   function enterRuinMode() {
     if (ruinMode) return;
     ruinMode = true;
@@ -519,8 +522,8 @@
   }
 
   /* ════════════════════════════════════════════════════════
-     IDLE DETECTION
-  ════════════════════════════════════════════════════════ */
+      IDLE DETECTION
+   ════════════════════════════════════════════════════════ */
   function resetIdleTimer() {
     clearTimeout(idleTimer);
     idleTimer = setTimeout(enterRuinMode, IDLE_DELAY);
