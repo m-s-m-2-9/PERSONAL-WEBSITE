@@ -8,7 +8,7 @@
   'use strict';
 
   /* ── CONFIG ── */
-  const IDLE_DELAY    = 10 * 60 * 1000; /* 10 minutes */
+  const IDLE_DELAY    = 10 * 1000; /* 10 minutes */
   const GROW_INTERVAL = 1800;           /* ms between vine segment additions */
   const MAX_VINES     = 22;
 
