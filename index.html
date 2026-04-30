@@ -74,27 +74,28 @@
   </ul>
 
   <div class="nav-right">
-    <!-- Music toggle — inline in nav near theme dots. Play/pause ONLY. -->
-    <button class="music-toggle muted" id="music-toggle" title="Play / Pause music">
-      <div class="sound-bars">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-    </button>
-
-    <div class="theme-switcher">
-      <div class="theme-dot active" data-t="dark"   title="Noir"   onclick="setTheme('dark')"></div>
-      <div class="theme-dot"        data-t="light"  title="Ivory"  onclick="setTheme('light')"></div>
-      <div class="theme-dot"        data-t="slate"  title="Slate"  onclick="setTheme('slate')"></div>
-      <div class="theme-dot"        data-t="forest" title="Forest" onclick="setTheme('forest')"></div>
-    </div>
-    <div class="hamburger" id="hamburger" onclick="toggleMobileNav()">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
+ <!-- Music toggle — inline in nav near theme dots. Play/pause ONLY. -->
+<button class="music-toggle muted" id="music-toggle" title="Play / Pause music">
+  <div class="sound-bars">
+    <span></span>
+    <span></span>
+    <span></span>
   </div>
+</button>
+
+<div class="theme-switcher">
+  <div class="theme-dot active" data-t="dark"   title="Noir"   onclick="setTheme('dark'); document.documentElement.style.setProperty('--ruin-color','rgba(200,220,255,0.5)')"></div>
+  <div class="theme-dot"        data-t="light"  title="Ivory"  onclick="setTheme('light'); document.documentElement.style.setProperty('--ruin-color','rgba(80,80,80,0.4)')"></div>
+  <div class="theme-dot"        data-t="slate"  title="Slate"  onclick="setTheme('slate'); document.documentElement.style.setProperty('--ruin-color','rgba(150,170,190,0.5)')"></div>
+  <div class="theme-dot"        data-t="forest" title="Forest" onclick="setTheme('forest'); document.documentElement.style.setProperty('--ruin-color','rgba(120,180,120,0.5)')"></div>
+</div>
+
+<div class="hamburger" id="hamburger" onclick="toggleMobileNav()">
+  <span></span>
+  <span></span>
+  <span></span>
+</div>
+</div>
 </nav>
 
 <!-- Mobile Nav Menu -->
@@ -1018,6 +1019,7 @@
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
 <script src="js/idle-bot.js"></script>
+<script src="js/abandoned.js"></script>
 
 
 
