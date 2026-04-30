@@ -1,5 +1,5 @@
 (function () {
-  const IDLE_TIME = 15000;
+  const IDLE_TIME = 1500;
 
   let idleTimer, active = false;
 
