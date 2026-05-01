@@ -1,14 +1,13 @@
-/* ═══════════════════════════════════════════════════════════
-   vines.css — Abandoned Ruins Effect
-   Works with abandoned.js
-   Add: <link rel="stylesheet" href="css/vines.css" />
-   Add: <script src="js/abandoned.js"></script>
-═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   vines.css — Abandoned Ruins Effect Styles
+   Link in index.html <head> BEFORE closing </head>
+   <link rel="stylesheet" href="css/vines.css" />
+═══════════════════════════════════════════════════════ */
 
-/* ─── CANVAS LAYERS (pointer-events none = never blocks clicks) ─── */
-
-.ruins-vine-canvas,
-.ruins-crack-canvas {
+/* ── CANVAS LAYERS
+   Both canvases sit fixed, full-screen, pointer-events
+   none so they NEVER block clicks or reading ── */
+.ruins-vine-canvas {
   position: fixed;
   top: 0;
   left: 0;
@@ -16,52 +15,65 @@
   height: 100%;
   pointer-events: none;
   z-index: 10;
-  opacity: 0;
-  transition: opacity 2s ease;
-  will-change: opacity;
+  /* Below all site content but above background */
 }
 
 .ruins-crack-canvas {
-  z-index: 12;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 11;
 }
 
-.ruins-vine-canvas.visible,
-.ruins-crack-canvas.visible {
-  opacity: 1;
-}
-
-/* ─── VIEWPORT EDGE VIGNETTE (very subtle, doesn't block content) ─── */
-
+/* ── EDGE VIGNETTE OVERLAY
+   Extremely subtle — just darkens the very edges
+   so vines look like they emerge from the frame ── */
 .ruins-overlay {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 8;
+  z-index: 9;
   opacity: 0;
-  transition: opacity 8s ease;
+  transition: opacity 12s ease;
   background:
-    radial-gradient(ellipse 140% 140% at 0% 0%,   rgba(20,35,15,0.14) 0%, transparent 55%),
-    radial-gradient(ellipse 140% 140% at 100% 0%,  rgba(20,35,15,0.10) 0%, transparent 55%),
-    radial-gradient(ellipse 140% 140% at 0% 100%,  rgba(20,35,15,0.12) 0%, transparent 55%),
-    radial-gradient(ellipse 140% 140% at 100% 100%,rgba(20,35,15,0.10) 0%, transparent 55%);
+    radial-gradient(ellipse 160% 160% at 0%   0%,   rgba(8,20,5,0.18) 0%, transparent 52%),
+    radial-gradient(ellipse 160% 160% at 100% 0%,   rgba(8,20,5,0.14) 0%, transparent 52%),
+    radial-gradient(ellipse 160% 160% at 0%   100%, rgba(8,20,5,0.16) 0%, transparent 52%),
+    radial-gradient(ellipse 160% 160% at 100% 100%, rgba(8,20,5,0.14) 0%, transparent 52%);
 }
 
 [data-theme="light"] .ruins-overlay {
   background:
-    radial-gradient(ellipse 140% 140% at 0% 0%,   rgba(30,60,20,0.10) 0%, transparent 55%),
-    radial-gradient(ellipse 140% 140% at 100% 100%,rgba(30,60,20,0.08) 0%, transparent 55%);
+    radial-gradient(ellipse 160% 160% at 0%   0%,   rgba(30,55,15,0.10) 0%, transparent 52%),
+    radial-gradient(ellipse 160% 160% at 100% 100%, rgba(30,55,15,0.08) 0%, transparent 52%);
 }
 
-.ruins-overlay.visible { opacity: 1; }
+[data-theme="slate"] .ruins-overlay {
+  background:
+    radial-gradient(ellipse 160% 160% at 0%   0%,   rgba(8,15,28,0.15) 0%, transparent 52%),
+    radial-gradient(ellipse 160% 160% at 100% 100%, rgba(8,15,28,0.12) 0%, transparent 52%);
+}
 
-/* ─── RESTORE BUTTON ─── */
+[data-theme="forest"] .ruins-overlay {
+  background:
+    radial-gradient(ellipse 160% 160% at 0%   0%,   rgba(5,18,5,0.18) 0%, transparent 52%),
+    radial-gradient(ellipse 160% 160% at 100% 100%, rgba(5,18,5,0.14) 0%, transparent 52%);
+}
 
+.ruins-overlay.visible {
+  opacity: 1;
+}
+
+/* ── RESTORE BUTTON ── */
 .ruins-restore-btn {
   position: fixed;
   bottom: 2rem;
   left: 50%;
-  transform: translateX(-50%) translateY(120%);
-  z-index: 99998;
+  transform: translateX(-50%) translateY(140%);
+  z-index: 99999;
   display: flex;
   align-items: center;
   gap: 0;
@@ -72,9 +84,10 @@
   pointer-events: all;
   opacity: 0;
   transition:
-    transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1),
-    opacity 0.5s ease;
+    transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity   0.6s ease;
   white-space: nowrap;
+  outline: none;
 }
 
 .ruins-restore-btn.visible {
@@ -83,56 +96,61 @@
 }
 
 .ruins-restore-btn.hiding {
-  transform: translateX(-50%) translateY(120%);
+  transform: translateX(-50%) translateY(140%);
   opacity: 0;
+  pointer-events: none;
 }
 
-/* Line bars on each side */
+/* Horizontal rule lines either side of text */
 .ruins-restore-line {
   display: block;
   height: 1px;
-  width: 48px;
+  width: 56px;
+  opacity: 0.4;
   background: currentColor;
-  opacity: 0.45;
-  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+  transition:
+    width   0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.35s ease;
   flex-shrink: 0;
 }
 
 .ruins-restore-btn:hover .ruins-restore-line {
-  width: 80px;
-  opacity: 0.75;
+  width: 90px;
+  opacity: 0.72;
 }
 
 .ruins-restore-text {
   display: block;
-  padding: 0 1rem;
+  padding: 0 1.1rem;
   font-family: var(--ff-mono, 'DM Mono', monospace);
-  font-size: 0.62rem;
-  letter-spacing: 0.3em;
+  font-size: 0.6rem;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: currentColor;
-  transition: letter-spacing 0.35s ease, color 0.25s ease;
+  opacity: 0.78;
+  transition:
+    letter-spacing 0.4s ease,
+    opacity        0.3s ease;
 }
 
 .ruins-restore-btn:hover .ruins-restore-text {
-  letter-spacing: 0.38em;
+  letter-spacing: 0.42em;
+  opacity: 1;
 }
 
 /* Theme-aware colour */
-[data-theme="dark"]   .ruins-restore-btn { color: rgba(160,210,140,0.75); }
-[data-theme="light"]  .ruins-restore-btn { color: rgba(55,100,35,0.80); }
-[data-theme="slate"]  .ruins-restore-btn { color: rgba(130,175,210,0.80); }
-[data-theme="forest"] .ruins-restore-btn { color: rgba(170,210,70,0.82); }
+[data-theme="dark"]   .ruins-restore-btn { color: rgba(148, 210, 120, 0.80); }
+[data-theme="light"]  .ruins-restore-btn { color: rgba( 60, 110,  35, 0.85); }
+[data-theme="slate"]  .ruins-restore-btn { color: rgba(120, 170, 215, 0.85); }
+[data-theme="forest"] .ruins-restore-btn { color: rgba(170, 215,  60, 0.85); }
 
-[data-theme="dark"]   .ruins-restore-btn:hover { color: rgba(180,240,150,0.95); }
-[data-theme="light"]  .ruins-restore-btn:hover  { color: rgba(60,120,40,1); }
-[data-theme="slate"]  .ruins-restore-btn:hover  { color: rgba(150,200,230,1); }
-[data-theme="forest"] .ruins-restore-btn:hover  { color: rgba(200,240,80,1); }
+[data-theme="dark"]   .ruins-restore-btn:hover { color: rgba(175, 240, 145, 1.00); }
+[data-theme="light"]  .ruins-restore-btn:hover  { color: rgba( 55, 120,  30, 1.00); }
+[data-theme="slate"]  .ruins-restore-btn:hover  { color: rgba(145, 195, 235, 1.00); }
+[data-theme="forest"] .ruins-restore-btn:hover  { color: rgba(200, 240,  75, 1.00); }
 
-/* ─── RESPONSIVE ─── */
-
+/* ── Mobile ── */
 @media (max-width: 768px) {
-  .ruins-restore-line         { width: 30px; }
-  .ruins-restore-btn:hover .ruins-restore-line { width: 50px; }
-  .ruins-restore-text         { font-size: 0.58rem; padding: 0 0.75rem; }
+  .ruins-restore-line                        { width: 32px; }
+  .ruins-restore-btn:hover .ruins-restore-line { width: 55px; }
+  .ruins-restore-text                        { font-size: 0.55rem; padding: 0 0.75rem; }
 }
