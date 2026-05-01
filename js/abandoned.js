@@ -1,713 +1,716 @@
 /* ═══════════════════════════════════════════════════════════
    abandoned.js — Ruins Easter Egg
-   Canvas-based. Everything drawn in a single RAF loop.
-   Vines grow FROM anchor elements, never OVER content.
-   Leaves bloom from the vine stem itself as it grows.
-   Flowers open petal-by-petal after leaves appear.
-   Cracks = real stone hairline fractures, not spider webs.
-   IDLE: 10 min trigger. 5 min spawn. 5 min restore.
+   
+   HOW IT WORKS:
+   - Two <canvas> layers sit fixed, pointer-events:none
+     so the entire site remains fully usable
+   - Vine canvas: drawn with Canvas 2D API, vines grow
+     organically from DOM element EDGES (not centres)
+   - Crack canvas: stone hairline fractures from corners
+   - Everything is drawn with code — zero external images
+   
+   TIMING:
+   - 10 min idle → enter ruin mode
+   - 5 min to fully spawn vines + cracks
+   - On any activity → gradual 5-min restore
+   - Restore button → instant cleanup
 ═══════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
 
-  /* ── TIMING (ms) ── */
-  const IDLE_TRIGGER    = 10 * 1000;
-  const SPAWN_DURATION  =  5 * 60 * 1000;
-  const RESTORE_DURATION=  5 * 60 * 1000;
+  /* ─── TIMING (ms) ─── */
+  const IDLE_MS    = 10 * 1000;   /* 10 min */
+  const SPAWN_MS   =  5 * 60 * 1000;   /* 5 min to fully spawn */
+  const RESTORE_MS =  5 * 60 * 1000;   /* 5 min gradual restore */
 
-  /* ── VINE PARAMS ── */
-  const MAX_VINES       = 14;
-  const VINE_SPAWN_GAP  = SPAWN_DURATION / MAX_VINES;  /* ~21s between vines */
-  const SEG_PX          = 3;    /* px per vine segment */
-  const SEG_RATE        = 38;   /* ms per segment tick */
-  const LEAF_EVERY      = 8;    /* segments between leaf attempts */
-  const FLOWER_EVERY    = 22;   /* segments between flower attempts */
+  /* ─── VINE PARAMS ─── */
+  const MAX_VINES       = 16;
+  const VINE_SPAWN_GAP  = Math.floor(SPAWN_MS / MAX_VINES);  /* ~18.75 s */
+  const STEP_PX         = 2.5;   /* px per growth step */
+  const TICK_MS         = 32;    /* growth tick interval (~30fps) */
+  const LEAF_THRESHOLD  = 7;     /* steps between leaf attempts */
+  const FLOWER_THRESHOLD= 22;    /* steps between flower attempts */
 
-  /* ── STATE ── */
-  let ruinMode  = false;
-  let restoring = false;
-  let ruinStart = 0;
-  let idleTimer = null;
-  let vineTimer = null;
-  let segTimer  = null;
-  let rafId     = null;
-  let globalAlpha = 0; /* 0→1 as ruins spawn, 1→0 as restoring */
+  /* ─── STATE ─── */
+  let ruinMode   = false;
+  let restoring  = false;
+  let ruinStart  = 0;
+  let idleTimer  = null;
+  let spawnTimer = null;
+  let growTick   = null;
+  let rafId      = null;
+  let dirty      = false;   /* flag: redraw needed */
 
-  const vines      = [];
-  const cracks     = [];
-  const mossPatches= [];
-  let crackLevel   = 0;  /* 0→1 */
-  let crackStarted = false;
+  const vines  = [];
+  const cracks = [];
 
-  /* ── CANVASES ── */
-  let vineCanvas, vineCtx;
-  let crackCanvas, crackCtx;
+  /* ─── CANVASES ─── */
+  let vC = null, vX = null;   /* vine canvas / context */
+  let cC = null, cX = null;   /* crack canvas / context */
 
-  /* ── DOM ── */
-  let overlay = null, restoreBtn = null;
+  /* ─── DOM ─── */
+  let overlay    = null;
+  let restoreBtn = null;
 
-  /* ────────────────────────────────────────────────
-     THEME FLOWER COLOURS
-  ──────────────────────────────────────────────────*/
-  const FLOWERS = {
+  /* ─── FLOWER THEME PALETTES ─── */
+  const PALETTE = {
     dark:   [
-      { p:'#5588ff', c:'#ffffff' },
-      { p:'#9944ee', c:'#ffddff' },
-      { p:'#3399ff', c:'#ddeeff' },
+      { p: '#5577ff', c: '#cce' },
+      { p: '#8833ee', c: '#eec' },
+      { p: '#2299ff', c: '#cef' },
     ],
     light:  [
-      { p:'#ffaacc', c:'#fff5ee' },
-      { p:'#ffcc44', c:'#fff8cc' },
-      { p:'#ff88aa', c:'#ffeedd' },
+      { p: '#ffaacc', c: '#ffe' },
+      { p: '#ffbb44', c: '#fff' },
+      { p: '#ee6699', c: '#fee' },
     ],
     slate:  [
-      { p:'#88aacc', c:'#eef2f8' },
-      { p:'#99bbdd', c:'#ddeeff' },
-      { p:'#aabbcc', c:'#f0f4f8' },
+      { p: '#7799bb', c: '#ddf' },
+      { p: '#99bbcc', c: '#eff' },
+      { p: '#88aacc', c: '#eef' },
     ],
     forest: [
-      { p:'#ffcc00', c:'#fff8cc' },
-      { p:'#ff8800', c:'#ffeecc' },
-      { p:'#ddcc00', c:'#ffffcc' },
+      { p: '#ddcc00', c: '#ffd' },
+      { p: '#ff8800', c: '#ffe' },
+      { p: '#eeaa00', c: '#ffe' },
     ],
   };
-  function themeFlowers() {
+  function palette() {
     const t = document.documentElement.getAttribute('data-theme') || 'dark';
-    return FLOWERS[t] || FLOWERS.dark;
+    return PALETTE[t] || PALETTE.dark;
   }
 
-  /* ────────────────────────────────────────────────
-     MATH HELPERS
-  ──────────────────────────────────────────────────*/
-  function rand(lo, hi) { return lo + Math.random() * (hi - lo); }
+  /* ─── MATHS ─── */
+  const TAU = Math.PI * 2;
+  function rng(lo, hi) { return lo + Math.random() * (hi - lo); }
   function lerp(a, b, t) { return a + (b - a) * t; }
-  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-  function easeIn(t)    { return t * t; }
-  function easeOut(t)   { return 1 - (1-t)*(1-t); }
-  function easeInOut(t) { return t<0.5 ? 2*t*t : -1+(4-2*t)*t; }
+  function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+  function easeOut(t) { return 1 - Math.pow(1 - t, 2); }
+  function easeInOut(t) { return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2; }
 
-  /* ────────────────────────────────────────────────
+  /* ════════════════════════════════════════════════
      ANCHOR DISCOVERY
-     Returns array of {x, y, label} points around
-     DOM elements (their edges, not their centers).
-     Vines start FROM these edges.
-  ──────────────────────────────────────────────────*/
-  const ANCHOR_SELECTORS = [
-    /* Nav links */
-    '#nav-links li a',
-    '.nav-logo',
-    /* Buttons */
+     Finds edge points of visible DOM elements.
+     Vines start FROM these edges, growing outward
+     (away from element, not into it).
+  ════════════════════════════════════════════════ */
+  const SELECTORS = [
+    /* Nav items — vines grow downward from nav bar */
+    '#nav',
+    '.nav-links a',
+    /* Hero */
+    '.hero-photo-wrap',
+    '.hero-name .word',
+    '.scroll-indicator',
+    /* Buttons throughout site */
     '.btn',
     '.btn-accent',
     '.game-play-btn',
-    /* Cards */
+    '.game-modal-close',
+    /* Cards and list items */
     '.game-card',
     '.album-card',
     '.belief-card',
     '.profile-item',
     '.list-item',
+    '.testimonial-card',
+    '.skill-item',
     /* Headings */
     '.section-title',
-    '.hero-name',
-    /* Images */
-    '.hero-photo-wrap',
-    '.about-photo-wrap',
-    /* Resume */
+    '.section-label',
+    '.resume-name',
     '.resume-section-title',
-    '.resume-entry',
-    /* Timeline */
+    '.bday-title',
+    /* About photo */
+    '.about-photo-wrap',
+    /* Timeline nodes */
     '.year-node',
-    /* Skills */
-    '.skill-tag',
+    '.year-detail-header',
+    /* Inputs */
+    '.gate-input-wrap',
+    '.inline-password-form',
     /* Footer */
     '.footer',
   ];
 
+  function pickAngle(r, side) {
+    /* Return an angle that grows AWAY from the element */
+    switch (side) {
+      case 'top':    return rng(-TAU/2 - 0.4, -TAU/2 + 0.4);  /* upward */
+      case 'bottom': return rng(-0.45, 0.45);                   /* downward (but gravity pulls up so net = up-ish) */
+      case 'left':   return rng(TAU * 0.62, TAU * 0.88);        /* leftward */
+      case 'right':  return rng(TAU * 0.12, TAU * 0.38);        /* rightward */
+      default:       return rng(0, TAU);
+    }
+  }
+
   function discoverAnchors() {
-    const anchors = [];
-    ANCHOR_SELECTORS.forEach(sel => {
+    const result = [];
+    const W = window.innerWidth, H = window.innerHeight;
+
+    SELECTORS.forEach(sel => {
       try {
         document.querySelectorAll(sel).forEach(el => {
-          if (!el.offsetParent && el.tagName !== 'BODY') return;
+          /* Skip hidden elements */
+          if (!el.getBoundingClientRect) return;
           const r = el.getBoundingClientRect();
-          if (r.width < 8 || r.height < 8) return;
-          if (r.right < 0 || r.bottom < 0) return;
-          if (r.left > window.innerWidth || r.top > window.innerHeight) return;
+          if (r.width < 6 || r.height < 6) return;
+          if (r.right < -40 || r.bottom < -40) return;
+          if (r.left > W + 40 || r.top > H + 40) return;
 
-          /* Spawn from the BOTTOM edge (vines grow up/sideways) */
-          anchors.push({
-            x: rand(r.left + 4, r.right - 4),
+          /* Bottom edge — most common spawn point for downward-hanging vines */
+          result.push({
+            x: rng(r.left + 6, r.right - 6),
             y: r.bottom,
-            side: 'bottom',
-            label: sel,
+            initAngle: rng(-0.35, 0.35),  /* mostly downward; gravity bends upward */
+            weight: 1.2,
           });
-          /* Sometimes spawn from left/right edges */
-          if (Math.random() > 0.6) {
-            anchors.push({
+
+          /* Left edge — less common */
+          if (Math.random() > 0.55) {
+            result.push({
               x: r.left,
-              y: rand(r.top + 4, r.bottom - 4),
-              side: 'left',
-              label: sel,
+              y: rng(r.top + 4, r.bottom - 4),
+              initAngle: rng(TAU * 0.62, TAU * 0.88),
+              weight: 0.9,
             });
           }
-          if (Math.random() > 0.6) {
-            anchors.push({
+
+          /* Right edge */
+          if (Math.random() > 0.55) {
+            result.push({
               x: r.right,
-              y: rand(r.top + 4, r.bottom - 4),
-              side: 'right',
-              label: sel,
+              y: rng(r.top + 4, r.bottom - 4),
+              initAngle: rng(TAU * 0.12, TAU * 0.38),
+              weight: 0.9,
             });
           }
         });
-      } catch(e){}
+      } catch(e) {}
     });
 
-    /* Also include viewport corner/edge anchors */
-    const W = window.innerWidth, H = window.innerHeight;
-    [
-      { x: 0,   y: 0 },
-      { x: W,   y: 0 },
-      { x: 0,   y: H },
-      { x: W,   y: H },
-      { x: W*0.25, y: 0 },
-      { x: W*0.75, y: 0 },
-      { x: 0,   y: H*0.4 },
-      { x: W,   y: H*0.6 },
-    ].forEach(p => anchors.push({ x: p.x, y: p.y, side: 'corner' }));
-
-    return anchors;
-  }
-
-  /* ────────────────────────────────────────────────
-     VINE CREATION
-     Each vine is a growing path drawn on canvas.
-     Segments added one by one via setInterval.
-  ──────────────────────────────────────────────────*/
-  function makeVine(anchor, index) {
-    /* Initial angle: vines from bottom grow UP (negative y).
-       Corners/sides grow inward. */
-    let initAngle;
-    if (anchor.side === 'bottom') {
-      initAngle = rand(-Math.PI * 0.65, -Math.PI * 0.35); /* mostly upward */
-    } else if (anchor.side === 'left') {
-      initAngle = rand(-Math.PI * 0.2, Math.PI * 0.2);    /* rightward */
-    } else if (anchor.side === 'right') {
-      initAngle = rand(Math.PI * 0.8, Math.PI * 1.2);     /* leftward */
-    } else {
-      /* Corner — grow inward */
-      const W = window.innerWidth, H = window.innerHeight;
-      const dx = anchor.x < W/2 ? 1 : -1;
-      const dy = anchor.y < H/2 ? 1 : -1;
-      initAngle = Math.atan2(dy, dx) + rand(-0.4, 0.4);
+    /* Fallback: viewport corners if nothing found */
+    if (result.length < 4) {
+      result.push(
+        { x: 0, y: 0,  initAngle: rng(0.1, 0.7),  weight: 1 },
+        { x: W, y: 0,  initAngle: rng(2.5, 3.1),   weight: 1 },
+        { x: 0, y: H,  initAngle: rng(-0.7, -0.1), weight: 1 },
+        { x: W, y: H,  initAngle: rng(-3.1, -2.5), weight: 1 }
+      );
     }
 
-    /* Total length depends on spawn duration spread */
-    const totalLen  = rand(80, 240);
-    const totalSegs = Math.floor(totalLen / SEG_PX);
-    const cols      = themeFlowers();
-    const col       = cols[index % cols.length];
+    return result;
+  }
 
-    /* Vine thickness — main stems thicker */
-    const thickness = rand(1.1, 2.2);
-
+  /* ════════════════════════════════════════════════
+     VINE OBJECT
+  ════════════════════════════════════════════════ */
+  function makeVine(anchor, idx) {
+    const cols = palette();
+    const col  = cols[idx % cols.length];
     return {
-      /* Position */
-      x: anchor.x,
-      y: anchor.y,
-      /* Path (array of {x,y}) */
-      pts: [{ x: anchor.x, y: anchor.y }],
-      /* Walking state */
-      angle: initAngle,
-      momentum: 0,        /* smoothed angular momentum */
-      totalSegs,
-      drawnSegs: 0,
-      /* Appearance */
-      thickness,
-      alpha: 0,           /* fades in */
+      pts:     [{ x: anchor.x, y: anchor.y }],
+      angle:   anchor.initAngle,
+      momentum:0,
+      /* How far to grow */
+      maxSteps: Math.floor(rng(55, 200)),
+      step:     0,
+      /* Visual */
+      alpha:   0,
+      dying:   false,
+      col,
+      thick:   rng(1.2, 2.4) * (anchor.weight || 1),
       /* Children */
-      leaves: [],         /* {x,y,angle,t,maxT,side,scale} */
-      flowers: [],        /* {x,y,t,maxT,petals,col} */
-      /* Control */
-      done: false,
-      dying: false,       /* set when restoring */
-      dyingT: 0,
-      /* Counters */
-      segsSinceLeaf: 0,
-      segsSinceFlower: 0,
-      leafCount: 0,
-      /* Floral colour */
-      flowerCol: col,
+      leaves:  [],
+      flowers: [],
+      sinceLeaf:   0,
+      sinceFlower: 0,
+      leafCount:   0,
+      done:    false,
     };
   }
 
-  /* Advance one vine by one segment */
-  function tickVine(v) {
+  /* ── One growth step ── */
+  function stepVine(v) {
     if (v.done || v.pts.length === 0) return;
-    if (v.drawnSegs >= v.totalSegs) { v.done = true; return; }
+    if (v.step >= v.maxSteps) { v.done = true; return; }
 
-    /* Update walking angle: slight random drift + gravity pull + curve memory */
-    const drift    = (Math.random() - 0.5) * 0.28;
-    const gravity  = 0.018; /* pull slightly downward */
-    v.momentum    = v.momentum * 0.82 + drift * 0.18;
-    v.angle      += v.momentum + gravity;
+    /* Organic walk: small random drift + upward gravity bias
+       so vines naturally arc upward/sideways */
+    const drift    = (Math.random() - 0.5) * 0.22;
+    const gravityUp= -0.014;             /* bias upward */
+    v.momentum     = v.momentum * 0.78 + drift * 0.22;
+    v.angle       += v.momentum + gravityUp;
 
-    /* Clamp so vine doesn't go completely horizontal or back on itself */
-    /* Allow mostly upward/sideways growth */
-    const maxDown = Math.PI * 0.25;
-    v.angle = clamp(v.angle, -Math.PI + maxDown, maxDown);
+    /* Allow vines to hang downward a bit at first,
+       then curve up — clamp loosely */
+    v.angle = clamp(v.angle, -Math.PI * 1.1, Math.PI * 0.55);
 
     const last = v.pts[v.pts.length - 1];
-    const nx = last.x + Math.cos(v.angle) * SEG_PX;
-    const ny = last.y + Math.sin(v.angle) * SEG_PX;
-    v.pts.push({ x: nx, y: ny });
-    v.drawnSegs++;
-    v.segsSinceLeaf++;
-    v.segsSinceFlower++;
-    v.leafCount;
+    v.pts.push({
+      x: last.x + Math.cos(v.angle) * STEP_PX,
+      y: last.y + Math.sin(v.angle) * STEP_PX,
+    });
+    v.step++;
+    v.sinceLeaf++;
+    v.sinceFlower++;
 
-    /* Try spawning a leaf */
-    if (v.segsSinceLeaf >= LEAF_EVERY && v.drawnSegs > 4) {
-      if (Math.random() > 0.3) {
-        spawnLeaf(v);
-        v.segsSinceLeaf = 0;
+    /* Leaf attempt */
+    if (v.sinceLeaf >= LEAF_THRESHOLD && v.step > 5) {
+      if (Math.random() > 0.28) {
+        addLeaf(v);
+        v.sinceLeaf = 0;
       }
     }
 
-    /* Try spawning a flower (only after several leaves exist) */
-    if (v.segsSinceFlower >= FLOWER_EVERY && v.leafCount >= 2) {
-      if (Math.random() > 0.45) {
-        spawnFlower(v);
-        v.segsSinceFlower = 0;
+    /* Flower attempt (only after a few leaves) */
+    if (v.sinceFlower >= FLOWER_THRESHOLD && v.leafCount >= 2) {
+      if (Math.random() > 0.40) {
+        addFlower(v);
+        v.sinceFlower = 0;
       }
     }
+
+    dirty = true;
   }
 
-  function spawnLeaf(v) {
-    const i    = v.pts.length - 1;
-    const p    = v.pts[i];
-    const prev = v.pts[Math.max(0, i - 3)];
-    const stemAngle = Math.atan2(p.y - prev.y, p.x - prev.x);
-    const side  = v.leafCount % 2 === 0 ? 1 : -1; /* alternate sides */
-    const leafAngle = stemAngle + (Math.PI / 2) * side + rand(-0.3, 0.3);
-    const maxScale  = rand(0.7, 1.6);
-    const maxT      = rand(2800, 5500);
-
-    v.leaves.push({ x: p.x, y: p.y, angle: leafAngle, t: 0, maxT, side, scale: 0, maxScale });
+  /* ── Add leaf at current tip ── */
+  function addLeaf(v) {
+    const i   = v.pts.length - 1;
+    const p   = v.pts[i];
+    const prv = v.pts[Math.max(0, i - 4)];
+    const stemAng = Math.atan2(p.y - prv.y, p.x - prv.x);
+    const side    = v.leafCount % 2 === 0 ? 1 : -1;
+    const leafAng = stemAng + (Math.PI / 2) * side + rng(-0.28, 0.28);
+    v.leaves.push({
+      x: p.x, y: p.y,
+      angle: leafAng,
+      t: 0,
+      growMs: rng(2200, 4800),
+      size:   rng(7, 15),
+      side,
+    });
     v.leafCount++;
   }
 
-  function spawnFlower(v) {
-    const p   = v.pts[v.pts.length - 1];
-    const maxT= rand(4000, 8000);
-    const petals = Math.floor(rand(4, 7));
-    v.flowers.push({ x: p.x, y: p.y, t: 0, maxT, petals, col: v.flowerCol });
-  }
-
-  /* ────────────────────────────────────────────────
-     CRACK SYSTEM
-     Stone-like hairline fractures from corners.
-     Wandering paths, NOT radial spider webs.
-  ──────────────────────────────────────────────────*/
-  function buildCrackSystem() {
-    /* Pre-compute all crack paths using a random-walk stone fracture algorithm */
-    const W = window.innerWidth, H = window.innerHeight;
-
-    /* Corner origins */
-    const origins = [
-      { x: 0,   y: 0,   ax: 0.55,  ay: 0.55  },
-      { x: W,   y: 0,   ax:-0.55,  ay: 0.55  },
-      { x: 0,   y: H,   ax: 0.55,  ay:-0.55  },
-      { x: W,   y: H,   ax:-0.55,  ay:-0.55  },
-    ];
-
-    origins.forEach((o, oi) => {
-      /* 2-4 main fractures per corner */
-      const mainCount = 2 + Math.floor(Math.random() * 3);
-      for (let m = 0; m < mainCount; m++) {
-        const spreadAngle = (m / mainCount) * 0.7 - 0.35;
-        const baseAngle   = Math.atan2(o.ay, o.ax) + spreadAngle;
-        buildCrackLine(o.x, o.y, baseAngle, 0, oi * 10 + m);
-      }
+  /* ── Add flower at current tip ── */
+  function addFlower(v) {
+    const p = v.pts[v.pts.length - 1];
+    v.flowers.push({
+      x: p.x, y: p.y,
+      t: 0,
+      growMs: rng(3500, 7500),
+      petals: Math.floor(rng(4, 7)),
+      radius: rng(4, 9),
+      col:    v.col,
+      rotOff: Math.random() * TAU,
     });
   }
 
-  function buildCrackLine(sx, sy, angle, depth, seed) {
-    if (depth > 3) return;
-    const W = window.innerWidth, H = window.innerHeight;
-    const len = rand(40, 180) * (1 - depth * 0.25);
-    const pts = [{ x: sx, y: sy }];
+  /* ════════════════════════════════════════════════
+     DRAW — all on canvas, no DOM manipulation
+  ════════════════════════════════════════════════ */
 
-    let cx = sx, cy = sy, a = angle;
-    const segs = Math.floor(rand(8, 20));
-    const segLen = len / segs;
+  /* Draw one leaf as a filled bezier teardrop */
+  function drawLeaf(ctx, lf, parentAlpha, dt) {
+    lf.t = Math.min(lf.t + dt, lf.growMs);
+    const progress = easeOut(lf.t / lf.growMs);
+    if (progress < 0.02) return;
 
-    for (let s = 0; s < segs; s++) {
-      /* Stone cracks wander — not smooth curves */
-      const drift = (Math.random() - 0.5) * 0.4;
-      a += drift;
-      /* Occasional sharp kink (realistic crack behaviour) */
-      if (Math.random() > 0.82) a += (Math.random() - 0.5) * 0.6;
-
-      const d = segLen * rand(0.6, 1.4);
-      cx = clamp(cx + Math.cos(a) * d, -20, W + 20);
-      cy = clamp(cy + Math.sin(a) * d, -20, H + 20);
-      pts.push({ x: cx, y: cy });
-
-      /* Branch: occasional secondary crack growing sideways */
-      if (depth < 2 && Math.random() > 0.78) {
-        const branchAngle = a + (Math.random() > 0.5 ? 1 : -1) * rand(0.5, 1.2);
-        buildCrackLine(cx, cy, branchAngle, depth + 1, Math.random() * 9999);
-      }
-    }
-
-    const opacity = rand(0.22, 0.52) - depth * 0.08;
-    const width   = rand(0.4, 0.9) - depth * 0.1;
-
-    cracks.push({
-      pts,
-      opacity,
-      width: Math.max(0.2, width),
-      t: 0,          /* growth progress 0→1 */
-      maxT: rand(60000, SPAWN_DURATION * 0.7),
-      alpha: 0,      /* fade alpha */
-    });
-  }
-
-  /* ────────────────────────────────────────────────
-     DRAW HELPERS
-  ──────────────────────────────────────────────────*/
-
-  /* Draw a leaf as a teardrop bezier */
-  function drawLeaf(ctx, lf, vinealpha) {
-    const s   = lf.scale * lf.maxScale;
-    if (s < 0.05) return;
+    const s   = lf.size * progress;
     const a   = lf.angle;
-    const px  = lf.x, py = lf.y;
-    const len = 9 * s, wid = 5 * s;
-
-    /* Tip of leaf */
-    const tx = px + Math.cos(a) * len;
-    const ty = py + Math.sin(a) * len;
-    /* Control points for bezier (left and right bulge) */
-    const la = a + Math.PI / 2;
-    const ra = a - Math.PI / 2;
-    const mx = px + Math.cos(a) * len * 0.55;
-    const my = py + Math.sin(a) * len * 0.55;
-    const lx = mx + Math.cos(la) * wid;
-    const ly = my + Math.sin(la) * wid;
-    const rx = mx + Math.cos(ra) * wid;
-    const ry = my + Math.sin(ra) * wid;
-
-    /* Leaf vein */
-    const veinProgress = clamp(lf.t / lf.maxT, 0, 1);
+    const nx  = Math.cos(a), ny = Math.sin(a);
+    const tx  = lf.x + nx * s;
+    const ty  = lf.y + ny * s;
+    /* perpendicular for leaf width */
+    const px2 = -ny, py2 = nx;
+    const w   = s * 0.44;
+    const mx  = lf.x + nx * s * 0.52;
+    const my  = lf.y + ny * s * 0.52;
+    const l1x = mx + px2 * w, l1y = my + py2 * w;
+    const r1x = mx - px2 * w, r1y = my - py2 * w;
 
     ctx.save();
-    ctx.globalAlpha = Math.min(0.92, vinealpha) * Math.min(1, lf.t / 800);
+    ctx.globalAlpha = parentAlpha * Math.min(1, lf.t / 600);
 
-    /* Leaf fill */
-    const leafGrad = ctx.createLinearGradient(px, py, tx, ty);
-    leafGrad.addColorStop(0, '#2a5c14');
-    leafGrad.addColorStop(0.5,'#3d7a22');
-    leafGrad.addColorStop(1, '#4a9028');
-    ctx.fillStyle = leafGrad;
-    ctx.strokeStyle = '#1e4410';
-    ctx.lineWidth = 0.4;
-
+    /* Fill */
+    const g = ctx.createLinearGradient(lf.x, lf.y, tx, ty);
+    g.addColorStop(0,   '#1e4a0e');
+    g.addColorStop(0.45,'#2d6918');
+    g.addColorStop(1,   '#3d8522');
+    ctx.fillStyle   = g;
+    ctx.strokeStyle = '#153a09';
+    ctx.lineWidth   = 0.45;
     ctx.beginPath();
-    ctx.moveTo(px, py);
-    ctx.bezierCurveTo(lx, ly, tx, ty, tx, ty);
-    ctx.bezierCurveTo(tx, ty, rx, ry, px, py);
+    ctx.moveTo(lf.x, lf.y);
+    ctx.bezierCurveTo(l1x, l1y, tx, ty, tx, ty);
+    ctx.bezierCurveTo(tx, ty, r1x, r1y, lf.x, lf.y);
     ctx.fill();
     ctx.stroke();
 
-    /* Midrib (center vein) */
-    if (veinProgress > 0.15) {
-      const veinEnd = lerp(0, 1, Math.min(1, veinProgress * 1.4));
-      const vex = lerp(px, tx, veinEnd);
-      const vey = lerp(py, ty, veinEnd);
+    /* Midrib vein */
+    if (progress > 0.18) {
+      const vEnd = Math.min(1, (progress - 0.18) * 1.5);
       ctx.beginPath();
-      ctx.moveTo(px, py);
-      ctx.lineTo(vex, vey);
-      ctx.strokeStyle = 'rgba(20,60,8,0.45)';
-      ctx.lineWidth = 0.3;
+      ctx.moveTo(lf.x, lf.y);
+      ctx.lineTo(lf.x + nx * s * vEnd, lf.y + ny * s * vEnd);
+      ctx.strokeStyle = 'rgba(12,45,5,0.38)';
+      ctx.lineWidth   = 0.32;
       ctx.stroke();
+    }
+
+    /* Secondary veins — subtle */
+    if (progress > 0.5) {
+      const vfrac = (progress - 0.5) * 2;
+      const vCount = 3;
+      for (let vi = 0; vi < vCount; vi++) {
+        const vt  = (vi + 1) / (vCount + 1);
+        const vx0 = lf.x + nx * s * vt;
+        const vy0 = lf.y + ny * s * vt;
+        const vLen = w * 0.65 * (1 - vt) * vfrac;
+        ctx.beginPath();
+        ctx.moveTo(vx0, vy0);
+        ctx.lineTo(vx0 + px2 * lf.side * vLen, vy0 + py2 * lf.side * vLen);
+        ctx.strokeStyle = 'rgba(12,45,5,0.22)';
+        ctx.lineWidth   = 0.25;
+        ctx.stroke();
+      }
     }
 
     ctx.restore();
   }
 
-  /* Draw a tiny realistic flower */
-  function drawFlower(ctx, fl, vinealpha) {
-    const progress = clamp(fl.t / fl.maxT, 0, 1);
-    if (progress < 0.05) return;
+  /* Draw one flower — petals open one by one */
+  function drawFlower(ctx, fl, parentAlpha, dt) {
+    fl.t = Math.min(fl.t + dt, fl.growMs);
+    const prog = easeInOut(fl.t / fl.growMs);
+    if (prog < 0.04) return;
 
-    const r    = 4.5 * easeOut(progress);
-    const n    = fl.petals;
-    const col  = fl.col;
-    const cx2  = fl.x, cy2 = fl.y;
+    const r   = fl.radius * prog;
+    const n   = fl.petals;
+    const col = fl.col;
 
     ctx.save();
-    ctx.globalAlpha = Math.min(0.9, vinealpha) * Math.min(1, fl.t / 1200);
+    ctx.globalAlpha = parentAlpha * Math.min(1, fl.t / 900);
 
-    /* Petals open one at a time */
-    const petalsOpen = Math.ceil(n * easeInOut(progress));
+    /* Each petal opens sequentially */
+    const petalsOpen = Math.min(n, Math.ceil(n * prog * 1.4));
     for (let i = 0; i < petalsOpen; i++) {
-      const petalProgress = clamp((progress * n - i) / 1, 0, 1);
-      const ang = (i / n) * Math.PI * 2;
-      const pr  = r * (0.85 + 0.15 * easeOut(petalProgress));
-      const px2 = cx2 + Math.cos(ang) * pr;
-      const py2 = cy2 + Math.sin(ang) * pr;
+      const pp  = clamp((prog * n * 1.3 - i) / 1, 0, 1);
+      if (pp < 0.01) continue;
+      const ang = (i / n) * TAU + fl.rotOff;
+      const pr  = r * easeOut(pp);
+      const px2 = fl.x + Math.cos(ang) * pr;
+      const py2 = fl.y + Math.sin(ang) * pr;
 
-      /* Each petal: small filled ellipse rotated toward center */
       ctx.save();
       ctx.translate(px2, py2);
       ctx.rotate(ang + Math.PI / 2);
-      ctx.scale(1, 0.55);
+      ctx.scale(1, 0.52);
+
+      const petalR = pr * 0.58 * easeOut(pp);
+      const pg = ctx.createRadialGradient(0, -petalR*0.3, 0, 0, 0, petalR);
+      pg.addColorStop(0,   col.p);
+      pg.addColorStop(0.65,col.p);
+      pg.addColorStop(1,   col.p + '44');
       ctx.beginPath();
-      ctx.arc(0, 0, pr * 0.52 * petalProgress, 0, Math.PI * 2);
-      ctx.fillStyle = col.p;
+      ctx.arc(0, 0, petalR, 0, TAU);
+      ctx.fillStyle = pg;
       ctx.globalAlpha *= 0.88;
       ctx.fill();
-      /* Petal vein line */
-      ctx.beginPath();
-      ctx.moveTo(0, -pr * 0.52 * petalProgress);
-      ctx.lineTo(0, pr * 0.52 * petalProgress);
-      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-      ctx.lineWidth = 0.3;
+
+      /* Petal edge */
+      ctx.strokeStyle = 'rgba(0,0,0,0.10)';
+      ctx.lineWidth   = 0.3;
       ctx.stroke();
+
+      /* Petal vein */
+      ctx.beginPath();
+      ctx.moveTo(0, -petalR * 0.82);
+      ctx.lineTo(0,  petalR * 0.82);
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+      ctx.lineWidth   = 0.25;
+      ctx.stroke();
+
       ctx.restore();
     }
 
-    /* Stamen/center */
-    if (progress > 0.5) {
-      const centerR = r * 0.28 * easeOut((progress - 0.5) * 2);
+    /* Centre disc */
+    if (prog > 0.45) {
+      const cp    = easeOut(clamp((prog - 0.45) / 0.55, 0, 1));
+      const centR = r * 0.32 * cp;
       ctx.beginPath();
-      ctx.arc(cx2, cy2, centerR, 0, Math.PI * 2);
+      ctx.arc(fl.x, fl.y, centR, 0, TAU);
       ctx.fillStyle = col.c;
-      ctx.globalAlpha = Math.min(0.9, vinealpha);
+      ctx.globalAlpha = parentAlpha * cp;
       ctx.fill();
-      /* Tiny stamen dots */
-      for (let d = 0; d < 5; d++) {
-        const da  = (d / 5) * Math.PI * 2;
-        const dr  = centerR * 0.55;
-        ctx.beginPath();
-        ctx.arc(cx2 + Math.cos(da)*dr, cy2 + Math.sin(da)*dr, 0.6, 0, Math.PI*2);
-        ctx.fillStyle = '#ffee88';
-        ctx.fill();
+
+      /* Stamen dots */
+      if (cp > 0.5) {
+        const sCount = Math.floor(n * 0.8);
+        for (let si = 0; si < sCount; si++) {
+          const sa = (si / sCount) * TAU;
+          const sd = centR * 0.58;
+          ctx.beginPath();
+          ctx.arc(
+            fl.x + Math.cos(sa) * sd,
+            fl.y + Math.sin(sa) * sd,
+            0.7, 0, TAU
+          );
+          ctx.fillStyle = '#ffee88';
+          ctx.globalAlpha = parentAlpha * cp * 0.85;
+          ctx.fill();
+        }
       }
     }
 
     ctx.restore();
   }
 
-  /* Draw vine stem up to current drawn segment count */
-  function drawVineStem(ctx, v) {
+  /* Draw vine stem (tapered, coloured by depth) */
+  function drawStem(ctx, v) {
     if (v.pts.length < 2) return;
-
     ctx.save();
+    ctx.lineCap  = 'round';
+    ctx.lineJoin = 'round';
     ctx.globalAlpha = v.alpha;
-    ctx.lineCap   = 'round';
-    ctx.lineJoin  = 'round';
 
-    /* Draw each segment with slight colour variation for depth */
     for (let i = 1; i < v.pts.length; i++) {
-      const p0 = v.pts[i-1], p1 = v.pts[i];
-      /* Taper: thicker near base, thinner toward tip */
-      const t   = i / v.totalSegs;
-      const w   = v.thickness * (1 - t * 0.55);
-      /* Colour variation */
-      const g   = Math.floor(lerp(22, 52, t));
+      const t  = i / v.maxSteps;
+      /* Taper: thicker at root, thinner at tip */
+      const w  = Math.max(0.45, v.thick * (1 - t * 0.6));
+      /* Colour: dark at root → slightly lighter at tip */
+      const gr = Math.floor(lerp(18, 46, t));
+      const gg = Math.floor(lerp(36, 82, t));
+      const gb = Math.floor(lerp(10, 22, t));
+
       ctx.beginPath();
-      ctx.moveTo(p0.x, p0.y);
-      ctx.lineTo(p1.x, p1.y);
-      ctx.strokeStyle = `rgb(${Math.floor(lerp(14,22,t))},${g+Math.floor(Math.random()*4-2)},${Math.floor(lerp(6,14,t))})`;
-      ctx.lineWidth = Math.max(0.5, w);
+      ctx.moveTo(v.pts[i-1].x, v.pts[i-1].y);
+      ctx.lineTo(v.pts[i].x,   v.pts[i].y);
+      ctx.strokeStyle = `rgb(${gr},${gg},${gb})`;
+      ctx.lineWidth   = w;
       ctx.stroke();
     }
 
     ctx.restore();
   }
 
-  /* Draw cracks: thin stone fracture lines */
-  function drawCracks() {
-    if (!crackCtx) return;
-    const W = crackCanvas.width, H = crackCanvas.height;
-    crackCtx.clearRect(0, 0, W, H);
+  /* ════════════════════════════════════════════════
+     CRACK SYSTEM
+     Stone fracture look: irregular wandering lines
+     from corners, NOT radial spider webs.
+  ════════════════════════════════════════════════ */
+  function buildCracks() {
+    cracks.length = 0;
+    const W = window.innerWidth, H = window.innerHeight;
+
+    /* Each corner spawns 2–3 wandering primary fractures */
+    const corners = [
+      { x: 0, y: 0,  ax: 0.7,  ay: 0.7  },
+      { x: W, y: 0,  ax:-0.7,  ay: 0.7  },
+      { x: 0, y: H,  ax: 0.7,  ay:-0.7  },
+      { x: W, y: H,  ax:-0.7,  ay:-0.7  },
+    ];
+
+    corners.forEach((c, ci) => {
+      const mainCount = 2 + Math.floor(Math.random() * 2);
+      for (let m = 0; m < mainCount; m++) {
+        const spread   = rng(-0.45, 0.45);
+        const baseAngle= Math.atan2(c.ay, c.ax) + spread;
+        walkCrack(c.x, c.y, baseAngle, 0, ci * 100 + m * 10);
+      }
+    });
+  }
+
+  function walkCrack(sx, sy, angle, depth, seedBase) {
+    if (depth > 2) return;
+    const W = window.innerWidth, H = window.innerHeight;
+
+    /* Length: shorter for deeper branches */
+    const len  = rng(50, 160) * (1 - depth * 0.28);
+    const segs = Math.floor(rng(10, 22));
+    const pts  = [{ x: sx, y: sy }];
+    let cx = sx, cy = sy, a = angle;
+
+    for (let s = 0; s < segs; s++) {
+      /* Stone crack character: mostly straight with occasional kink */
+      const drift = (Math.random() - 0.5) * 0.3;
+      if (Math.random() > 0.78) {
+        /* Sharp kink — realistic crack direction change */
+        a += (Math.random() > 0.5 ? 1 : -1) * rng(0.35, 0.75);
+      }
+      a += drift;
+
+      const d = (len / segs) * rng(0.55, 1.45);
+      cx = clamp(cx + Math.cos(a) * d, -30, W + 30);
+      cy = clamp(cy + Math.sin(a) * d, -30, H + 30);
+      pts.push({ x: cx, y: cy });
+
+      /* Secondary branch */
+      if (depth < 1 && Math.random() > 0.76) {
+        const branchA = a + (Math.random() > 0.5 ? 1 : -1) * rng(0.5, 1.1);
+        walkCrack(cx, cy, branchA, depth + 1, Math.random() * 9999 | 0);
+      }
+    }
+
+    const baseOpacity = rng(0.18, 0.42) * (1 - depth * 0.1);
+
+    cracks.push({
+      pts,
+      baseOpacity,
+      width:  rng(0.35, 0.85) * (1 - depth * 0.18),
+      alpha:  0,    /* current draw alpha — animated in render */
+      dying:  false,
+      dyingStart: 0,
+    });
+  }
+
+  /* Render crack canvas */
+  function renderCracks(elapsed) {
+    if (!cX) return;
+    cX.clearRect(0, 0, cC.width, cC.height);
 
     cracks.forEach(cr => {
-      if (cr.alpha < 0.01 || cr.t < 1) return;
-      const prog = clamp(cr.t / cr.maxT, 0, 1);
-      const pts  = cr.pts;
+      /* Progress along this crack's path depends on global elapsed */
+      let drawProg, lineAlpha;
+
+      if (cr.dying) {
+        const dyingElapsed = Date.now() - cr.dyingStart;
+        lineAlpha  = Math.max(0, 1 - dyingElapsed / RESTORE_MS);
+        drawProg   = 1;
+      } else {
+        /* Grow in over first 60% of SPAWN_MS */
+        const crackWindow = SPAWN_MS * 0.6;
+        lineAlpha  = clamp(elapsed / (SPAWN_MS * 0.12), 0, 1);
+        drawProg   = clamp(elapsed / crackWindow, 0, 1);
+      }
+
+      if (lineAlpha < 0.01) return;
+
+      const pts = cr.pts;
       if (pts.length < 2) return;
 
-      crackCtx.save();
-      crackCtx.globalAlpha = cr.alpha * cr.opacity;
-      crackCtx.lineCap    = 'round';
-      crackCtx.lineJoin   = 'round';
-      crackCtx.lineWidth  = cr.width;
+      const drawCount = Math.max(2, Math.floor((pts.length - 1) * drawProg) + 1);
 
-      /* How many segments to draw based on progress */
-      const drawPts = Math.max(2, Math.floor((pts.length - 1) * prog) + 1);
+      cX.save();
+      cX.globalAlpha = lineAlpha * cr.baseOpacity;
+      cX.lineCap     = 'round';
+      cX.lineJoin    = 'round';
+      cX.lineWidth   = cr.width;
 
-      crackCtx.beginPath();
-      crackCtx.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < drawPts; i++) {
-        crackCtx.lineTo(pts[i].x, pts[i].y);
+      /* Main crack line — slight blue-grey stone colour */
+      cX.beginPath();
+      cX.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < drawCount; i++) {
+        cX.lineTo(pts[i].x, pts[i].y);
       }
+      cX.strokeStyle = 'rgba(168,182,198,0.9)';
+      cX.stroke();
 
-      /* Stone crack look: vary colour slightly */
-      const lightness = Math.floor(rand(70, 90));
-      crackCtx.strokeStyle = `rgba(${lightness+20},${lightness+25},${lightness+28},0.88)`;
-      crackCtx.stroke();
+      /* Bright highlight (inner edge of crack) */
+      cX.globalAlpha = lineAlpha * cr.baseOpacity * 0.28;
+      cX.lineWidth   = cr.width * 0.35;
+      cX.strokeStyle = 'rgba(235,245,255,0.9)';
+      cX.stroke();
 
-      /* Subtle bright highlight along crack (depth illusion) */
-      crackCtx.globalAlpha = cr.alpha * cr.opacity * 0.22;
-      crackCtx.strokeStyle = `rgba(220,235,245,0.9)`;
-      crackCtx.lineWidth   = cr.width * 0.35;
-      crackCtx.stroke();
+      /* Dark shadow (opposite edge) — gives 3D depth */
+      cX.globalAlpha = lineAlpha * cr.baseOpacity * 0.35;
+      cX.lineWidth   = cr.width * 0.4;
+      cX.strokeStyle = 'rgba(40,50,60,0.7)';
+      cX.stroke();
 
-      crackCtx.restore();
+      cX.restore();
     });
   }
 
-  /* ────────────────────────────────────────────────
-     MAIN RENDER LOOP
-  ──────────────────────────────────────────────────*/
-  function renderLoop() {
+  /* ════════════════════════════════════════════════
+     MAIN RAF LOOP
+  ════════════════════════════════════════════════ */
+  let lastRaf = 0;
+
+  function renderLoop(ts) {
     rafId = requestAnimationFrame(renderLoop);
-    if (!vineCtx) return;
 
-    const dt = 16; /* approximate */
+    const dt      = Math.min(ts - lastRaf, 80);  /* cap at 80ms for tab-switch */
+    lastRaf       = ts;
+    const elapsed = ruinMode ? (Date.now() - ruinStart) : 0;
 
-    /* Clear vine canvas */
-    vineCtx.clearRect(0, 0, vineCanvas.width, vineCanvas.height);
+    /* ── Vine canvas ── */
+    if (vX && (dirty || vines.some(v => !v.done || v.leaves.length || v.flowers.length))) {
+      vX.clearRect(0, 0, vC.width, vC.height);
 
-    const elapsed     = ruinMode ? (Date.now() - ruinStart) : 0;
-    const spawnFrac   = ruinMode ? clamp(elapsed / SPAWN_DURATION, 0, 1) : globalAlpha;
-
-    /* ── Update & draw each vine ── */
-    vines.forEach(v => {
-      /* Fade vine in */
-      if (!v.dying) {
-        v.alpha = Math.min(0.92, v.alpha + 0.004);
-      } else {
-        /* Fade out slowly */
-        v.dyingT += dt;
-        v.alpha   = Math.max(0, v.alpha - (1 / (RESTORE_DURATION / 60)));
-      }
-
-      /* Update leaves */
-      v.leaves.forEach(lf => {
-        if (lf.t < lf.maxT) lf.t += dt;
-        if (v.dying) lf.t = Math.max(0, lf.t - dt * 2);
-        lf.scale = easeInOut(clamp(lf.t / Math.min(lf.maxT, 3500), 0, 1));
-      });
-
-      /* Update flowers */
-      v.flowers.forEach(fl => {
-        if (fl.t < fl.maxT) fl.t += dt;
-        if (v.dying) fl.t = Math.max(0, fl.t - dt * 3);
-      });
-
-      if (v.alpha < 0.005) return;
-
-      /* Draw stem */
-      drawVineStem(vineCtx, v);
-
-      /* Draw leaves (behind flowers) */
-      v.leaves.forEach(lf => drawLeaf(vineCtx, lf, v.alpha));
-
-      /* Draw flowers */
-      v.flowers.forEach(fl => drawFlower(vineCtx, fl, v.alpha));
-    });
-
-    /* ── Cracks ── */
-    if (crackStarted || cracks.some(c => c.t > 0)) {
-      const now = Date.now();
-      cracks.forEach(cr => {
-        if (!ruinMode && !cr.dying) { cr.dying = true; cr.dyingStart = now; }
-        if (cr.dying) {
-          const elapsed2 = now - (cr.dyingStart || now);
-          cr.alpha = Math.max(0, 1 - elapsed2 / RESTORE_DURATION);
+      vines.forEach(v => {
+        /* Fade in */
+        if (!v.dying) {
+          v.alpha = Math.min(0.90, v.alpha + 0.003);
         } else {
-          cr.alpha = Math.min(1, (ruinMode ? elapsed : 0) / (SPAWN_DURATION * 0.4));
-          if (cr.t < cr.maxT && ruinMode) cr.t += dt;
+          /* Gradual fade out over RESTORE_MS */
+          v.alpha = Math.max(0, v.alpha - (dt / RESTORE_MS));
         }
+
+        if (v.alpha < 0.01) return;
+
+        drawStem(vX, v);
+
+        v.leaves.forEach(lf => {
+          if (v.dying) lf.t = Math.max(0, lf.t - dt * 2.5);
+          drawLeaf(vX, lf, v.alpha, v.dying ? 0 : dt);
+        });
+
+        v.flowers.forEach(fl => {
+          if (v.dying) fl.t = Math.max(0, fl.t - dt * 3);
+          drawFlower(vX, fl, v.alpha, v.dying ? 0 : dt);
+        });
       });
-      drawCracks();
-    }
 
-    /* ── Remove fully faded vines ── */
-    for (let i = vines.length - 1; i >= 0; i--) {
-      if (vines[i].dying && vines[i].alpha <= 0.002) {
-        vines.splice(i, 1);
+      /* Remove fully faded vines */
+      for (let i = vines.length - 1; i >= 0; i--) {
+        if (vines[i].dying && vines[i].alpha <= 0.01) vines.splice(i, 1);
       }
+
+      dirty = false;
+    }
+
+    /* ── Crack canvas ── */
+    if (cX && (ruinMode || cracks.some(c => c.dying))) {
+      renderCracks(elapsed);
     }
   }
 
-  /* ────────────────────────────────────────────────
-     VINE GROWTH TICKER
-     Adds one segment to each active vine per tick
-  ──────────────────────────────────────────────────*/
+  /* ════════════════════════════════════════════════
+     GROWTH TICK (separate interval, not RAF)
+  ════════════════════════════════════════════════ */
   function startGrowthTick() {
-    segTimer = setInterval(() => {
-      if (!ruinMode) { clearInterval(segTimer); return; }
-      vines.forEach(v => { if (!v.done && !v.dying) tickVine(v); });
-    }, SEG_RATE);
+    clearInterval(growTick);
+    growTick = setInterval(() => {
+      if (!ruinMode) { clearInterval(growTick); return; }
+      vines.forEach(v => { if (!v.done && !v.dying) stepVine(v); });
+    }, TICK_MS);
   }
 
-  /* ────────────────────────────────────────────────
-     SPAWN VINES GRADUALLY OVER 5 MINUTES
-  ──────────────────────────────────────────────────*/
-  let vineSpawnIdx = 0;
-  let anchorsCache = [];
-
-  function spawnNextVine() {
-    if (!ruinMode || vineSpawnIdx >= MAX_VINES) {
-      clearInterval(vineTimer); return;
-    }
-    if (anchorsCache.length === 0) return;
-
-    /* Pick a random anchor (shuffle so vines spread across the page) */
-    const idx    = Math.floor(Math.random() * anchorsCache.length);
-    const anchor = anchorsCache.splice(idx, 1)[0];
-
-    vines.push(makeVine(anchor, vineSpawnIdx));
-    vineSpawnIdx++;
-  }
-
-  /* ────────────────────────────────────────────────
-     CANVAS SETUP
-  ──────────────────────────────────────────────────*/
-  function setupCanvases() {
-    if (!vineCanvas) {
-      vineCanvas = document.createElement('canvas');
-      vineCanvas.className = 'ruins-vine-canvas';
-      vineCanvas.style.cssText =
-        'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;';
-      document.body.appendChild(vineCanvas);
-      vineCtx = vineCanvas.getContext('2d');
-    }
-    if (!crackCanvas) {
-      crackCanvas = document.createElement('canvas');
-      crackCanvas.className = 'ruins-crack-canvas';
-      crackCanvas.style.cssText =
-        'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:12;';
-      document.body.appendChild(crackCanvas);
-      crackCtx = crackCanvas.getContext('2d');
-    }
-    resizeCanvases();
-  }
-
-  function resizeCanvases() {
+  /* ════════════════════════════════════════════════
+     SETUP / TEARDOWN
+  ════════════════════════════════════════════════ */
+  function initCanvases() {
     const W = window.innerWidth, H = window.innerHeight;
-    if (vineCanvas)  { vineCanvas.width  = W; vineCanvas.height  = H; }
-    if (crackCanvas) { crackCanvas.width = W; crackCanvas.height = H; }
+    if (!vC) {
+      vC = document.createElement('canvas');
+      vC.className  = 'ruins-vine-canvas';
+      vC.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;';
+      document.body.appendChild(vC);
+      vX = vC.getContext('2d');
+    }
+    if (!cC) {
+      cC = document.createElement('canvas');
+      cC.className  = 'ruins-crack-canvas';
+      cC.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:11;';
+      document.body.appendChild(cC);
+      cX = cC.getContext('2d');
+    }
+    vC.width  = cC.width  = W;
+    vC.height = cC.height = H;
   }
 
-  /* ────────────────────────────────────────────────
-     OVERLAY (subtle vignette at edges)
-  ──────────────────────────────────────────────────*/
   function showOverlay() {
     if (overlay) return;
     overlay = document.createElement('div');
@@ -715,167 +718,173 @@
     document.body.appendChild(overlay);
     requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('visible')));
   }
+
   function hideOverlay() {
     if (!overlay) return;
-    overlay.classList.remove('visible');
-    setTimeout(() => { if (overlay && overlay.parentNode) overlay.remove(); overlay = null; }, 4000);
+    const el = overlay; overlay = null;
+    el.classList.remove('visible');
+    setTimeout(() => { if (el.parentNode) el.remove(); }, 14000);
   }
 
-  /* ────────────────────────────────────────────────
-     RESTORE BUTTON
-  ──────────────────────────────────────────────────*/
+  /* Restore button stays until ALL vines are gone */
   function showRestoreButton() {
-    if (restoreBtn) return;
-    /* Show after 25s so it doesn't appear immediately */
+    /* Delayed so button doesn't pop up immediately at ruin start */
     setTimeout(() => {
-      if (!ruinMode) return;
+      if (!ruinMode || restoreBtn) return;
       restoreBtn = document.createElement('button');
       restoreBtn.className = 'ruins-restore-btn';
       restoreBtn.innerHTML =
         '<span class="ruins-restore-line"></span>' +
         '<span class="ruins-restore-text">Restore</span>' +
         '<span class="ruins-restore-line"></span>';
+      restoreBtn.addEventListener('click', restoreInstant);
       document.body.appendChild(restoreBtn);
       requestAnimationFrame(() => requestAnimationFrame(() => restoreBtn.classList.add('visible')));
-      restoreBtn.addEventListener('click', restoreInstant);
-    }, 25000);
+    }, 28000);
   }
 
-  function hideRestoreButton(instant) {
-    if (!restoreBtn) return;
-    const btn = restoreBtn;
-    restoreBtn = null;
-    if (instant) {
-      btn.classList.remove('visible');
-      btn.classList.add('hiding');
-      setTimeout(() => { if (btn.parentNode) btn.remove(); }, 800);
-    } else {
-      /* Keep visible until ALL vines are gone */
-      const check = setInterval(() => {
-        if (vines.length === 0) {
-          clearInterval(check);
-          btn.classList.remove('visible');
-          btn.classList.add('hiding');
-          setTimeout(() => { if (btn.parentNode) btn.remove(); }, 800);
+  function pollAndHideRestoreButton() {
+    /* Poll until vines are all gone, then slide the button away */
+    const id = setInterval(() => {
+      if (vines.length === 0) {
+        clearInterval(id);
+        if (restoreBtn) {
+          restoreBtn.classList.remove('visible');
+          restoreBtn.classList.add('hiding');
+          setTimeout(() => {
+            if (restoreBtn && restoreBtn.parentNode) restoreBtn.remove();
+            restoreBtn = null;
+          }, 1000);
         }
-      }, 2000);
-    }
+      }
+    }, 3000);
   }
 
-  /* ────────────────────────────────────────────────
-     ENTER / EXIT RUIN MODE
-  ──────────────────────────────────────────────────*/
+  /* ════════════════════════════════════════════════
+     ENTER / EXIT
+  ════════════════════════════════════════════════ */
+  let anchors = [];
+  let spawnIndex = 0;
+
   function enterRuinMode() {
     if (ruinMode) return;
-    ruinMode  = true;
-    restoring = false;
-    ruinStart = Date.now();
+    ruinMode   = true;
+    restoring  = false;
+    ruinStart  = Date.now();
+    spawnIndex = 0;
+
     document.documentElement.classList.add('ruins-active');
+    initCanvases();
 
-    setupCanvases();
-    anchorsCache = discoverAnchors();
+    /* Discover anchors once at start */
+    anchors = discoverAnchors();
+    /* Shuffle */
+    for (let i = anchors.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [anchors[i], anchors[j]] = [anchors[j], anchors[i]];
+    }
 
-    /* Pre-build crack system */
-    cracks.length = 0;
-    buildCrackSystem();
-    crackStarted  = true;
+    /* Build crack geometry */
+    buildCracks();
 
     showOverlay();
     showRestoreButton();
 
-    /* Start vine spawning */
-    vineSpawnIdx = 0;
-    spawnNextVine();
-    vineTimer = setInterval(spawnNextVine, VINE_SPAWN_GAP);
+    /* Spawn first vine immediately */
+    spawnVine();
+    spawnTimer = setInterval(spawnVine, VINE_SPAWN_GAP);
 
-    /* Start growth ticker */
+    /* Growth ticker */
     startGrowthTick();
+  }
 
-    /* Start render loop if not already */
-    if (!rafId) renderLoop();
+  function spawnVine() {
+    if (!ruinMode || spawnIndex >= MAX_VINES || anchors.length === 0) {
+      clearInterval(spawnTimer);
+      return;
+    }
+    const anchor = anchors[spawnIndex % anchors.length];
+    vines.push(makeVine(anchor, spawnIndex));
+    spawnIndex++;
+    dirty = true;
   }
 
   function beginRestore() {
     if (!ruinMode) return;
-    ruinMode  = false;
-    restoring = true;
+    ruinMode = false; restoring = true;
     document.documentElement.classList.remove('ruins-active');
 
-    clearInterval(vineTimer);
-    clearInterval(segTimer);
+    clearInterval(spawnTimer);
+    clearInterval(growTick);
 
-    /* Mark all vines as dying */
-    vines.forEach(v => { v.dying = true; v.dyingT = 0; });
-
-    /* Mark cracks as dying */
+    /* Mark everything as dying */
+    vines.forEach(v => { v.dying = true; });
     const now = Date.now();
     cracks.forEach(cr => { cr.dying = true; cr.dyingStart = now; });
 
     hideOverlay();
+    pollAndHideRestoreButton();
 
-    /* Don't hide restore button — keep visible until vines are fully gone */
-    /* It's already set up to do this via the setInterval check in hideRestoreButton */
-
-    setTimeout(() => { restoring = false; resetIdleTimer(); }, RESTORE_DURATION);
+    setTimeout(() => { restoring = false; resetIdle(); }, RESTORE_MS + 5000);
   }
 
   function restoreInstant() {
-    const wasRuining = ruinMode || restoring;
-    ruinMode  = false;
-    restoring = false;
+    ruinMode = false; restoring = false;
     document.documentElement.classList.remove('ruins-active');
 
-    clearInterval(vineTimer);
-    clearInterval(segTimer);
+    clearInterval(spawnTimer);
+    clearInterval(growTick);
 
-    /* Fast-fade everything */
-    vines.forEach(v => { v.dying = true; v.alpha = 0.001; });
-    cracks.forEach(cr => { cr.alpha = 0; });
-    crackStarted = false;
+    /* Snap-clear */
+    vines.forEach(v => { v.dying = true; v.alpha = 0; });
+    cracks.forEach(cr => { cr.alpha = 0; cr.dying = true; cr.dyingStart = 0; });
+
+    if (vX) vX.clearRect(0, 0, vC.width, vC.height);
+    if (cX) cX.clearRect(0, 0, cC.width, cC.height);
+
+    vines.length = 0;
 
     hideOverlay();
-    hideRestoreButton(true);
 
-    setTimeout(() => {
-      vines.length  = 0;
-      cracks.length = 0;
-      if (vineCtx)  vineCtx.clearRect(0,0,vineCanvas.width,vineCanvas.height);
-      if (crackCtx) crackCtx.clearRect(0,0,crackCanvas.width,crackCanvas.height);
-      resetIdleTimer();
-    }, 400);
+    /* Hide button immediately */
+    if (restoreBtn) {
+      restoreBtn.classList.remove('visible');
+      restoreBtn.classList.add('hiding');
+      setTimeout(() => {
+        if (restoreBtn && restoreBtn.parentNode) restoreBtn.remove();
+        restoreBtn = null;
+      }, 900);
+    }
+
+    resetIdle();
   }
 
-  /* ────────────────────────────────────────────────
+  /* ════════════════════════════════════════════════
      IDLE DETECTION
-  ──────────────────────────────────────────────────*/
-  function resetIdleTimer() {
+  ════════════════════════════════════════════════ */
+  function resetIdle() {
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(enterRuinMode, IDLE_TRIGGER);
+    idleTimer = setTimeout(enterRuinMode, IDLE_MS);
   }
 
   function onActivity() {
-    if (ruinMode)   beginRestore();
-    if (!restoring) resetIdleTimer();
+    if (ruinMode)  beginRestore();
+    if (!restoring) resetIdle();
   }
 
-  const EVENTS = ['mousemove','mousedown','keydown','touchstart','touchmove','scroll','wheel','click'];
-  EVENTS.forEach(ev => document.addEventListener(ev, onActivity, { passive: true }));
+  ['mousemove','mousedown','keydown','touchstart','touchmove','scroll','wheel','click']
+    .forEach(ev => document.addEventListener(ev, onActivity, { passive: true }));
 
-  /* Start idle timer */
-  resetIdleTimer();
+  /* ── Start ── */
+  initCanvases();          /* create canvases immediately */
+  rafId = requestAnimationFrame(renderLoop);  /* start loop */
+  resetIdle();             /* begin idle countdown */
 
-  /* Start render loop immediately so it's ready */
-  setupCanvases();
-  renderLoop();
-
-  /* Handle resize */
+  /* Resize */
   window.addEventListener('resize', () => {
-    resizeCanvases();
-    if (ruinMode) {
-      cracks.length = 0;
-      buildCrackSystem();
-      drawCracks();
-    }
+    if (vC) { vC.width = window.innerWidth; vC.height = window.innerHeight; }
+    if (cC) { cC.width = window.innerWidth; cC.height = window.innerHeight; }
+    if (ruinMode) { buildCracks(); }
   });
 
 })();
