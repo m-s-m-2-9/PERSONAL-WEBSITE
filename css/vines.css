@@ -1,240 +1,13 @@
 /* ═══════════════════════════════════════════════════════════
-   vines.css — Abandoned Ruins Easter Egg Styles
-   All visual effects for the ruins takeover system.
-   Vines, leaves, flowers, moss, cracks, restore button.
-   Works with abandoned.js. Link in index.html head.
+   vines.css — Abandoned Ruins Effect
+   Works with abandoned.js
+   Add: <link rel="stylesheet" href="css/vines.css" />
+   Add: <script src="js/abandoned.js"></script>
 ═══════════════════════════════════════════════════════════ */
 
-/* ─── KEYFRAMES ─── */
+/* ─── CANVAS LAYERS (pointer-events none = never blocks clicks) ─── */
 
-/* Vine stem drawing — stroke-dashoffset from full to 0 */
-@keyframes ruins-stem-grow {
-  0%   { stroke-dashoffset: var(--vine-len, 800); opacity: 0; }
-  8%   { opacity: 1; }
-  100% { stroke-dashoffset: 0; opacity: 1; }
-}
-
-/* Leaf unfurl — scale from 0 with slight rotation */
-@keyframes ruins-leaf-unfurl {
-  0%   { transform: scale(0) rotate(-40deg); opacity: 0; }
-  60%  { transform: scale(1.08) rotate(4deg); opacity: 0.9; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
-}
-
-/* Petal bloom */
-@keyframes ruins-petal-bloom {
-  0%   { transform: scale(0) rotate(var(--petal-rot, 0deg)); opacity: 0; }
-  50%  { transform: scale(1.15) rotate(var(--petal-rot, 0deg)); opacity: 1; }
-  100% { transform: scale(1) rotate(var(--petal-rot, 0deg)); opacity: 0.92; }
-}
-
-/* Floret (wisteria cluster) drop */
-@keyframes ruins-floret-drop {
-  0%   { transform: translateY(-12px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 0.88; }
-}
-
-/* Moss spread */
-@keyframes ruins-moss-in {
-  0%   { --moss-opacity: 0; opacity: 0; }
-  100% { --moss-opacity: 1; opacity: 1; }
-}
-
-/* Moss recede */
-@keyframes ruins-moss-out {
-  0%   { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-/* Restore button pulse */
-@keyframes ruins-restore-pulse {
-  0%,100% { box-shadow: 0 0 0 0 rgba(var(--restore-glow), 0.4); }
-  50%     { box-shadow: 0 0 0 12px rgba(var(--restore-glow), 0); }
-}
-
-/* Gentle vine sway */
-@keyframes ruins-sway {
-  0%,100% { transform: translateX(0) skewX(0deg); }
-  25%     { transform: translateX(1.5px) skewX(0.4deg); }
-  75%     { transform: translateX(-1.5px) skewX(-0.4deg); }
-}
-
-/* Leaf flutter */
-@keyframes ruins-flutter {
-  0%,100% { transform: scale(1) rotate(0deg); }
-  33%     { transform: scale(1.03) rotate(2deg); }
-  66%     { transform: scale(0.97) rotate(-1.5deg); }
-}
-
-/* Cracks appear */
-@keyframes ruins-crack-in {
-  0%   { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-/* Overlay darkening */
-@keyframes ruins-overlay-in {
-  0%   { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-/* Restore button slide up */
-@keyframes ruins-btn-slide {
-  0%   { transform: translateX(-50%) translateY(80px); opacity: 0; }
-  100% { transform: translateX(-50%) translateY(0); opacity: 1; }
-}
-
-/* Particle drift */
-@keyframes ruins-particle-drift {
-  0%   { transform: translate(0, 0) rotate(0deg); opacity: 0.7; }
-  100% { transform: translate(var(--pdx, 20px), var(--pdy, -40px)) rotate(360deg); opacity: 0; }
-}
-
-/* ─── BODY STATE WHEN RUINS ACTIVE ─── */
-
-html.ruins-active {
-  /* Subtle filter on the whole page — aged look */
-}
-
-html.ruins-active body {
-  /* Very subtle warm shift — barely perceptible, doesn't break layout */
-}
-
-/* ─── VINE SVG CONTAINER ─── */
-
-.ruins-vine-svg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 99970;
-  overflow: visible;
-  will-change: opacity;
-}
-
-/* ─── VINE STEM ─── */
-
-.ruins-vine-stem {
-  fill: none;
-  stroke: #2d5a1e;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2.2;
-  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));
-  animation: ruins-stem-grow var(--grow-dur, 18s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-}
-
-.ruins-vine-stem.thick {
-  stroke-width: 3.5;
-  stroke: #1e4012;
-}
-
-.ruins-vine-stem.thin {
-  stroke-width: 1.3;
-  stroke: #3a7228;
-}
-
-/* ─── LEAVES ─── */
-
-.ruins-leaf {
-  fill: #3d7a25;
-  stroke: #2a5a18;
-  stroke-width: 0.5;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
-  transform-origin: center;
-  animation:
-    ruins-leaf-unfurl var(--leaf-dur, 2.8s) cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-    ruins-flutter 4s ease-in-out infinite var(--leaf-delay, 0s);
-  animation-fill-mode: both;
-}
-
-.ruins-leaf.dark-leaf   { fill: #2d6018; }
-.ruins-leaf.light-leaf  { fill: #4d8a2e; }
-.ruins-leaf.small-leaf  { fill: #3a7228; opacity: 0.85; }
-
-/* ─── PETALS ─── */
-
-.ruins-petal {
-  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.25));
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: ruins-petal-bloom var(--petal-dur, 3.2s) cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  animation-fill-mode: both;
-}
-
-/* ─── FLOWER CENTERS ─── */
-
-.ruins-flower-center {
-  filter: drop-shadow(0 0 4px var(--flower-color, #ffcc44));
-}
-
-/* ─── FLORETS (wisteria-style hanging clusters) ─── */
-
-.ruins-floret {
-  animation: ruins-floret-drop var(--floret-dur, 2s) ease forwards;
-  animation-fill-mode: both;
-}
-
-/* ─── THEME FLOWER COLOURS applied via SVG fill attr — no CSS needed ─── */
-
-/* ─── MOSS EFFECT ON ELEMENTS ─── */
-
-.ruins-moss {
-  position: relative;
-  overflow: visible;
-}
-
-.ruins-moss::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  background:
-    radial-gradient(ellipse 55% 30% at 20% 80%, rgba(55,110,35,0.38) 0%, transparent 70%),
-    radial-gradient(ellipse 40% 25% at 75% 90%, rgba(45,100,28,0.30) 0%, transparent 65%),
-    radial-gradient(ellipse 30% 20% at 50% 70%, rgba(62,122,38,0.22) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 1;
-  animation: ruins-moss-in 3.5s ease forwards;
-  mix-blend-mode: multiply;
-}
-
-[data-theme="light"] .ruins-moss::before {
-  background:
-    radial-gradient(ellipse 55% 30% at 20% 80%, rgba(70,138,42,0.28) 0%, transparent 70%),
-    radial-gradient(ellipse 40% 25% at 75% 90%, rgba(58,120,32,0.22) 0%, transparent 65%),
-    radial-gradient(ellipse 30% 20% at 50% 70%, rgba(78,148,50,0.16) 0%, transparent 60%);
-  mix-blend-mode: darken;
-}
-
-.ruins-moss::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(55,110,35,0.5) 18%,
-    rgba(45,95,28,0.65) 45%,
-    rgba(60,118,38,0.48) 72%,
-    transparent 100%);
-  border-radius: 0 0 4px 4px;
-  pointer-events: none;
-  animation: ruins-moss-in 2.8s ease forwards;
-}
-
-/* Moss removing */
-.ruins-moss-out::before,
-.ruins-moss-out::after {
-  animation: ruins-moss-out 1.4s ease forwards !important;
-}
-
-/* ─── CRACK CANVAS ─── */
-
+.ruins-vine-canvas,
 .ruins-crack-canvas {
   position: fixed;
   top: 0;
@@ -242,140 +15,124 @@ html.ruins-active body {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 99975;
+  z-index: 10;
   opacity: 0;
+  transition: opacity 2s ease;
   will-change: opacity;
 }
 
-/* ─── AMBIENT OVERLAY ─── */
+.ruins-crack-canvas {
+  z-index: 12;
+}
+
+.ruins-vine-canvas.visible,
+.ruins-crack-canvas.visible {
+  opacity: 1;
+}
+
+/* ─── VIEWPORT EDGE VIGNETTE (very subtle, doesn't block content) ─── */
 
 .ruins-overlay {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 99960;
-  background: radial-gradient(
-    ellipse 110% 110% at 50% 50%,
-    rgba(0,0,0,0) 35%,
-    rgba(0,0,0,0.18) 100%
-  );
-  will-change: opacity;
+  z-index: 8;
+  opacity: 0;
+  transition: opacity 8s ease;
+  background:
+    radial-gradient(ellipse 140% 140% at 0% 0%,   rgba(20,35,15,0.14) 0%, transparent 55%),
+    radial-gradient(ellipse 140% 140% at 100% 0%,  rgba(20,35,15,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse 140% 140% at 0% 100%,  rgba(20,35,15,0.12) 0%, transparent 55%),
+    radial-gradient(ellipse 140% 140% at 100% 100%,rgba(20,35,15,0.10) 0%, transparent 55%);
 }
 
 [data-theme="light"] .ruins-overlay {
-  background: radial-gradient(
-    ellipse 110% 110% at 50% 50%,
-    rgba(0,0,0,0) 35%,
-    rgba(20,30,10,0.12) 100%
-  );
+  background:
+    radial-gradient(ellipse 140% 140% at 0% 0%,   rgba(30,60,20,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse 140% 140% at 100% 100%,rgba(30,60,20,0.08) 0%, transparent 55%);
 }
+
+.ruins-overlay.visible { opacity: 1; }
 
 /* ─── RESTORE BUTTON ─── */
 
 .ruins-restore-btn {
   position: fixed;
-  bottom: -100px;
+  bottom: 2rem;
   left: 50%;
-  transform: translateX(-50%) translateY(0);
-  z-index: 99999;
+  transform: translateX(-50%) translateY(120%);
+  z-index: 99998;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.7rem 1.8rem;
-  border: 1px solid rgba(255,255,255,0.22);
-  border-radius: 100px;
-  background: rgba(8,8,8,0.72);
-  backdrop-filter: blur(18px) saturate(160%);
-  color: rgba(255,255,255,0.82);
-  font-family: 'DM Mono', 'DM Sans', monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  gap: 0;
+  padding: 0;
+  border: none;
+  background: none;
   cursor: pointer;
-  transition: bottom 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
-              opacity 0.5s ease,
-              border-color 0.3s ease,
-              background 0.3s ease;
-  --restore-glow: 120, 200, 80;
   pointer-events: all;
+  opacity: 0;
+  transition:
+    transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.5s ease;
   white-space: nowrap;
 }
 
-.ruins-restore-btn:hover {
-  border-color: rgba(120,200,80,0.55);
-  background: rgba(12,12,12,0.88);
-  color: rgba(255,255,255,1);
-  box-shadow:
-    0 0 20px rgba(120,200,80,0.15),
-    0 4px 24px rgba(0,0,0,0.4);
+.ruins-restore-btn.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
 }
 
-.ruins-restore-btn.ruins-restore-visible {
-  bottom: 2rem;
-  animation: ruins-restore-pulse 2.5s ease-in-out 3s infinite;
-}
-
-.ruins-restore-btn.ruins-restore-hiding {
-  bottom: -100px;
+.ruins-restore-btn.hiding {
+  transform: translateX(-50%) translateY(120%);
   opacity: 0;
 }
 
-[data-theme="light"] .ruins-restore-btn {
-  background: rgba(248,248,240,0.85);
-  border-color: rgba(80,140,40,0.35);
-  color: rgba(30,50,15,0.88);
-  --restore-glow: 80, 150, 40;
+/* Line bars on each side */
+.ruins-restore-line {
+  display: block;
+  height: 1px;
+  width: 48px;
+  background: currentColor;
+  opacity: 0.45;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+  flex-shrink: 0;
 }
 
-[data-theme="slate"] .ruins-restore-btn {
-  background: rgba(10,12,20,0.78);
-  border-color: rgba(100,140,200,0.28);
-  --restore-glow: 100, 140, 200;
-}
-
-[data-theme="forest"] .ruins-restore-btn {
-  background: rgba(8,12,6,0.80);
-  border-color: rgba(140,180,60,0.28);
-  --restore-glow: 140, 180, 60;
-}
-
-.ruins-restore-icon {
-  font-size: 0.6rem;
-  opacity: 0.6;
-  animation: ruins-flutter 3s ease-in-out infinite;
+.ruins-restore-btn:hover .ruins-restore-line {
+  width: 80px;
+  opacity: 0.75;
 }
 
 .ruins-restore-text {
-  letter-spacing: 0.22em;
+  display: block;
+  padding: 0 1rem;
+  font-family: var(--ff-mono, 'DM Mono', monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: currentColor;
+  transition: letter-spacing 0.35s ease, color 0.25s ease;
 }
 
-/* ─── VINE SWAY WRAPPER ─── */
-
-.ruins-vine-group {
-  animation: ruins-sway 6s ease-in-out infinite;
-  transform-origin: top center;
+.ruins-restore-btn:hover .ruins-restore-text {
+  letter-spacing: 0.38em;
 }
 
-/* ─── DUST PARTICLES ─── */
+/* Theme-aware colour */
+[data-theme="dark"]   .ruins-restore-btn { color: rgba(160,210,140,0.75); }
+[data-theme="light"]  .ruins-restore-btn { color: rgba(55,100,35,0.80); }
+[data-theme="slate"]  .ruins-restore-btn { color: rgba(130,175,210,0.80); }
+[data-theme="forest"] .ruins-restore-btn { color: rgba(170,210,70,0.82); }
 
-.ruins-particle {
-  position: fixed;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 99972;
-  animation: ruins-particle-drift var(--pdur, 8s) ease-out forwards;
-  will-change: transform, opacity;
-}
-
-/* ─── EDGE TINT when ruin mode active (very subtle) ─── */
-
-html.ruins-active .ruins-overlay {
-  animation: ruins-overlay-in 8s ease forwards;
-}
+[data-theme="dark"]   .ruins-restore-btn:hover { color: rgba(180,240,150,0.95); }
+[data-theme="light"]  .ruins-restore-btn:hover  { color: rgba(60,120,40,1); }
+[data-theme="slate"]  .ruins-restore-btn:hover  { color: rgba(150,200,230,1); }
+[data-theme="forest"] .ruins-restore-btn:hover  { color: rgba(200,240,80,1); }
 
 /* ─── RESPONSIVE ─── */
 
 @media (max-width: 768px) {
-  .ruins-vine-stem      { stroke-width: 1.8; }
-  .ruins-restore-btn    { font-size: 0.62rem; padding: 0.6rem 1.4rem; }
+  .ruins-restore-line         { width: 30px; }
+  .ruins-restore-btn:hover .ruins-restore-line { width: 50px; }
+  .ruins-restore-text         { font-size: 0.58rem; padding: 0 0.75rem; }
 }
