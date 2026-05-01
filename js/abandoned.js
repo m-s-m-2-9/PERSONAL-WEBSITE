@@ -11,7 +11,7 @@
   'use strict';
 
   /* ── TIMING (ms) ── */
-  const IDLE_TRIGGER    = 10 * 60 * 1000;
+  const IDLE_TRIGGER    = 10 * 1000;
   const SPAWN_DURATION  =  5 * 60 * 1000;
   const RESTORE_DURATION=  5 * 60 * 1000;
 
