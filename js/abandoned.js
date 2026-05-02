@@ -23,7 +23,7 @@
   'use strict';
 
   /* ─── TIMING ─── */
-  const IDLE_MS      = 10 * 60 * 1000;  /* 10 min idle → enter ruin */
+  const IDLE_MS      = 10 * 1000;  /* 10 min idle → enter ruin */
   const SPAWN_MS     =  5 * 60 * 1000;  /* 5 min to fully spawn all vines */
   const RESTORE_MS   =  5 * 60 * 1000;  /* 5 min gradual ungrow after activity */
 
