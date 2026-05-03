@@ -28,16 +28,16 @@
   const RESTORE_MS   =  5 * 60 * 1000;  /* 5 min gradual ungrow after activity */
 
   /* ─── VINE GROWTH PARAMS ─── */
-  const MAX_VINES     = 14;
+  const MAX_VINES     = 10;
   const VINE_GAP_MS   = Math.floor(SPAWN_MS / MAX_VINES); /* ~21s between spawns */
   const STEP_PX       = 2;      /* px grown per tick */
-  const TICK_MS       = 40;     /* ms between growth ticks (~25fps) */
+  const TICK_MS       = window.innerWidth < 768 ? 80 : 40;     /* ms between growth ticks (~25fps) */
   const LEAF_EVERY    = 8;      /* steps between leaf attempts */
   const FLOWER_EVERY  = 24;     /* steps between flower attempts */
 
   /* ─── MOSS ─── */
   const MOSS_DELAY_MS = 45000;  /* start moss 45s into ruin */
-  const MAX_MOSS      = 20;
+  const MAX_MOSS      = 14;
   const MOSS_GAP_MS   = (SPAWN_MS - MOSS_DELAY_MS) / MAX_MOSS;
 
   /* ─── STATE ─── */
@@ -241,7 +241,7 @@
 
     /* Organic drift with upward gravity bias */
     const drift   = (Math.random() - 0.5) * 0.24;
-    const gravity = -0.015; /* pulls angle toward -π/2 (upward) */
+   const gravity = -0.012 + Math.sin(v.step * 0.05) * 0.01;
     v.momentum    = v.momentum * 0.80 + drift * 0.20;
     v.angle      += v.momentum + gravity;
 
@@ -266,10 +266,9 @@
       v.sinceLeaf = 0;
     }
     /* Flower attempt */
-    if (v.sinceFlower >= FLOWER_EVERY && v.leafCount >= 2 && Math.random() > 0.42) {
-      addFlower(v);
-      v.sinceFlower = 0;
-    }
+    if (v.leafCount >= 2 && Math.random() > 0.965) {
+  addFlower(v);
+}
   }
 
   function addLeaf(v) {
@@ -643,9 +642,14 @@
 
       crackCtx.beginPath();
       crackCtx.moveTo(cr.pts[0].x, cr.pts[0].y);
-      for (let i = 1; i < drawCount; i++) {
-        crackCtx.lineTo(cr.pts[i].x, cr.pts[i].y);
-      }
+      const jitter = 0.6;
+
+for (let i = 1; i < drawCount; i++) {
+  crackCtx.lineTo(
+    cr.pts[i].x + (Math.random() - 0.5) * jitter,
+    cr.pts[i].y + (Math.random() - 0.5) * jitter
+  );
+}
 
       /* Main fracture line — blue-grey stone colour */
       crackCtx.strokeStyle = 'rgba(158,175,195,0.92)';
@@ -685,18 +689,18 @@
     if (vineCtx && vineCanvas) {
       vineCtx.clearRect(0, 0, vineCanvas.width, vineCanvas.height);
 
-      vines.forEach(v => {
-        /* Fade-in when growing */
-        if (!v.restoring) {
-          v.alpha = Math.min(0.88, v.alpha + 0.004);
-        } else {
-          /* Gradual fade-out over RESTORE_MS from when restore started */
-          const elapsed2 = Date.now() - v.restoreStart;
-          v.alpha = Math.max(0, v.startAlpha * (1 - easeIn(clamp(elapsed2 / RESTORE_MS, 0, 1))));
-        }
+     vines.forEach(v => {
 
-        if (v.alpha < 0.005) return;
+  if (!currentPage) return;
 
+  const viewTop = currentPage.scrollTop;
+  const viewBottom = viewTop + currentPage.clientHeight;
+
+  // Skip vines completely off-screen
+  if (v.pts.length && (
+      v.pts[0].y < viewTop - 200 ||
+      v.pts[0].y > viewBottom + 200
+  )) return;
         drawStem(vineCtx, v, v.alpha);
 
         /* Update and draw leaves */
@@ -798,13 +802,13 @@
     vineCanvas.className = 'ruins-vine-canvas';
     /* Explicit inline styles override everything */
     vineCanvas.style.cssText = `
-      position: absolute;
+      position: relative;
       top: 0;
       left: 0;
       width: 100%;
-      pointer-events: none;
-      z-index: 0;
-    `;
+     z-index: -1;
+pointer-events: none;
+
     vineCanvas.width  = pg.clientWidth  || window.innerWidth;
     vineCanvas.height = pg.scrollHeight || window.innerHeight;
     vineCtx = vineCanvas.getContext('2d');
