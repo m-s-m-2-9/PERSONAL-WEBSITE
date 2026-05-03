@@ -259,12 +259,11 @@
     v.pts.push({ x: clamp(nx, -60, W + 60), y: clamp(ny, -60, H + 60) });
     v.step++;
     v.sinceLeaf++;
-    v.sinceFlower++;
+   
 
     /* Leaf attempt */
     if (v.sinceLeaf >= LEAF_EVERY && v.step > 4 && Math.random() > 0.32) {
       addLeaf(v);
-      v.sinceLeaf = 0;
     }
     /* Flower attempt */
     if (v.leafCount >= 2 && Math.random() > 0.965) {
@@ -651,7 +650,6 @@ for (let i = 1; i < drawCount; i++) {
     cr.pts[i].y + (Math.random() - 0.5) * jitter
   );
 }
-
       /* Main fracture line — blue-grey stone colour */
       crackCtx.strokeStyle = 'rgba(158,175,195,0.92)';
       crackCtx.lineWidth   = cr.width;
@@ -692,16 +690,17 @@ for (let i = 1; i < drawCount; i++) {
 
      vines.forEach(v => {
 
+  vines.forEach(v => {
   if (!currentPage) return;
 
   const viewTop = currentPage.scrollTop;
   const viewBottom = viewTop + currentPage.clientHeight;
 
-  // Skip vines completely off-screen
-  if (v.pts.length && (
-      v.pts[0].y < viewTop - 200 ||
-      v.pts[0].y > viewBottom + 200
-  )) return;
+  const firstPoint = v.pts[0];
+  if (!firstPoint) return;
+
+  // Skip off-screen vines
+  if (firstPoint.y < viewTop - 200 || firstPoint.y > viewBottom + 200) return;
         drawStem(vineCtx, v, v.alpha);
 
         /* Update and draw leaves */
@@ -842,21 +841,24 @@ pointer-events: none;
      MOSS FACTORY
   ═══════════════════════════════════════════════ */
   function makeMossSpot(pageEl) {
-    const anchors = discoverAnchors(pageEl);
+  const anchors = discoverAnchors(pageEl);
+  const a = anchors[Math.floor(Math.random() * anchors.length)];
 
-/* fallback safety */
-if (!anchors.length) {
+  const angleOffsets = Array.from({ length: 5 }, () => Math.random() * TAU);
+  const distOffsets  = Array.from({ length: 5 }, () => Math.random());
+  const scaleOffsets = Array.from({ length: 10 }, () => Math.random());
+  const dotCount     = 60;
+  const dotAngles    = Array.from({ length: dotCount }, () => Math.random() * TAU);
+  const dotDists     = Array.from({ length: dotCount }, () => Math.random());
+
   return {
-    x: rng(0, pageEl.clientWidth),
-    y: rng(0, pageEl.scrollHeight),
+    x: a.x + (Math.random() - 0.5) * 40,
+    y: a.y + (Math.random() - 0.5) * 40,
     radius: rng(14, 42),
     t: 0,
     growMs: rng(20000, 60000),
-    angleOffsets: [],
-    distOffsets: [],
-    scaleOffsets: [],
-    dotAngles: [],
-    dotDists: [],
+    angleOffsets, distOffsets, scaleOffsets,
+    dotAngles, dotDists,
     restoring: false,
     restoreStart: 0,
     startT: 0,
@@ -1018,7 +1020,7 @@ y: y,
     if (!ruinMode) return;
     ruinMode      = false;
     restoring     = true;
-    restoreStart  = Date.now();
+    restoreStart  = now + Math.random() * 800;
 
     clearInterval(spawnTimer);
     clearInterval(growInterval);
@@ -1030,7 +1032,7 @@ y: y,
     vines.forEach(v => {
       v.restoring   = true;
 v.restoreStart= now + Math.random() * 800; // stagger
-v.startAlpha  = v.alpha * (0.8 + Math.random() * 0.2); // variation
+v.startAlpha  = v.alpha * (0.8 + Math.random() * 0.2);
       v.leaves.forEach(lf => { lf.restoring = true; lf.restoreStart = now; lf.startT = lf.t; });
       v.flowers.forEach(fl => { fl.restoring = true; fl.restoreStart = now; fl.startT = fl.t; });
     });
@@ -1077,9 +1079,8 @@ v.startAlpha  = v.alpha * (0.8 + Math.random() * 0.2); // variation
  document.addEventListener('scroll', () => {
   if (!currentPage) return;
 
-  const current = currentPage.scrollTop;
-  const delta = current - lastScrollTop;
-  lastScrollTop = current;
+  const delta = currentPage.scrollTop - lastScrollTop;
+  lastScrollTop = currentPage.scrollTop;
 
   vines.forEach(v => {
     v.angle += delta * 0.0008;
@@ -1087,6 +1088,16 @@ v.startAlpha  = v.alpha * (0.8 + Math.random() * 0.2); // variation
 }, { passive: true });
 }
 
+document.addEventListener('scroll', () => {
+  if (!currentPage) return;
+
+  const delta = currentPage.scrollTop - lastScrollTop;
+  lastScrollTop = currentPage.scrollTop;
+
+  vines.forEach(v => {
+    v.angle += delta * 0.0008;
+  });
+}, { passive: true });
   const EVTS = ['mousemove','mousedown','keydown','touchstart','touchmove','scroll','wheel','click'];
   EVTS.forEach(ev => document.addEventListener(ev, onActivity, { passive: true }));
 
