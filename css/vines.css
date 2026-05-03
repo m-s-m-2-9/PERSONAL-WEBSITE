@@ -1,37 +1,41 @@
 /* ═══════════════════════════════════════════════════════════
-   vines.css — Abandoned Ruins Easter Egg
+   vines.css — Abandoned Ruins Easter Egg Styles
    
-   SETUP — add these two lines to index.html:
-   In <head>:  <link rel="stylesheet" href="css/vines.css" />
-   Before </body>:  <script src="js/abandoned.js"></script>
-   
-   ARCHITECTURE:
-   Vine canvas = position:absolute INSIDE .page, z-index:-1
-   → scrolls with page content, sits BEHIND all text/buttons
-   → user can read and click everything normally
-   
-   Crack canvas = position:fixed (viewport-space cracks)
-   
-   Restore button = position:fixed, z-index:99999
+   ADD TO index.html <head>:
+     <link rel="stylesheet" href="css/vines.css" />
+   ADD TO index.html before </body>:
+     <script src="js/abandoned.js"></script>
 ═══════════════════════════════════════════════════════════ */
 
+/* ── CRITICAL: elevate .page-inner above vine canvas ──────
+   Vine canvas sits at z-index:0 inside .page.
+   .page-inner at z-index:1 puts ALL site content above it.
+   Everything in the website stays fully visible & clickable.
+───────────────────────────────────────────────────────── */
+.page-inner {
+  position: relative;
+  z-index: 1;
+}
+
 /* ── VINE CANVAS
-   Injected as FIRST CHILD of .page.active
-   z-index:-1 within .page stacking context
-   → paints BEHIND all sibling elements ── */
+   Injected as FIRST CHILD of .page.active via JS.
+   position:absolute inside .page (position:fixed, overflow-y:auto)
+   → scrolls with page content automatically
+   → z-index:0 puts it BELOW .page-inner (z-index:1)
+   → pointer-events:none so it never blocks clicks
+──────────────────────────────────────────────────────── */
 .ruins-vine-canvas {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  /* height set in JS to page.scrollHeight */
+  /* height set in JS = page.scrollHeight */
   pointer-events: none;
-  z-index: -1;
-  /* Canvas background is transparent by default
-     so page background shows through normally */
+  z-index: 0;
+  display: block;
 }
 
-/* ── CRACK CANVAS (viewport-space, fixed) ── */
+/* ── CRACK CANVAS — viewport-fixed, screen-space cracks ── */
 .ruins-crack-canvas {
   position: fixed;
   top: 0;
@@ -39,43 +43,39 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 11;
-  /* Above vine layer, below nav (z-index 9000) */
+  z-index: 13;
+  /* Above page content but below nav (nav is z-index ~9000) */
 }
 
-/* ── EDGE VIGNETTE OVERLAY
-   Very subtle — darkens corners slightly
-   so vines feel like they emerge from the frame ── */
+/* ── EDGE VIGNETTE — very subtle corner darkening ── */
 .ruins-overlay {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 9;
+  z-index: 8;
   opacity: 0;
-  transition: opacity 16s ease;
+  transition: opacity 18s ease;
   background:
-    radial-gradient(ellipse 200% 200% at   0%   0%, rgba( 8, 22,  5, 0.22) 0%, transparent 45%),
-    radial-gradient(ellipse 200% 200% at 100%   0%, rgba( 8, 22,  5, 0.18) 0%, transparent 45%),
-    radial-gradient(ellipse 200% 200% at   0% 100%, rgba( 8, 22,  5, 0.20) 0%, transparent 45%),
-    radial-gradient(ellipse 200% 200% at 100% 100%, rgba( 8, 22,  5, 0.18) 0%, transparent 45%);
+    radial-gradient(ellipse 200% 200% at   0%   0%, rgba( 6, 18,  4, 0.20) 0%, transparent 46%),
+    radial-gradient(ellipse 200% 200% at 100%   0%, rgba( 6, 18,  4, 0.16) 0%, transparent 46%),
+    radial-gradient(ellipse 200% 200% at   0% 100%, rgba( 6, 18,  4, 0.18) 0%, transparent 46%),
+    radial-gradient(ellipse 200% 200% at 100% 100%, rgba( 6, 18,  4, 0.16) 0%, transparent 46%);
 }
-
 [data-theme="light"] .ruins-overlay {
   background:
-    radial-gradient(ellipse 200% 200% at   0%   0%, rgba(25, 55, 12, 0.14) 0%, transparent 45%),
-    radial-gradient(ellipse 200% 200% at 100% 100%, rgba(25, 55, 12, 0.10) 0%, transparent 45%);
+    radial-gradient(ellipse 200% 200% at   0%   0%, rgba(24, 52, 12, 0.13) 0%, transparent 46%),
+    radial-gradient(ellipse 200% 200% at 100% 100%, rgba(24, 52, 12, 0.10) 0%, transparent 46%);
 }
 [data-theme="slate"] .ruins-overlay {
   background:
-    radial-gradient(ellipse 200% 200% at   0%   0%, rgba( 8, 14, 28, 0.20) 0%, transparent 45%),
-    radial-gradient(ellipse 200% 200% at 100% 100%, rgba( 8, 14, 28, 0.16) 0%, transparent 45%);
+    radial-gradient(ellipse 200% 200% at   0%   0%, rgba( 6, 12, 26, 0.18) 0%, transparent 46%),
+    radial-gradient(ellipse 200% 200% at 100% 100%, rgba( 6, 12, 26, 0.14) 0%, transparent 46%);
 }
 [data-theme="forest"] .ruins-overlay {
   background:
-    radial-gradient(ellipse 200% 200% at   0%   0%, rgba( 4, 18,  4, 0.22) 0%, transparent 45%),
-    radial-gradient(ellipse 200% 200% at 100% 100%, rgba( 4, 18,  4, 0.18) 0%, transparent 45%);
+    radial-gradient(ellipse 200% 200% at   0%   0%, rgba( 4, 16,  4, 0.20) 0%, transparent 46%),
+    radial-gradient(ellipse 200% 200% at 100% 100%, rgba( 4, 16,  4, 0.16) 0%, transparent 46%);
 }
-
 .ruins-overlay.visible { opacity: 1; }
 
 /* ── RESTORE BUTTON ── */
@@ -83,7 +83,7 @@
   position: fixed;
   bottom: 2rem;
   left: 50%;
-  transform: translateX(-50%) translateY(180%);
+  transform: translateX(-50%) translateY(200%);
   z-index: 99999;
   display: flex;
   align-items: center;
@@ -100,6 +100,7 @@
   white-space: nowrap;
   outline: none;
   -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .ruins-restore-btn.visible {
@@ -108,23 +109,20 @@
 }
 
 .ruins-restore-btn.hiding {
-  transform: translateX(-50%) translateY(180%);
+  transform: translateX(-50%) translateY(200%);
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.55s ease, opacity 0.45s ease;
+  transition: transform 0.5s ease, opacity 0.4s ease;
 }
 
-/* Horizontal rule lines flanking text */
 .ruins-restore-line {
   display: block;
   height: 1px;
-  width: 64px;
+  width: 62px;
   background: currentColor;
-  opacity: 0.36;
+  opacity: 0.35;
   flex-shrink: 0;
-  transition:
-    width   0.55s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.4s ease;
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
 }
 
 .ruins-restore-btn:hover .ruins-restore-line {
@@ -137,31 +135,30 @@
   padding: 0 1.2rem;
   font-family: var(--ff-mono, 'DM Mono', monospace);
   font-size: 0.58rem;
-  letter-spacing: 0.35em;
+  letter-spacing: 0.34em;
   text-transform: uppercase;
   opacity: 0.70;
   transition: letter-spacing 0.5s ease, opacity 0.35s ease;
 }
 
 .ruins-restore-btn:hover .ruins-restore-text {
-  letter-spacing: 0.46em;
+  letter-spacing: 0.44em;
   opacity: 1;
 }
 
 /* Theme colours */
 [data-theme="dark"]   .ruins-restore-btn { color: rgba(145, 210, 115, 0.82); }
-[data-theme="light"]  .ruins-restore-btn { color: rgba( 52, 105,  28, 0.88); }
+[data-theme="light"]  .ruins-restore-btn { color: rgba( 50, 105,  28, 0.88); }
 [data-theme="slate"]  .ruins-restore-btn { color: rgba(112, 165, 212, 0.88); }
 [data-theme="forest"] .ruins-restore-btn { color: rgba(165, 215,  52, 0.90); }
 
 [data-theme="dark"]   .ruins-restore-btn:hover { color: rgba(175, 242, 140, 1.0); }
-[data-theme="light"]  .ruins-restore-btn:hover  { color: rgba( 48, 118,  22, 1.0); }
-[data-theme="slate"]  .ruins-restore-btn:hover  { color: rgba(138, 194, 234, 1.0); }
+[data-theme="light"]  .ruins-restore-btn:hover  { color: rgba( 45, 118,  22, 1.0); }
+[data-theme="slate"]  .ruins-restore-btn:hover  { color: rgba(138, 195, 234, 1.0); }
 [data-theme="forest"] .ruins-restore-btn:hover  { color: rgba(198, 240,  68, 1.0); }
 
-/* ── Mobile ── */
 @media (max-width: 768px) {
   .ruins-restore-line                          { width: 38px; }
-  .ruins-restore-btn:hover .ruins-restore-line { width: 62px; }
+  .ruins-restore-btn:hover .ruins-restore-line { width: 64px; }
   .ruins-restore-text  { font-size: 0.52rem; padding: 0 0.85rem; }
 }
