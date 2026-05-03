@@ -50,6 +50,7 @@
   let mossTimer   = null;
   let growInterval= null;
   let rafId       = null;
+   let lastScrollTop = 0;
 
   const vines      = [];
   const mossSpots  = [];
@@ -841,18 +842,32 @@ pointer-events: none;
      MOSS FACTORY
   ═══════════════════════════════════════════════ */
   function makeMossSpot(pageEl) {
-    const W = pageEl.clientWidth;
-    const H = pageEl.scrollHeight;
-    /* Place moss near edges and corners */
-    const regions = [
-      { x: rng(0, W * 0.2),   y: rng(0, H * 0.15) },
-      { x: rng(W * 0.8, W),   y: rng(0, H * 0.15) },
-      { x: rng(0, W * 0.15),  y: rng(H * 0.3, H * 0.7) },
-      { x: rng(W * 0.85, W),  y: rng(H * 0.3, H * 0.7) },
-      { x: rng(0, W * 0.2),   y: rng(H * 0.8, H) },
-      { x: rng(W * 0.8, W),   y: rng(H * 0.8, H) },
-    ];
-    const region = regions[Math.floor(Math.random() * regions.length)];
+    const anchors = discoverAnchors(pageEl);
+
+/* fallback safety */
+if (!anchors.length) {
+  return {
+    x: rng(0, pageEl.clientWidth),
+    y: rng(0, pageEl.scrollHeight),
+    radius: rng(14, 42),
+    t: 0,
+    growMs: rng(20000, 60000),
+    angleOffsets: [],
+    distOffsets: [],
+    scaleOffsets: [],
+    dotAngles: [],
+    dotDists: [],
+    restoring: false,
+    restoreStart: 0,
+    startT: 0,
+  };
+}
+
+const a = anchors[Math.floor(Math.random() * anchors.length)];
+
+/* slight offset so it's not perfectly on element */
+const x = a.x + rng(-12, 12);
+const y = a.y + rng(-12, 12);
 
     /* Pre-compute random offsets so drawing is deterministic each frame */
     const angleOffsets = Array.from({ length: 5 }, () => Math.random() * TAU);
@@ -863,8 +878,9 @@ pointer-events: none;
     const dotDists     = Array.from({ length: dotCount }, () => Math.random());
 
     return {
-      x: region.x, y: region.y,
-      radius: rng(14, 42),
+      x: x,
+y: y,
+      radius: rng(10, 30) * (Math.random() > 0.7 ? 1.8 : 1),
       t: 0,
       growMs: rng(20000, 60000),
       angleOffsets, distOffsets, scaleOffsets,
@@ -1013,8 +1029,8 @@ pointer-events: none;
     /* Mark all vines as restoring */
     vines.forEach(v => {
       v.restoring   = true;
-      v.restoreStart= now;
-      v.startAlpha  = v.alpha;
+v.restoreStart= now + Math.random() * 800; // stagger
+v.startAlpha  = v.alpha * (0.8 + Math.random() * 0.2); // variation
       v.leaves.forEach(lf => { lf.restoring = true; lf.restoreStart = now; lf.startT = lf.t; });
       v.flowers.forEach(fl => { fl.restoring = true; fl.restoreStart = now; fl.startT = fl.t; });
     });
@@ -1058,7 +1074,18 @@ pointer-events: none;
   function onActivity() {
     if (ruinMode) beginRestore();
     if (!restoring) resetIdle();
-  }
+ document.addEventListener('scroll', () => {
+  if (!currentPage) return;
+
+  const current = currentPage.scrollTop;
+  const delta = current - lastScrollTop;
+  lastScrollTop = current;
+
+  vines.forEach(v => {
+    v.angle += delta * 0.0008;
+  });
+}, { passive: true });
+}
 
   const EVTS = ['mousemove','mousedown','keydown','touchstart','touchmove','scroll','wheel','click'];
   EVTS.forEach(ev => document.addEventListener(ev, onActivity, { passive: true }));
