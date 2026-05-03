@@ -181,3 +181,14 @@ footer {
   position: relative;
   z-index: 2;
 }
+
+
+.ruins-overlay.visible {
+  backdrop-filter: blur(1.5px);
+  animation: breathe 6s infinite ease-in-out;
+}
+
+@keyframes breathe {
+  0%,100% { opacity: 0.15; }
+  50% { opacity: 0.25; }
+}
