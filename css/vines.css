@@ -162,3 +162,22 @@
   .ruins-restore-btn:hover .ruins-restore-line { width: 64px; }
   .ruins-restore-text  { font-size: 0.52rem; padding: 0 0.85rem; }
 }
+
+
+/* ADD THIS at the end of your file */
+
+/* ensure vines always stay behind EVERYTHING */
+.page {
+  position: relative;
+}
+
+.ruins-vine-canvas {
+  z-index: 0 !important;
+}
+
+.page-inner,
+nav,
+footer {
+  position: relative;
+  z-index: 2;
+}
