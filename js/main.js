@@ -552,13 +552,22 @@ function renderGame(gameId) {
   }
 }
 
-/* ─── GAME 1: SNAKE ─── */
+/* ─────────────────────────────────────────────────────────
+   FIX 1A: SNAKE — touch swipe support for mobile
+   Swipe maps to direction. First swipe starts game.
+   Touch listeners on canvas with preventDefault so
+   page doesn't scroll while swiping to play.
+───────────────────────────────────────────────────────── */
 function renderSnake(container) {
+  /* Detect touch device for instruction text */
+  const isMobile = window.matchMedia('(pointer: coarse)').matches;
+  const inputHint = isMobile ? 'Swipe to move' : 'Arrow keys or WASD';
+
   container.innerHTML = `
     <h3 style="font-family:var(--ff-display);font-size:1.5rem;color:var(--text);text-align:center;margin-bottom:1rem;">Snake</h3>
-    <p style="text-align:center;font-size:0.75rem;color:var(--text3);margin-bottom:1rem;">Arrow keys or WASD · Score: <span id="snake-score">0</span></p>
-    <canvas id="snake-canvas" width="400" height="400" style="border:1px solid var(--border2);background:var(--bg2);display:block;margin:0 auto;max-width:100%;"></canvas>
-    <p style="text-align:center;font-size:0.75rem;color:var(--text3);margin-top:1rem;" id="snake-msg">Press any arrow key to start</p>
+    <p style="text-align:center;font-size:0.75rem;color:var(--text3);margin-bottom:1rem;">${inputHint} · Score: <span id="snake-score">0</span></p>
+    <canvas id="snake-canvas" width="400" height="400" style="border:1px solid var(--border2);background:var(--bg2);display:block;margin:0 auto;max-width:100%;touch-action:none;"></canvas>
+    <p style="text-align:center;font-size:0.75rem;color:var(--text3);margin-top:1rem;" id="snake-msg">${isMobile ? 'Swipe to start' : 'Press any arrow key to start'}</p>
   `;
 
   const canvas = document.getElementById('snake-canvas');
@@ -592,7 +601,7 @@ function renderSnake(container) {
       ctx.fillText('Game Over — Score: ' + score, canvas.width / 2, canvas.height / 2);
       ctx.font = '13px DM Sans, sans-serif';
       ctx.fillStyle = '#888';
-      ctx.fillText('Press any key to restart', canvas.width / 2, canvas.height / 2 + 28);
+      ctx.fillText(isMobile ? 'Swipe to restart' : 'Press any key to restart', canvas.width / 2, canvas.height / 2 + 28);
     }
   }
 
@@ -622,6 +631,7 @@ function renderSnake(container) {
     draw();
   }
 
+  /* ── Keyboard controls (desktop) ── */
   const DIRS = {
     ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0},
     w:{x:0,y:-1}, s:{x:0,y:1}, a:{x:-1,y:0}, d:{x:1,y:0},
@@ -640,6 +650,46 @@ function renderSnake(container) {
       e.preventDefault();
     }
   });
+
+  /* ── Touch swipe controls (mobile) — FIX 1A ── */
+  if (isMobile) {
+    let touchStartX = 0, touchStartY = 0;
+    const SWIPE_THRESHOLD = 20; /* minimum px to count as a swipe */
+
+    canvas.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      e.preventDefault(); /* stop page scroll while on canvas */
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      const absDx = Math.abs(dx), absDy = Math.abs(dy);
+
+      /* Must exceed threshold to register as intentional swipe */
+      if (Math.max(absDx, absDy) < SWIPE_THRESHOLD) return;
+
+      if (gameOver) { startGame(); return; }
+      if (!running) { startGame(); }
+
+      let newDir;
+      if (absDx > absDy) {
+        /* Horizontal swipe */
+        newDir = dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 };
+      } else {
+        /* Vertical swipe */
+        newDir = dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 };
+      }
+
+      /* Prevent reversing directly into self */
+      if (dir.x !== -newDir.x || dir.y !== -newDir.y) {
+        dir = newDir;
+      }
+
+      e.preventDefault();
+    }, { passive: false });
+  }
 
   draw();
 }
@@ -688,13 +738,20 @@ function renderMemory(container) {
   });
 }
 
-/* ─── GAME 3: 2048 ─── */
+/* ─────────────────────────────────────────────────────────
+   FIX 1B: 2048 — touch swipe support for mobile
+   Swipe on the grid maps to move direction.
+   touch-action:none on grid prevents scroll interference.
+───────────────────────────────────────────────────────── */
 function render2048(container) {
+  const isMobile = window.matchMedia('(pointer: coarse)').matches;
+  const inputHint = isMobile ? 'Swipe to slide' : 'Arrow keys to slide';
+
   let grid = Array(4).fill(null).map(() => Array(4).fill(0)), score = 0;
   container.innerHTML = `
     <h3 style="font-family:var(--ff-display);font-size:1.5rem;color:var(--text);text-align:center;margin-bottom:0.5rem;">2048</h3>
-    <p style="text-align:center;font-size:0.75rem;color:var(--text3);margin-bottom:1rem;">Score: <span id="g2048-score">0</span> · Arrow keys to slide</p>
-    <div id="g2048-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-width:340px;margin:0 auto;background:var(--bg3);padding:6px;border-radius:4px;"></div>
+    <p style="text-align:center;font-size:0.75rem;color:var(--text3);margin-bottom:1rem;">Score: <span id="g2048-score">0</span> · ${inputHint}</p>
+    <div id="g2048-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-width:340px;margin:0 auto;background:var(--bg3);padding:6px;border-radius:4px;touch-action:none;user-select:none;"></div>
   `;
   const colors = {0:'var(--bg3)',2:'#eee4da',4:'#ede0c8',8:'#f2b179',16:'#f59563',32:'#f67c5f',64:'#f65e3b',128:'#edcf72',256:'#edcc61',512:'#edc850',1024:'#edc53f',2048:'#edc22e'};
 
@@ -735,11 +792,41 @@ function render2048(container) {
 
   addRandom(); addRandom(); drawGrid();
 
+  /* ── Keyboard controls (desktop) ── */
   document.addEventListener('keydown', function keys2048(e) {
     if (!document.getElementById('game-modal').classList.contains('open')) { document.removeEventListener('keydown', keys2048); return; }
     const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
     if (map[e.key]) { e.preventDefault(); move(map[e.key]); }
   });
+
+  /* ── Touch swipe controls (mobile) — FIX 1B ── */
+  if (isMobile) {
+    const gridEl = document.getElementById('g2048-grid');
+    let touchStartX = 0, touchStartY = 0;
+    const SWIPE_THRESHOLD = 24; /* min px for valid swipe */
+
+    gridEl.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      e.preventDefault(); /* prevent scroll while interacting with grid */
+    }, { passive: false });
+
+    gridEl.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      const absDx = Math.abs(dx), absDy = Math.abs(dy);
+
+      if (Math.max(absDx, absDy) < SWIPE_THRESHOLD) return;
+
+      if (absDx > absDy) {
+        move(dx > 0 ? 'right' : 'left');
+      } else {
+        move(dy > 0 ? 'down' : 'up');
+      }
+
+      e.preventDefault();
+    }, { passive: false });
+  }
 }
 
 /* ─── GAME 4: REACTION TIME ─── */
@@ -754,15 +841,15 @@ function renderReaction(container) {
     <p id="react-results" style="text-align:center;font-size:0.8rem;color:var(--text2);margin-top:1.5rem;"></p>
   `;
   const box = document.getElementById('react-box'), text = document.getElementById('react-text'), sub = document.getElementById('react-sub');
-  function reset() { state = 'waiting'; box.style.background = 'var(--bg3)'; text.textContent = 'Click when it turns green'; sub.textContent = ''; }
+  function reset() { state = 'waiting'; box.style.background = 'var(--bg3)'; text.textContent = 'Tap when it turns green'; sub.textContent = ''; }
   reset(); let timeout;
   function reactionClick() {
     if (state === 'waiting') {
       state = 'ready'; box.style.background = '#c0392b'; text.textContent = 'Wait...'; sub.textContent = '';
       clearTimeout(timeout);
-      timeout = setTimeout(() => { state = 'go'; box.style.background = '#27ae60'; text.textContent = 'Click now!'; startTime = performance.now(); }, 1500 + Math.random() * 3000);
+      timeout = setTimeout(() => { state = 'go'; box.style.background = '#27ae60'; text.textContent = 'Tap now!'; startTime = performance.now(); }, 1500 + Math.random() * 3000);
     } else if (state === 'ready') {
-      clearTimeout(timeout); box.style.background = '#c0392b'; text.textContent = 'Too early! Click again.'; setTimeout(reset, 1000);
+      clearTimeout(timeout); box.style.background = '#c0392b'; text.textContent = 'Too early! Tap again.'; setTimeout(reset, 1000);
     } else if (state === 'go') {
       const t = Math.round(performance.now() - startTime); times.push(t);
       const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
@@ -815,10 +902,7 @@ function renderWordScramble(container) {
 
 /* ═══════════════════════════════════════════════════════════
    EASTER EGGS
-   FIX 1: Konami code listener REMOVED entirely
 ═══════════════════════════════════════════════════════════ */
-
-/* Name click counter */
 let nameClicks = 0;
 const nameClickMessages = [
   "", "", "", "", "",
@@ -827,7 +911,6 @@ const nameClickMessages = [
   "7 clicks! You found the easter egg. Hello, persistent human. Here is your reward — lean back and calm down.",
 ];
 
-/* Type "manomay" anywhere */
 (function () {
   let typed = '';
   document.addEventListener('keypress', e => {
