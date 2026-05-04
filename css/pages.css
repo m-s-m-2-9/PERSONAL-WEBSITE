@@ -126,9 +126,6 @@
   animation: scrollPulse 2s ease-in-out infinite;
 }
 
-/* FIX 5: hero-links — removed border-top which was causing
-   a visible double-line overlapping with the scroll indicator line.
-   Replaced with box-shadow inset which gives same visual without overlap. */
 .hero-links {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -151,7 +148,6 @@
 .hero-link-item .link-arrow { font-size: 1.2rem; color: var(--accent); transition: transform 0.3s ease; }
 .hero-link-item:hover .link-arrow { transform: translateX(6px); }
 
-/* FIX 4: Footer — desktop/mobile variants */
 .footer {
   padding: 2.5rem 3rem;
   border-top: 1px solid var(--border);
@@ -163,7 +159,6 @@
   font-size: 0.65rem;
   letter-spacing: 0.1em;
 }
-/* Desktop shows single-line spans, mobile shows multi-line divs */
 .footer-desktop-only { display: block; }
 .footer-mobile-only  { display: none; line-height: 1.9; }
 
@@ -335,20 +330,15 @@
 ───────────────────────────────────────────────────────── */
 .timeline-header { padding: 6rem 0 4rem; text-align: center; }
 
-/* FIX 6: Hide the horizontal scrollbar visually.
-   The timeline still scrolls horizontally (swipe works),
-   but the ugly scrollbar track is hidden. */
 .years-mindmap {
   position: relative;
   padding: 2rem 0 6rem;
   overflow-x: auto;
   overflow-y: visible;
-  scrollbar-width: none;        /* Firefox: hides scrollbar */
-  -ms-overflow-style: none;     /* IE / old Edge: hides scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-.years-mindmap::-webkit-scrollbar {
-  display: none;                /* Chrome / Safari: hides scrollbar */
-}
+.years-mindmap::-webkit-scrollbar { display: none; }
 
 .years-track {
   display: flex; gap: 0; align-items: center;
@@ -481,10 +471,6 @@
 .game-desc       { font-size: 0.8rem; color: var(--text3); line-height: 1.6; flex: 1; }
 .game-play-btn   { align-self: flex-start; font-family: var(--ff-mono); font-size: 0.7rem; letter-spacing: 0.1em; color: var(--accent); display: flex; align-items: center; gap: 0.5rem; }
 
-/* FIX 7: Game modal — mobile responsive.
-   Changed from centered flex to top-aligned with overflow-y scroll
-   so games are fully visible and scrollable on small screens.
-   position:fixed close button so it's always reachable. */
 .game-modal {
   position: fixed; inset: 0;
   z-index: 9500;
@@ -492,9 +478,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;    /* top-aligned so game fits on mobile */
+  justify-content: flex-start;
   padding: 4.5rem 1rem 2rem;
-  overflow-y: auto;               /* scrollable on small screens */
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   opacity: 0;
   pointer-events: none;
@@ -504,7 +490,7 @@
 .game-modal.open { opacity: 1; pointer-events: all; transform: scale(1); }
 
 .game-modal-close {
-  position: fixed;               /* stays visible even when user scrolls */
+  position: fixed;
   top: 1rem; right: 1rem;
   background: var(--bg);
   border: 1px solid var(--border2);
@@ -538,27 +524,26 @@
 .testimonial-text    { font-family: var(--ff-display); font-size: 1rem; font-style: italic; color: var(--text2); line-height: 1.7; margin-bottom: 1.5rem; }
 .testimonial-author  { font-family: var(--ff-mono); font-size: 0.7rem; color: var(--text3); }
 
-/* ─────────────────────────────────────────────────────────
-   RESPONSIVE OVERRIDES
-───────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE OVERRIDES — MOBILE ONLY (max-width: 768px)
+   All 5 fixes are contained within this block.
+   Desktop styles above are completely untouched.
+═══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
 
-  /* About */
+  /* ── About ── */
   .about-grid        { grid-template-columns: 1fr; }
   .about-photo-col   { position: relative; top: 0; }
 
-  /* Resume */
+  /* ── Resume ── */
   .resume-header-block { flex-direction: column; gap: 1.5rem; }
   .resume-contact-col  { text-align: left; }
   .resume-wrap         { padding: 6rem 1.5rem; }
 
-  /* Contact */
+  /* ── Contact ── */
   .contact-wrap { padding: 6rem 1.5rem; }
 
-  /* Birthday */
-  .bday-timer { gap: 1.5rem; }
-
-  /* FIX 4: Footer mobile — two-line stacked layout */
+  /* ── Footer ── */
   .footer {
     flex-direction: column;
     align-items: flex-start;
@@ -568,10 +553,107 @@
   .footer-desktop-only { display: none !important; }
   .footer-mobile-only  { display: block !important; line-height: 1.9; }
 
-  /* Albums — 2 column on mobile */
+  /* ── Albums — 2 column on mobile ── */
   .albums-grid { grid-template-columns: repeat(2, 1fr); }
 
-  /* FIX 7: Game modal full-width on mobile */
+  /* ── Game modal ── */
   .game-modal      { padding: 3.5rem 0.25rem 1rem; }
   #game-container  { padding: 0 0.5rem 2rem; }
-}
+
+  /* ════════════════════════════════════════════════════════
+     FIX 2: LISTS PAGE — horizontal tab scroll
+     Makes "Movies" reachable by sliding.
+     Thin accent-coloured line scrollbar for aesthetics.
+  ════════════════════════════════════════════════════════ */
+  .lists-tabs {
+    overflow-x: auto;
+    overflow-y: visible;
+    flex-wrap: nowrap;          /* prevent tabs wrapping to next line */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;      /* Firefox: thin scrollbar */
+    /* Firefox: thumb = accent, track = transparent */
+    scrollbar-color: var(--accent) transparent;
+    /* Extra bottom padding so scrollbar doesn't overlap the border */
+    padding-bottom: 2px;
+    gap: 0;
+  }
+  /* Webkit (Chrome/Safari/Samsung): thin line scrollbar */
+  .lists-tabs::-webkit-scrollbar {
+    height: 2px;                /* ultra-thin line */
+  }
+  .lists-tabs::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .lists-tabs::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 1px;
+  }
+  /* Prevent tabs from shrinking — they must stay full-width text */
+  .list-tab {
+    flex-shrink: 0;
+    padding: 0.75rem 1.2rem;
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+
+  /* ════════════════════════════════════════════════════════
+     FIX 3: BIRTHDAY CLOCK — single row for all 4 time units
+     Line 1: [Days : Hours : Minutes : Seconds]
+     Line 2: [Milliseconds]  ← already outside .bday-timer
+     Works down to iPhone SE (375px) without wrapping.
+  ════════════════════════════════════════════════════════ */
+  .bday-timer {
+    flex-wrap: nowrap;          /* CRITICAL — no wrapping to second line */
+    gap: clamp(0.2rem, 1.8vw, 0.8rem);
+    align-items: flex-end;
+    justify-content: center;
+    width: 100%;
+  }
+  .bday-value {
+    font-size: clamp(1.55rem, 7vw, 2.8rem);
+    min-width: unset;           /* remove fixed min-width so it can shrink */
+    width: auto;
+  }
+  .bday-label {
+    font-size: clamp(0.38rem, 1.3vw, 0.52rem);
+    letter-spacing: 0.12em;
+  }
+  .bday-separator {
+    font-size: clamp(0.9rem, 4vw, 1.8rem);
+    padding-bottom: clamp(0.15rem, 0.8vw, 0.4rem);
+    flex-shrink: 0;
+  }
+  .bday-ms {
+    font-size: clamp(0.8rem, 3.5vw, 1.2rem);
+    margin-top: 0.6rem;
+  }
+  .birthday-hero {
+    padding: 5rem 1.2rem;
+  }
+
+  /* ════════════════════════════════════════════════════════
+     FIX 4: JOURNEY PAGE — year and title on separate lines
+     Year stays large (background style). Title goes below.
+     Desktop layout (flex row, baseline-aligned) unchanged.
+  ════════════════════════════════════════════════════════ */
+  .year-detail-header {
+    flex-direction: column;     /* stack year above title */
+    align-items: flex-start;
+    gap: 0.25rem;
+    margin-bottom: 1.2rem;
+  }
+  .year-detail-year {
+    font-size: clamp(3rem, 18vw, 5rem);
+    opacity: 0.45;
+    line-height: 1;
+    margin-bottom: 0;
+  }
+  .year-detail-title {
+    font-size: clamp(1.3rem, 5.5vw, 1.8rem);
+    line-height: 1.2;
+    /* Title sits visually below the big year number */
+    margin-top: -0.25rem;
+  }
+  .year-detail {
+    padding: 0 1.5rem;
+  }
