@@ -61,7 +61,6 @@
     <li><a href="#" onclick="navigateTo('about'); return false;">Identity</a></li>
     <li><a href="#" onclick="navigateTo('photos'); return false;">Photos</a></li>
     <li><a href="#" onclick="navigateTo('resume'); return false;">CV</a></li>
-    <li><a href="#" onclick="navigateTo('projects'); return false;">Projects</a></li>
     <li><a href="#" onclick="navigateTo('profiles'); return false;">Profiles</a></li>
     <li><a href="#" onclick="navigateTo('journey'); return false;">Journey</a></li>
     <li><a href="#" onclick="navigateTo('birthday'); return false;">Clock</a></li>
@@ -104,7 +103,6 @@
   <a href="#" onclick="navigateTo('about');   toggleMobileNav(); return false;">Identity</a>
   <a href="#" onclick="navigateTo('photos');  toggleMobileNav(); return false;">Photos</a>
   <a href="#" onclick="navigateTo('resume');  toggleMobileNav(); return false;">CV</a>
-  <a href="#" onclick="navigateTo('projects');toggleMobileNav(); return false;">Projects</a>
   <a href="#" onclick="navigateTo('profiles');toggleMobileNav(); return false;">Profiles</a>
   <a href="#" onclick="navigateTo('journey'); toggleMobileNav(); return false;">Journey</a>
   <a href="#" onclick="navigateTo('birthday');toggleMobileNav(); return false;">Clock</a>
@@ -164,10 +162,6 @@
       </a>
       <a class="hero-link-item" href="#" onclick="navigateTo('resume'); return false;">
         <span class="link-label">CV / Résumé</span>
-        <span class="link-arrow">→</span>
-      </a>
-      <a class="hero-link-item" href="#" onclick="navigateTo('projects'); return false;">
-        <span class="link-label">Projects</span>
         <span class="link-arrow">→</span>
       </a>
       <a class="hero-link-item" href="#" onclick="navigateTo('thoughts'); return false;">
@@ -406,132 +400,6 @@
       <div class="resume-download reveal reveal-d5">
         <a href="manomay-cv.pdf" download class="btn btn-accent">↓ &nbsp; Download PDF</a>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- PAGE: PROJECTS -->
-<section id="page-projects" class="page">
-  <div class="page-inner">
-    <div class="container section">
-      <div class="section-label reveal">— Projects</div>
-      <h2 class="section-title reveal reveal-d1">Things I've<br>built and led.</h2>
-
-      <div class="lists-tabs reveal reveal-d2">
-        <div class="list-tab active" onclick="switchListTab('nationals', this)">Nationals</div>
-        <div class="list-tab" onclick="switchListTab('ecommerce-app', this)">E-commerce App</div>
-        <div class="list-tab" onclick="switchListTab('ecommerce-web', this)">E-commerce Website</div>
-        <div class="list-tab" onclick="switchListTab('iskon', this)">Iskon Centre Summer Camp</div>
-      </div>
-
-      <div class="list-panel active" id="list-nationals">
-        <div class="list-item">
-          <div class="list-item-num">01</div>
-          <div class="list-item-info">
-            <div class="list-item-title">xyz National Project Title — REPLACE</div>
-            <div class="list-item-meta">Category · Year</div>
-          </div>
-          <span class="list-item-status status-completed">Completed</span>
-        </div>
-        <div class="list-item">
-          <div class="list-item-num">02</div>
-          <div class="list-item-info">
-            <div class="list-item-title">xyz National Project Title — REPLACE</div>
-            <div class="list-item-meta">Category · Year</div>
-          </div>
-          <span class="list-item-status status-completed">Completed</span>
-        </div>
-        <div class="list-item">
-          <div class="list-item-num">03</div>
-          <div class="list-item-info">
-            <div class="list-item-title">xyz National Project Title — REPLACE</div>
-            <div class="list-item-meta">Category · Year</div>
-          </div>
-          <span class="list-item-status status-ongoing">Ongoing</span>
-        </div>
-      </div>
-
-      <div class="list-panel" id="list-ecommerce-app">
-        <div class="list-item">
-          <div class="list-item-num">01</div>
-          <div class="list-item-info">
-            <div class="list-item-title">xyz App Feature / Module — REPLACE</div>
-            <div class="list-item-meta">Platform · Stack</div>
-          </div>
-          <span class="list-item-status status-completed">Completed</span>
-        </div>
-        <div class="list-item">
-          <div class="list-item-num">02</div>
-          <div class="list-item-info">
-            <div class="list-item-title">xyz App Feature / Module — REPLACE</div>
-            <div class="list-item-meta">Platform · Stack</div>
-          </div>
-          <span class="list-item-status status-ongoing">Ongoing</span>
-        </div>
-        <div class="list-item">
-          <div class="list-item-num">03</div>
-          <div class="list-item-info">
-            <div class="list-item-title">xyz App Feature / Module — REPLACE</div>
-            <div class="list-item-meta">Platform · Stack</div>
-          </div>
-          <span class="list-item-status status-planned">Planned</span>
-        </div>
-      </div>
-
-      <div class="list-panel" id="list-ecommerce-web">
-        <div class="list-item">
-          <div class="list-item-num">01</div>
-          <div class="list-item-info">
-            <div class="list-item-title">xyz Website Section / Feature — REPLACE</div>
-            <div class="list-item-meta">Tech Stack · Year</div>
-          </div>
-          <span class="list-item-status status-completed">Completed</span>
-        </div>
-        <div class="list-item">
-          <div class="list-item-num">02</div>
-          <div class="list-item-info">
-            <div class="list-item-title">xyz Website Section / Feature — REPLACE</div>
-            <div class="list-item-meta">Tech Stack · Year</div>
-          </div>
-          <span class="list-item-status status-ongoing">Ongoing</span>
-        </div>
-        <div class="list-item">
-          <div class="list-item-num">03</div>
-          <div class="list-item-info">
-            <div class="list-item-title">xyz Website Section / Feature — REPLACE</div>
-            <div class="list-item-meta">Tech Stack · Year</div>
-          </div>
-          <span class="list-item-status status-planned">Planned</span>
-        </div>
-      </div>
-
-      <div class="list-panel" id="list-iskon">
-        <div class="list-item">
-          <div class="list-item-num">01</div>
-          <div class="list-item-info">
-            <div class="list-item-title">xyz Camp Activity / Initiative — REPLACE</div>
-            <div class="list-item-meta">Role · Year</div>
-          </div>
-          <span class="list-item-status status-completed">Completed</span>
-        </div>
-        <div class="list-item">
-          <div class="list-item-num">02</div>
-          <div class="list-item-info">
-            <div class="list-item-title">xyz Camp Activity / Initiative — REPLACE</div>
-            <div class="list-item-meta">Role · Year</div>
-          </div>
-          <span class="list-item-status status-completed">Completed</span>
-        </div>
-        <div class="list-item">
-          <div class="list-item-num">03</div>
-          <div class="list-item-info">
-            <div class="list-item-title">xyz Camp Activity / Initiative — REPLACE</div>
-            <div class="list-item-meta">Role · Year</div>
-          </div>
-          <span class="list-item-status status-ongoing">Ongoing</span>
-        </div>
-      </div>
-
     </div>
   </div>
 </section>
