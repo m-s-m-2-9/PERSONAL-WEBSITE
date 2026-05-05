@@ -3,14 +3,52 @@
    Sections: Home, About, Photos, CV/Resume, Profiles,
              Journey/Timeline, Birthday, Thoughts,
              Contact, Lists, Skills/Traits, Games,
-             Social Proof
+             Social Proof, Projects
 ═══════════════════════════════════════════════════════════ */
-
+ 
+/* ─────────────────────────────────────────────────────────
+   CUSTOM SCROLLBAR — Global, ultra-slim, theme-integrated
+   No arrows/buttons. Thumb uses --border2 / accent on hover.
+   Works on all scrollable containers across the site.
+───────────────────────────────────────────────────────── */
+ 
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+ 
+/* Webkit — Chrome, Safari, Edge, Samsung Browser */
+::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border2);
+  border-radius: 2px;
+  transition: background 0.3s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+/* Remove scrollbar arrow buttons completely */
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+ 
 /* ─────────────────────────────────────────────────────────
    HOME PAGE
 ───────────────────────────────────────────────────────── */
 #page-home .page-inner { padding: 0; }
-
+ 
 .hero {
   position: relative;
   height: 100vh;
@@ -36,7 +74,7 @@
   mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black, transparent);
   pointer-events: none;
 }
-
+ 
 .hero-photo-wrap { position: relative; width: 160px; height: 160px; margin-bottom: 3rem; }
 .hero-photo {
   width: 160px; height: 160px;
@@ -62,7 +100,7 @@
   border-right-color: var(--accent);
   animation: spinRing 8s linear infinite;
 }
-
+ 
 /* Hero name */
 .hero-name {
   font-family: var(--ff-display);
@@ -86,7 +124,7 @@
   display: inline-block;
   transform: skewX(-8deg);
 }
-
+ 
 .hero-tagline {
   margin-top: 1.5rem;
   font-size: 0.85rem;
@@ -99,7 +137,7 @@
   transition: opacity 0.8s ease 1.2s, transform 0.8s ease 1.2s;
 }
 .hero-tagline.visible { opacity: 1; transform: translateY(0); }
-
+ 
 .hero-nav-hint {
   margin-top: 3rem;
   font-size: 0.75rem;
@@ -111,8 +149,22 @@
   transition: opacity 0.8s ease 1.5s;
 }
 .hero-nav-hint.visible { opacity: 1; }
-.hero-nav-hint a { color: var(--accent); text-decoration: none; }
-
+ 
+/* ── Home page contact link — glow interaction ── */
+.hero-nav-hint a {
+  color: var(--accent);
+  text-decoration: none;
+  cursor: pointer;
+  transition: text-shadow 0.35s ease, color 0.35s ease;
+}
+.hero-nav-hint a:hover {
+  color: var(--text);
+  text-shadow:
+    0 0 8px var(--accent),
+    0 0 20px rgba(200, 169, 110, 0.35),
+    0 0 40px rgba(200, 169, 110, 0.15);
+}
+ 
 .scroll-indicator {
   position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
@@ -125,7 +177,7 @@
   background: linear-gradient(var(--accent), transparent);
   animation: scrollPulse 2s ease-in-out infinite;
 }
-
+ 
 .hero-links {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -147,7 +199,7 @@
 .hero-link-item .link-label { font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; }
 .hero-link-item .link-arrow { font-size: 1.2rem; color: var(--accent); transition: transform 0.3s ease; }
 .hero-link-item:hover .link-arrow { transform: translateX(6px); }
-
+ 
 .footer {
   padding: 2.5rem 3rem;
   border-top: 1px solid var(--border);
@@ -161,7 +213,7 @@
 }
 .footer-desktop-only { display: block; }
 .footer-mobile-only  { display: none; line-height: 1.9; }
-
+ 
 /* ─────────────────────────────────────────────────────────
    ABOUT PAGE
 ───────────────────────────────────────────────────────── */
@@ -197,7 +249,7 @@
   font-family: var(--ff-mono); font-size: 0.65rem;
   letter-spacing: 0.2em; color: var(--text3); text-transform: uppercase; margin-bottom: 1rem;
 }
-
+ 
 /* ─────────────────────────────────────────────────────────
    PHOTOS PAGE
 ───────────────────────────────────────────────────────── */
@@ -237,7 +289,7 @@
   background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
   color: #fff; font-family: var(--ff-mono); font-size: 0.65rem; padding: 3px 8px; border-radius: 2px;
 }
-
+ 
 /* Photo Viewer */
 .photo-viewer {
   position: fixed; inset: 0; z-index: 8500;
@@ -273,7 +325,7 @@
 }
 .viewer-info-title { font-family: var(--ff-display); font-size: 1.1rem; margin-bottom: 0.25rem; color: #fff; }
 .viewer-info-desc  { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
-
+ 
 /* ─────────────────────────────────────────────────────────
    CV / RESUME PAGE
 ───────────────────────────────────────────────────────── */
@@ -299,7 +351,7 @@
 .skill-tag          { font-family: var(--ff-mono); font-size: 0.7rem; padding: 0.3rem 0.8rem; border: 1px solid var(--border2); border-radius: 2px; color: var(--text2); transition: all 0.2s; }
 .skill-tag:hover    { border-color: var(--accent); color: var(--accent); }
 .resume-download    { display: flex; justify-content: flex-end; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); }
-
+ 
 /* ─────────────────────────────────────────────────────────
    PROFILES PAGE
 ───────────────────────────────────────────────────────── */
@@ -324,12 +376,12 @@
 .profile-info-handle { font-family: var(--ff-mono); font-size: 0.7rem; color: var(--text3); }
 .profile-arrow       { margin-left: auto; color: var(--text3); font-size: 0.9rem; transition: transform 0.3s ease, color 0.3s ease; }
 .profile-item:hover .profile-arrow { transform: translateX(4px); color: var(--accent); }
-
+ 
 /* ─────────────────────────────────────────────────────────
    JOURNEY / TIMELINE PAGE
 ───────────────────────────────────────────────────────── */
 .timeline-header { padding: 6rem 0 4rem; text-align: center; }
-
+ 
 .years-mindmap {
   position: relative;
   padding: 2rem 0 6rem;
@@ -339,7 +391,7 @@
   -ms-overflow-style: none;
 }
 .years-mindmap::-webkit-scrollbar { display: none; }
-
+ 
 .years-track {
   display: flex; gap: 0; align-items: center;
   min-width: max-content; padding: 0 3rem; position: relative;
@@ -353,18 +405,30 @@
 .year-node:hover .year-dot,  .year-node.active .year-dot  { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); transform: scale(1.5); }
 .year-label { font-family: var(--ff-mono); font-size: 0.75rem; color: var(--text3); transition: color 0.3s ease; }
 .year-node:hover .year-label, .year-node.active .year-label { color: var(--accent); }
-
+ 
 .year-detail         { max-width: 700px; margin: 3rem auto 0; padding: 0 3rem; display: none; }
 .year-detail.visible { display: block; animation: fadeSlideUp 0.5s ease; }
 .year-detail-header  { display: flex; align-items: baseline; gap: 1.5rem; margin-bottom: 1.5rem; }
 .year-detail-year    { font-family: var(--ff-display); font-size: 5rem; font-weight: 300; color: var(--accent); line-height: 1; opacity: 0.5; }
 .year-detail-title   { font-family: var(--ff-display); font-size: 1.8rem; font-weight: 300; color: var(--text); }
 .year-detail-body    { font-size: 0.9rem; line-height: 1.9; color: var(--text2); }
-
+ 
 /* ─────────────────────────────────────────────────────────
    BIRTHDAY TIMER PAGE
+   Vertical alignment shifted upward via padding-top reduction
+   and justify-content changed to flex-start with offset.
 ───────────────────────────────────────────────────────── */
-.birthday-hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 6rem 3rem; }
+.birthday-hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  /* Reduced top padding moves the clock section visually upward */
+  padding: 12vh 3rem 6rem;
+  position: relative;
+}
 .bday-title    { font-family: var(--ff-display); font-size: clamp(2rem,5vw,3.5rem); font-weight: 300; font-style: italic; color: var(--text2); margin-bottom: 3rem; }
 .bday-timer    { display: flex; gap: 3rem; align-items: flex-end; justify-content: center; flex-wrap: wrap; }
 .bday-unit     { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
@@ -375,7 +439,112 @@
 .bday-date-info          { margin-top: 4rem; padding: 2rem; border: 1px solid var(--border); border-radius: 4px; display: none; }
 .bday-date-info.unlocked { display: block; animation: fadeSlideUp 0.5s ease; }
 .bday-date-info p        { font-size: 0.85rem; color: var(--text2); margin-bottom: 0.5rem; }
-
+ 
+/* ── Birthday wish banner ─────────────────────────────── */
+/* Injected below .bday-ms on August 29th by main.js      */
+.birthday-wish-text {
+  margin-top: 2rem;
+  font-family: var(--ff-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: center;
+  user-select: none;
+  position: relative;
+  display: inline-block;
+  /* Subtle underline decoration matching nav glow elements */
+  padding-bottom: 3px;
+  border-bottom: 1px solid transparent;
+  transition:
+    color        0.35s ease,
+    text-shadow  0.35s ease,
+    border-color 0.35s ease;
+}
+.birthday-wish-text::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 50%;
+  width: 0; height: 1px;
+  background: var(--accent);
+  transform: translateX(-50%);
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.birthday-wish-text:hover {
+  color: var(--text);
+  border-color: transparent;
+  text-shadow:
+    0 0 8px var(--accent),
+    0 0 18px rgba(200, 169, 110, 0.4),
+    0 0 36px rgba(200, 169, 110, 0.18);
+}
+.birthday-wish-text:hover::after {
+  width: 100%;
+}
+ 
+/* ── Birthday mode — body-level ambient animation ─────── */
+/* Activated via body.birthday-mode class in main.js       */
+/* High-end: slow-pulse radial gradient, no emojis         */
+ 
+body.birthday-mode #page-birthday {
+  background:
+    radial-gradient(
+      ellipse 60% 50% at 30% 40%,
+      rgba(200, 169, 110, 0.055) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 50% 60% at 75% 65%,
+      rgba(200, 169, 110, 0.035) 0%,
+      transparent 55%
+    ),
+    var(--bg);
+  background-size: 200% 200%, 200% 200%, auto;
+  animation: birthdayAmbience 14s ease-in-out infinite;
+}
+ 
+/* Fine-line geometric shimmer layer via pseudo-element */
+body.birthday-mode #page-birthday::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 79px,
+      rgba(200, 169, 110, 0.022) 80px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 79px,
+      rgba(200, 169, 110, 0.018) 80px
+    );
+  animation: birthdayGridPulse 10s ease-in-out infinite alternate;
+}
+ 
+/* All content inside birthday-hero stays above the animated layers */
+body.birthday-mode .birthday-hero > * {
+  position: relative;
+  z-index: 1;
+}
+ 
+@keyframes birthdayAmbience {
+  0%   { background-position: 0% 0%,   100% 100%, center; }
+  33%  { background-position: 60% 40%,  30%  70%, center; }
+  66%  { background-position: 100% 80%, 0%   20%, center; }
+  100% { background-position: 0% 0%,   100% 100%, center; }
+}
+ 
+@keyframes birthdayGridPulse {
+  0%   { opacity: 0.3; }
+  100% { opacity: 0.75; }
+}
+ 
 /* ─────────────────────────────────────────────────────────
    THOUGHTS PAGE
 ───────────────────────────────────────────────────────── */
@@ -391,7 +560,7 @@
 .belief-title   { font-family: var(--ff-display); font-size: 1.3rem; font-weight: 400; color: var(--text); margin-bottom: 0.5rem; }
 .belief-preview { font-size: 0.8rem; color: var(--text3); line-height: 1.6; }
 .belief-count   { position: absolute; top: 1.5rem; right: 1.5rem; font-family: var(--ff-mono); font-size: 0.65rem; color: var(--text3); }
-
+ 
 .belief-post-view        { display: none; }
 .belief-post-view.active { display: block; animation: fadeSlideUp 0.4s ease; }
 .belief-posts-list       { margin-top: 2rem; }
@@ -400,7 +569,7 @@
 .belief-post-date  { font-family: var(--ff-mono); font-size: 0.65rem; color: var(--text3); margin-bottom: 0.75rem; }
 .belief-post-title { font-family: var(--ff-display); font-size: 1.3rem; font-weight: 400; color: var(--text); margin-bottom: 0.75rem; }
 .belief-post-body  { font-size: 0.875rem; color: var(--text2); line-height: 1.8; }
-
+ 
 /* ─────────────────────────────────────────────────────────
    CONTACT PAGE
 ───────────────────────────────────────────────────────── */
@@ -415,7 +584,7 @@
 .form-status          { font-size: 0.8rem; color: var(--text2); }
 .form-status.success  { color: #4ade80; }
 .form-status.error    { color: #f87171; }
-
+ 
 /* ─────────────────────────────────────────────────────────
    LISTS PAGE
 ───────────────────────────────────────────────────────── */
@@ -423,10 +592,10 @@
 .list-tab    { padding: 0.75rem 1.5rem; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); cursor: pointer; border-bottom: 1px solid transparent; margin-bottom: -1px; transition: all 0.3s ease; }
 .list-tab:hover  { color: var(--text2); }
 .list-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-
+ 
 .list-panel        { display: none; }
 .list-panel.active { display: block; animation: fadeSlideUp 0.4s ease; }
-
+ 
 .list-item       { display: flex; align-items: center; gap: 1.25rem; padding: 1.25rem 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: padding-left 0.3s ease; }
 .list-item:hover { padding-left: 0.5rem; }
 .list-item-num   { font-family: var(--ff-mono); font-size: 0.7rem; color: var(--text3); min-width: 2ch; }
@@ -437,7 +606,36 @@
 .status-seen    { background: rgba(74,222,128,0.1);  color: #4ade80; }
 .status-want    { background: var(--accent-glow);    color: var(--accent); }
 .status-reading { background: rgba(96,165,250,0.1);  color: #60a5fa; }
-
+ 
+/* ─────────────────────────────────────────────────────────
+   PROJECTS PAGE
+   Mirrors the Lists Page architecture exactly.
+   Uses the same shared classes (.lists-tabs, .list-tab,
+   .list-panel, .list-item) so no duplicate rules needed.
+   Only page-header and wrapper overrides added here.
+───────────────────────────────────────────────────────── */
+#page-projects .page-inner {
+  /* inherits standard .page-inner padding from base.css */
+}
+ 
+/* Projects page header block — mirrors how lists page opens */
+.projects-header {
+  padding: 6rem 0 3rem;
+}
+ 
+/* Project category status badge — "Completed" / "Ongoing" / "Planned" */
+.status-completed { background: rgba(74,222,128,0.1);  color: #4ade80; }
+.status-ongoing   { background: var(--accent-glow);    color: var(--accent); }
+.status-planned   { background: rgba(96,165,250,0.1);  color: #60a5fa; }
+ 
+/* Project item detail expand area (optional future use) */
+.project-item-detail {
+  font-size: 0.8rem;
+  color: var(--text3);
+  line-height: 1.65;
+  margin-top: 0.35rem;
+}
+ 
 /* ─────────────────────────────────────────────────────────
    SKILLS / TRAITS PAGE
 ───────────────────────────────────────────────────────── */
@@ -451,7 +649,7 @@
 .marquee-track  { display: flex; gap: 3rem; animation: marquee 25s linear infinite; white-space: nowrap; }
 .marquee-item   { font-family: var(--ff-display); font-size: 1.1rem; font-style: italic; color: var(--text3); flex-shrink: 0; }
 .marquee-dot    { color: var(--accent); margin: 0 0.5rem; }
-
+ 
 .skills-grid      { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-bottom: 4rem; }
 .skill-item       { background: var(--bg); padding: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; transition: background 0.3s ease; }
 .skill-item:hover { background: var(--bg2); }
@@ -459,7 +657,7 @@
 .skill-bar        { height: 2px; background: var(--border2); border-radius: 1px; overflow: hidden; }
 .skill-bar-fill   { height: 100%; background: var(--accent); border-radius: 1px; width: 0; transition: width 1.2s cubic-bezier(0.16,1,0.3,1); }
 .skill-item.animated .skill-bar-fill { width: var(--skill-pct); }
-
+ 
 /* ─────────────────────────────────────────────────────────
    GAMES PAGE
 ───────────────────────────────────────────────────────── */
@@ -470,7 +668,7 @@
 .game-name       { font-family: var(--ff-display); font-size: 1.2rem; color: var(--text); }
 .game-desc       { font-size: 0.8rem; color: var(--text3); line-height: 1.6; flex: 1; }
 .game-play-btn   { align-self: flex-start; font-family: var(--ff-mono); font-size: 0.7rem; letter-spacing: 0.1em; color: var(--accent); display: flex; align-items: center; gap: 0.5rem; }
-
+ 
 .game-modal {
   position: fixed; inset: 0;
   z-index: 9500;
@@ -488,7 +686,7 @@
   transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16,1,0.3,1);
 }
 .game-modal.open { opacity: 1; pointer-events: all; transform: scale(1); }
-
+ 
 .game-modal-close {
   position: fixed;
   top: 1rem; right: 1rem;
@@ -504,12 +702,12 @@
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-
+ 
 #game-container {
   width: 100%;
   max-width: 600px;
 }
-
+ 
 /* ─────────────────────────────────────────────────────────
    SOCIAL PROOF PAGE
 ───────────────────────────────────────────────────────── */
@@ -517,32 +715,32 @@
 .logos-track   { display: flex; gap: 3rem; align-items: center; animation: marquee 20s linear infinite; }
 .logo-item     { font-family: var(--ff-display); font-size: 1.3rem; font-weight: 600; color: var(--text3); white-space: nowrap; flex-shrink: 0; letter-spacing: -0.02em; transition: color 0.3s ease; }
 .logo-item:hover { color: var(--text); }
-
+ 
 .testimonials-grid   { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); }
 .testimonial-card    { background: var(--bg); padding: 2rem; }
 .stars               { color: var(--accent); font-size: 0.85rem; margin-bottom: 1rem; letter-spacing: 0.1em; }
 .testimonial-text    { font-family: var(--ff-display); font-size: 1rem; font-style: italic; color: var(--text2); line-height: 1.7; margin-bottom: 1.5rem; }
 .testimonial-author  { font-family: var(--ff-mono); font-size: 0.7rem; color: var(--text3); }
-
+ 
 /* ═══════════════════════════════════════════════════════════
    RESPONSIVE OVERRIDES — MOBILE ONLY (max-width: 768px)
    All 5 fixes are contained within this block.
    Desktop styles above are completely untouched.
 ═══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-
+ 
   /* ── About ── */
   .about-grid        { grid-template-columns: 1fr; }
   .about-photo-col   { position: relative; top: 0; }
-
+ 
   /* ── Resume ── */
   .resume-header-block { flex-direction: column; gap: 1.5rem; }
   .resume-contact-col  { text-align: left; }
   .resume-wrap         { padding: 6rem 1.5rem; }
-
+ 
   /* ── Contact ── */
   .contact-wrap { padding: 6rem 1.5rem; }
-
+ 
   /* ── Footer ── */
   .footer {
     flex-direction: column;
@@ -552,14 +750,14 @@
   }
   .footer-desktop-only { display: none !important; }
   .footer-mobile-only  { display: block !important; line-height: 1.9; }
-
+ 
   /* ── Albums — 2 column on mobile ── */
   .albums-grid { grid-template-columns: repeat(2, 1fr); }
-
+ 
   /* ── Game modal ── */
   .game-modal      { padding: 3.5rem 0.25rem 1rem; }
   #game-container  { padding: 0 0.5rem 2rem; }
-
+ 
   /* ════════════════════════════════════════════════════════
      FIX 2: LISTS PAGE — horizontal tab scroll
      Makes "Movies" reachable by sliding.
@@ -595,7 +793,7 @@
     font-size: 0.72rem;
     white-space: nowrap;
   }
-
+ 
   /* ════════════════════════════════════════════════════════
      FIX 3: BIRTHDAY CLOCK — single row for all 4 time units
      Line 1: [Days : Hours : Minutes : Seconds]
@@ -628,9 +826,16 @@
     margin-top: 0.6rem;
   }
   .birthday-hero {
-    padding: 5rem 1.2rem;
+    padding: 8vh 1.2rem 5rem;
   }
-
+ 
+  /* Birthday wish banner — mobile size adjustment */
+  .birthday-wish-text {
+    font-size: 0.6rem;
+    letter-spacing: 0.22em;
+    margin-top: 1.5rem;
+  }
+ 
   /* ════════════════════════════════════════════════════════
      FIX 4: JOURNEY PAGE — year and title on separate lines
      Year stays large (background style). Title goes below.
@@ -657,3 +862,5 @@
   .year-detail {
     padding: 0 1.5rem;
   }
+}
+ 
