@@ -1,16 +1,16 @@
 /* ═══════════════════════════════════════════════════════════
    main.js — Core site logic
 ═══════════════════════════════════════════════════════════ */
-
+ 
 const CONFIG = {
   MASTER_PASSWORD:    "manomay2026",
   EMAILJS_PUBLIC_KEY: "YOUR_PUBLIC_KEY",
   EMAILJS_SERVICE_ID: "YOUR_SERVICE_ID",
   EMAILJS_TEMPLATE_ID:"YOUR_TEMPLATE_ID",
 };
-
+ 
 emailjs.init(CONFIG.EMAILJS_PUBLIC_KEY);
-
+ 
 if (window.netlifyIdentity) {
   window.netlifyIdentity.on("init", user => {
     if (!user) {
@@ -20,7 +20,7 @@ if (window.netlifyIdentity) {
     }
   });
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
    LOADING SCREEN
 ═══════════════════════════════════════════════════════════ */
@@ -28,29 +28,29 @@ window.addEventListener("load", () => {
   const loadingScreen = document.getElementById("loading-screen");
   const bar = document.getElementById("loading-bar");
   const pct = document.getElementById("loading-pct");
-
+ 
   loadingScreen.classList.add("ready");
-
+ 
   let progress = 0;
-
+ 
   const interval = setInterval(() => {
     progress += Math.random() * 15;
-
+ 
     if (progress >= 100) {
       progress = 100;
       clearInterval(interval);
-
+ 
       setTimeout(() => {
         loadingScreen.classList.add("done");
         startHeroAnimations();
       }, 300);
     }
-
+ 
     bar.style.width = progress + "%";
     pct.textContent = Math.floor(progress) + "%";
   }, 160);
 });
-
+ 
 /* ═══════════════════════════════════════════════════════════
    HERO ANIMATIONS
 ═══════════════════════════════════════════════════════════ */
@@ -60,13 +60,13 @@ function startHeroAnimations() {
     document.getElementById('name-part-2'),
     document.getElementById('name-part-3')
   ];
-
+ 
   let currentHighlight = parseInt(localStorage.getItem("heroHighlightIndex")) || 0;
-
+ 
   nameParts.forEach(el => {
     if (el) el.classList.remove("highlight");
   });
-
+ 
   nameParts.forEach((el, i) => {
     setTimeout(() => {
       if (!el) return;
@@ -78,37 +78,37 @@ function startHeroAnimations() {
       });
     }, i * 150 + 200);
   });
-
+ 
   let nextIndex = (currentHighlight + 1) % 3;
   localStorage.setItem("heroHighlightIndex", nextIndex);
-
+ 
   setTimeout(() => {
     document.getElementById('hero-tagline')?.classList.add('visible');
   }, 800);
-
+ 
   setTimeout(() => {
     document.getElementById('hero-nav-hint')?.classList.add('visible');
   }, 1000);
-
+ 
   setTimeout(() => {
     document.getElementById('scroll-indicator')?.classList.add('visible');
   }, 1200);
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
    CUSTOM CURSOR
 ═══════════════════════════════════════════════════════════ */
 const dot  = document.getElementById('cursor-dot');
 const ring = document.getElementById('cursor-ring');
 const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
-
+ 
 if (isTouchDevice) {
   document.body.style.cursor = 'auto';
   if (dot)  { dot.style.display  = 'none'; }
   if (ring) { ring.style.display = 'none'; }
 } else {
   let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
-
+ 
   document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
@@ -117,7 +117,7 @@ if (isTouchDevice) {
       dot.style.top  = mouseY + 'px';
     }
   });
-
+ 
   (function animateRing() {
     ringX += (mouseX - ringX) * 0.12;
     ringY += (mouseY - ringY) * 0.12;
@@ -127,20 +127,20 @@ if (isTouchDevice) {
     }
     requestAnimationFrame(animateRing);
   })();
-
+ 
   document.querySelectorAll('a, button, .game-card, .album-card, .belief-card, .year-node, .profile-item')
     .forEach(el => {
       el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
       el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
     });
-
+ 
   document.querySelectorAll('input, textarea')
     .forEach(el => {
       el.addEventListener('mouseenter', () => document.body.classList.add('cursor-text'));
       el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-text'));
     });
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
    THEME SWITCHER
 ═══════════════════════════════════════════════════════════ */
@@ -151,12 +151,12 @@ function setTheme(theme) {
   });
   localStorage.setItem('msm-theme', theme);
 }
-
+ 
 (function () {
   const saved = localStorage.getItem('msm-theme');
   if (saved) setTheme(saved);
 })();
-
+ 
 /* ═══════════════════════════════════════════════════════════
    NAV SCROLL EFFECT
 ═══════════════════════════════════════════════════════════ */
@@ -165,23 +165,25 @@ document.querySelectorAll('.page').forEach(page => {
     document.getElementById('nav').classList.toggle('scrolled', page.scrollTop > 60);
   }, { passive: true });
 });
-
+ 
 /* ═══════════════════════════════════════════════════════════
    PAGE NAVIGATION
 ═══════════════════════════════════════════════════════════ */
 let currentPage = 'home';
 const overlay   = document.getElementById('transition-overlay');
-
+ 
 function navigateTo(pageId) {
   if (pageId === currentPage) return;
+  // Push state for mobile hardware back-button support
+  history.pushState({ page: pageId, prev: currentPage }, '', '#' + pageId);
   doTransition(pageId);
 }
-
+ 
 function doTransition(pageId) {
   overlay.style.transition      = 'transform 0.4s cubic-bezier(0.76, 0, 0.24, 1)';
   overlay.style.transformOrigin = 'bottom';
   overlay.style.transform       = 'scaleY(1)';
-
+ 
   setTimeout(() => {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active', 'exit-up'));
     const next = document.getElementById('page-' + pageId);
@@ -191,7 +193,7 @@ function doTransition(pageId) {
     }
     currentPage = pageId;
     updateNavActive(pageId);
-
+ 
     setTimeout(() => {
       overlay.style.transition      = 'transform 0.5s cubic-bezier(0.76, 0, 0.24, 1)';
       overlay.style.transformOrigin = 'top';
@@ -200,11 +202,11 @@ function doTransition(pageId) {
     }, 60);
   }, 420);
 }
-
+ 
 function updateNavActive(pageId) {
   const map = {
     home:'Home', about:'Identity', photos:'Photos', resume:'CV',
-    profiles:'Profiles', journey:'Journey', birthday:'Clock',
+    projects:'Projects', profiles:'Profiles', journey:'Journey', birthday:'Clock',
     thoughts:'Thoughts', contact:'Contact', lists:'Lists',
     skills:'Traits', games:'Games', social:'Social'
   };
@@ -213,14 +215,82 @@ function updateNavActive(pageId) {
     if (a.textContent.trim().startsWith(map[pageId] || '')) a.classList.add('active');
   });
 }
-
+ 
+/* ═══════════════════════════════════════════════════════════
+   MOBILE HISTORY API — Hardware / Gesture Back Button Support
+   ─────────────────────────────────────────────────────────
+   On Android and iOS gesture-back, the popstate event fires.
+   Priority order:
+     1. Close any open modal/overlay (belief, photo, game, gate)
+     2. Navigate to the previous main page
+     3. Fall back to Home
+═══════════════════════════════════════════════════════════ */
+ 
+// Stamp the initial state so we always have something to pop back to
+history.replaceState({ page: 'home', prev: null }, '', '#home');
+ 
+window.addEventListener('popstate', (e) => {
+ 
+  // ── 1. Belief / Thoughts sub-section ──
+  const beliefView = document.getElementById('belief-post-view');
+  if (beliefView && beliefView.classList.contains('active')) {
+    closeBelief();
+    // Re-push so the next back press goes to the previous main page
+    history.pushState({ page: currentPage, prev: null }, '', '#' + currentPage);
+    return;
+  }
+ 
+  // ── 2. Photo viewer ──
+  const photoViewer = document.getElementById('photo-viewer');
+  if (photoViewer && photoViewer.classList.contains('open')) {
+    closeViewer();
+    history.pushState({ page: currentPage, prev: null }, '', '#' + currentPage);
+    return;
+  }
+ 
+  // ── 3. Game modal ──
+  const gameModal = document.getElementById('game-modal');
+  if (gameModal && gameModal.classList.contains('open')) {
+    closeGame();
+    history.pushState({ page: currentPage, prev: null }, '', '#' + currentPage);
+    return;
+  }
+ 
+  // ── 4. Password gate ──
+  const gate = document.getElementById('password-gate');
+  if (gate && gate.classList.contains('visible')) {
+    closeGate();
+    history.pushState({ page: currentPage, prev: null }, '', '#' + currentPage);
+    return;
+  }
+ 
+  // ── 5. Music panel ──
+  const mp = document.getElementById('music-panel');
+  if (mp && mp.classList.contains('open')) {
+    closeMusicPanel();
+    history.pushState({ page: currentPage, prev: null }, '', '#' + currentPage);
+    return;
+  }
+ 
+  // ── 6. Main page navigation ──
+  if (e.state && e.state.page) {
+    const target = e.state.page;
+    if (target !== currentPage) {
+      doTransition(target);
+    }
+  } else {
+    // No recorded state — return home
+    doTransition('home');
+  }
+});
+ 
 /* ═══════════════════════════════════════════════════════════
    SCROLL-TRIGGERED REVEALS
 ═══════════════════════════════════════════════════════════ */
 function triggerPageReveals(pageId) {
   const page = document.getElementById('page-' + pageId);
   if (!page) return;
-
+ 
   const reveals = page.querySelectorAll('.reveal');
   const obs = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -230,27 +300,27 @@ function triggerPageReveals(pageId) {
       }
     });
   }, { root: page, threshold: 0.1 });
-
+ 
   reveals.forEach(el => obs.observe(el));
   if (pageId === 'skills') setTimeout(() => animateSkillBars(page), 400);
 }
-
+ 
 function animateSkillBars(page) {
   page.querySelectorAll('.skill-item').forEach(item => item.classList.add('animated'));
 }
-
+ 
 setTimeout(() => triggerPageReveals('home'), 1500);
-
+ 
 /* ═══════════════════════════════════════════════════════════
    PASSWORD SYSTEM
 ═══════════════════════════════════════════════════════════ */
 let gateTargetPage = null;
-
+ 
 function unlockSection(inputId, contentId) {
   const input   = document.getElementById(inputId);
   const content = document.getElementById(contentId);
   if (!input || !content) return;
-
+ 
   if (input.value === CONFIG.MASTER_PASSWORD) {
     content.classList.add('unlocked');
     content.style.display = 'block';
@@ -266,20 +336,20 @@ function unlockSection(inputId, contentId) {
     }, 1500);
   }
 }
-
+ 
 function tryLockedPage(pageId) {
   gateTargetPage = pageId;
   document.getElementById('password-gate').classList.add('visible');
   setTimeout(() => document.getElementById('gate-input').focus(), 300);
 }
-
+ 
 function closeGate() {
   document.getElementById('password-gate').classList.remove('visible');
   document.getElementById('gate-input').value = '';
   document.getElementById('gate-error').classList.remove('show');
   gateTargetPage = null;
 }
-
+ 
 function submitGate() {
   const input  = document.getElementById('gate-input');
   const target = gateTargetPage;
@@ -293,11 +363,11 @@ function submitGate() {
     setTimeout(() => input.classList.remove('error'), 500);
   }
 }
-
+ 
 document.getElementById('gate-input').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') submitGate();
 });
-
+ 
 /* ═══════════════════════════════════════════════════════════
    MOBILE NAV
 ═══════════════════════════════════════════════════════════ */
@@ -307,15 +377,30 @@ function toggleMobileNav() {
   document.getElementById('mobile-nav').classList.toggle('open', mobileNavOpen);
   document.getElementById('hamburger').classList.toggle('open', mobileNavOpen);
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
    BIRTHDAY TIMER
 ═══════════════════════════════════════════════════════════ */
 function updateBirthdayTimer() {
   const now = new Date();
+ 
+  // ╔══════════════════════════════════════════════════════════════╗
+  // ║  BIRTHDAY TESTING TOGGLE                                     ║
+  // ║  To simulate August 29th immediately for testing:            ║
+  // ║  1. Comment out the `const checkDate = now;` line below.     ║
+  // ║  2. Uncomment the OVERRIDE line directly beneath it.         ║
+  // ║  Remember to revert before deploying to production.          ║
+  // ╠══════════════════════════════════════════════════════════════╣
+  const checkDate = now;
+  // OVERRIDE ↓ Uncomment to test birthday state instantly:
+  // const checkDate = new Date(now.getFullYear(), 7, 29, 13, 0, 0);
+  // ╚══════════════════════════════════════════════════════════════╝
+ 
+  const isBirthday = checkDate.getMonth() === 7 && checkDate.getDate() === 29;
+ 
   let nextBirthday = new Date(now.getFullYear(), 7, 29, 13, 0, 0);
   if (now > nextBirthday) nextBirthday = new Date(now.getFullYear() + 1, 7, 29, 13, 0, 0);
-
+ 
   const diff    = nextBirthday - now;
   const days    = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours   = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -323,23 +408,47 @@ function updateBirthdayTimer() {
   const seconds = Math.floor((diff % (1000 * 60)) / 1000);
   const ms      = diff % 1000;
   const pad     = (n, len = 2) => String(n).padStart(len, '0');
-
+ 
   document.getElementById('bd-days').textContent  = pad(days, 3);
   document.getElementById('bd-hours').textContent = pad(hours);
   document.getElementById('bd-mins').textContent  = pad(minutes);
   document.getElementById('bd-secs').textContent  = pad(seconds);
   document.getElementById('bd-ms').textContent    = pad(ms, 3) + ' ms';
-
+ 
   const born = new Date(2008, 7, 29);
   let age = now.getFullYear() - born.getFullYear();
   if (now < new Date(now.getFullYear(), born.getMonth(), born.getDate())) age--;
   const ageEl = document.getElementById('current-age');
   if (ageEl) ageEl.textContent = age + ' years old';
+ 
+  // ── Birthday banner injection ──────────────────────────────────
+  // Inserts "WISH MANOMAY SHAILENDRA MISRA" below the milliseconds
+  // display only on August 29th. Clicking routes to the Contact page.
+  const existingBanner = document.getElementById('birthday-wish-banner');
+  if (isBirthday) {
+    if (!existingBanner) {
+      const banner       = document.createElement('div');
+      banner.id          = 'birthday-wish-banner';
+      banner.className   = 'birthday-wish-text';
+      banner.textContent = 'WISH MANOMAY SHAILENDRA MISRA';
+      banner.title       = 'Send a message';
+      banner.addEventListener('click', () => navigateTo('contact'));
+      const msEl = document.getElementById('bd-ms');
+      if (msEl && msEl.parentNode) {
+        msEl.parentNode.insertAdjacentElement('afterend', banner);
+      }
+    }
+    // Activate full-page birthday aesthetic
+    document.body.classList.add('birthday-mode');
+  } else {
+    if (existingBanner) existingBanner.remove();
+    document.body.classList.remove('birthday-mode');
+  }
 }
-
+ 
 setInterval(updateBirthdayTimer, 10);
 updateBirthdayTimer();
-
+ 
 /* ═══════════════════════════════════════════════════════════
    YEAR JOURNEY TIMELINE
 ═══════════════════════════════════════════════════════════ */
@@ -364,7 +473,7 @@ const yearData = {
   2025: { title: "Transformation", body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
   2026: { title: "Present",        body: "Now. Right here. This website exists. That means something. xyz xyz xyz xyz xyz xyz xyz xyz xyz. — REPLACE" },
 };
-
+ 
 (function buildTimeline() {
   const track = document.getElementById('years-track');
   if (!track) return;
@@ -376,7 +485,7 @@ const yearData = {
     track.appendChild(node);
   }
 })();
-
+ 
 function showYear(year, nodeEl) {
   document.querySelectorAll('.year-node').forEach(n => n.classList.remove('active'));
   nodeEl.classList.add('active');
@@ -388,7 +497,7 @@ function showYear(year, nodeEl) {
   detail.classList.remove('visible');
   setTimeout(() => detail.classList.add('visible'), 50);
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
    THOUGHTS / BELIEFS
 ═══════════════════════════════════════════════════════════ */
@@ -422,7 +531,7 @@ const beliefPosts = {
     { date: "March 2026", title: "xyz Tech post — REPLACE", body: "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz. REPLACE." },
   ],
 };
-
+ 
 function openBelief(category) {
   const posts = beliefPosts[category] || [];
   document.getElementById('beliefs-overview').style.display = 'none';
@@ -439,12 +548,12 @@ function openBelief(category) {
   `).join('');
   view.classList.add('active');
 }
-
+ 
 function closeBelief() {
   document.getElementById('belief-post-view').classList.remove('active');
   document.getElementById('beliefs-overview').style.display = '';
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
    CONTACT FORM
 ═══════════════════════════════════════════════════════════ */
@@ -469,7 +578,7 @@ async function submitContactForm(e) {
   btn.textContent = 'Send →';
   btn.disabled    = false;
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
    LIST TABS
 ═══════════════════════════════════════════════════════════ */
@@ -479,7 +588,7 @@ function switchListTab(panel, tabEl) {
   tabEl.classList.add('active');
   document.getElementById('list-' + panel).classList.add('active');
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
    PHOTO VIEWER
 ═══════════════════════════════════════════════════════════ */
@@ -490,17 +599,17 @@ const albumData = {
   secret1: { photos: [{ src:'', title:'xyz Private Photo — REPLACE', desc:'xyz description — REPLACE' }] },
   secret2: { photos: [{ src:'', title:'xyz Private Photo — REPLACE', desc:'xyz description — REPLACE' }] },
 };
-
+ 
 let currentAlbum      = null;
 let currentPhotoIndex = 0;
-
+ 
 function openAlbum(albumId) {
   currentAlbum      = albumData[albumId] || { photos: [] };
   currentPhotoIndex = 0;
   showPhoto(0);
   document.getElementById('photo-viewer').classList.add('open');
 }
-
+ 
 function showPhoto(index) {
   const photos = currentAlbum.photos;
   if (!photos || photos.length === 0) return;
@@ -512,34 +621,34 @@ function showPhoto(index) {
   document.getElementById('viewer-title').textContent = photo.title;
   document.getElementById('viewer-desc').textContent  = photo.desc;
 }
-
+ 
 function viewerNav(dir) { showPhoto(currentPhotoIndex + dir); }
-
+ 
 function closeViewer() {
   document.getElementById('photo-viewer').classList.remove('open');
 }
-
+ 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeViewer(); closeGame(); closeGate(); closeMusicPanel(); }
 });
-
+ 
 /* ═══════════════════════════════════════════════════════════
    GAMES
 ═══════════════════════════════════════════════════════════ */
 let activeGame = null;
-
+ 
 function openGame(gameId) {
   activeGame = gameId;
   document.getElementById('game-modal').classList.add('open');
   renderGame(gameId);
 }
-
+ 
 function closeGame() {
   document.getElementById('game-modal').classList.remove('open');
   document.getElementById('game-container').innerHTML = '';
   activeGame = null;
 }
-
+ 
 function renderGame(gameId) {
   const container = document.getElementById('game-container');
   container.innerHTML = '';
@@ -551,7 +660,7 @@ function renderGame(gameId) {
     case 'word':     renderWordScramble(container); break;
   }
 }
-
+ 
 /* ─────────────────────────────────────────────────────────
    FIX 1A: SNAKE — touch swipe support for mobile
    Swipe maps to direction. First swipe starts game.
@@ -562,27 +671,27 @@ function renderSnake(container) {
   /* Detect touch device for instruction text */
   const isMobile = window.matchMedia('(pointer: coarse)').matches;
   const inputHint = isMobile ? 'Swipe to move' : 'Arrow keys or WASD';
-
+ 
   container.innerHTML = `
     <h3 style="font-family:var(--ff-display);font-size:1.5rem;color:var(--text);text-align:center;margin-bottom:1rem;">Snake</h3>
     <p style="text-align:center;font-size:0.75rem;color:var(--text3);margin-bottom:1rem;">${inputHint} · Score: <span id="snake-score">0</span></p>
     <canvas id="snake-canvas" width="400" height="400" style="border:1px solid var(--border2);background:var(--bg2);display:block;margin:0 auto;max-width:100%;touch-action:none;"></canvas>
     <p style="text-align:center;font-size:0.75rem;color:var(--text3);margin-top:1rem;" id="snake-msg">${isMobile ? 'Swipe to start' : 'Press any arrow key to start'}</p>
   `;
-
+ 
   const canvas = document.getElementById('snake-canvas');
   const ctx    = canvas.getContext('2d');
   const SIZE = 20, COLS = canvas.width / SIZE, ROWS = canvas.height / SIZE;
   let snake = [{ x: 10, y: 10 }], dir = { x: 0, y: 0 }, food = spawnFood();
   let score = 0, running = false, gameOver = false, interval;
-
+ 
   function spawnFood() {
     let f;
     do { f = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) }; }
     while (snake.some(s => s.x === f.x && s.y === f.y));
     return f;
   }
-
+ 
   function draw() {
     ctx.fillStyle = '#111';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -604,7 +713,7 @@ function renderSnake(container) {
       ctx.fillText(isMobile ? 'Swipe to restart' : 'Press any key to restart', canvas.width / 2, canvas.height / 2 + 28);
     }
   }
-
+ 
   function step() {
     if (!running || gameOver) return;
     const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
@@ -618,9 +727,9 @@ function renderSnake(container) {
     } else { snake.pop(); }
     draw();
   }
-
+ 
   function endGame() { gameOver = true; clearInterval(interval); draw(); }
-
+ 
   function startGame() {
     snake = [{ x: 10, y: 10 }]; dir = { x: 1, y: 0 }; score = 0;
     document.getElementById('snake-score').textContent = 0;
@@ -630,14 +739,14 @@ function renderSnake(container) {
     interval = setInterval(step, 120);
     draw();
   }
-
+ 
   /* ── Keyboard controls (desktop) ── */
   const DIRS = {
     ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0},
     w:{x:0,y:-1}, s:{x:0,y:1}, a:{x:-1,y:0}, d:{x:1,y:0},
     W:{x:0,y:-1}, S:{x:0,y:1}, A:{x:-1,y:0}, D:{x:1,y:0},
   };
-
+ 
   document.addEventListener('keydown', function snakeKeys(e) {
     if (!document.getElementById('game-modal').classList.contains('open')) {
       document.removeEventListener('keydown', snakeKeys); return;
@@ -650,29 +759,29 @@ function renderSnake(container) {
       e.preventDefault();
     }
   });
-
+ 
   /* ── Touch swipe controls (mobile) — FIX 1A ── */
   if (isMobile) {
     let touchStartX = 0, touchStartY = 0;
     const SWIPE_THRESHOLD = 20; /* minimum px to count as a swipe */
-
+ 
     canvas.addEventListener('touchstart', (e) => {
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
       e.preventDefault(); /* stop page scroll while on canvas */
     }, { passive: false });
-
+ 
     canvas.addEventListener('touchend', (e) => {
       const dx = e.changedTouches[0].clientX - touchStartX;
       const dy = e.changedTouches[0].clientY - touchStartY;
       const absDx = Math.abs(dx), absDy = Math.abs(dy);
-
+ 
       /* Must exceed threshold to register as intentional swipe */
       if (Math.max(absDx, absDy) < SWIPE_THRESHOLD) return;
-
+ 
       if (gameOver) { startGame(); return; }
       if (!running) { startGame(); }
-
+ 
       let newDir;
       if (absDx > absDy) {
         /* Horizontal swipe */
@@ -681,31 +790,31 @@ function renderSnake(container) {
         /* Vertical swipe */
         newDir = dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 };
       }
-
+ 
       /* Prevent reversing directly into self */
       if (dir.x !== -newDir.x || dir.y !== -newDir.y) {
         dir = newDir;
       }
-
+ 
       e.preventDefault();
     }, { passive: false });
   }
-
+ 
   draw();
 }
-
+ 
 /* ─── GAME 2: MEMORY MATCH ─── */
 function renderMemory(container) {
   const emojis = ['🌙', '⭐', '☀️', '🌊', '🔥', '🌿', '💎', '🎭'];
   let cards = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
   let flipped = [], matched = 0, locked = false, moves = 0;
-
+ 
   container.innerHTML = `
     <h3 style="font-family:var(--ff-display);font-size:1.5rem;color:var(--text);text-align:center;margin-bottom:0.5rem;">Memory Match</h3>
     <p style="text-align:center;font-size:0.75rem;color:var(--text3);margin-bottom:1.5rem;">Moves: <span id="mem-moves">0</span> · Pairs: <span id="mem-pairs">0</span>/8</p>
     <div id="mem-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:340px;margin:0 auto;"></div>
   `;
-
+ 
   const grid = document.getElementById('mem-grid');
   cards.forEach((emoji, i) => {
     const card = document.createElement('div');
@@ -737,7 +846,7 @@ function renderMemory(container) {
     grid.appendChild(card);
   });
 }
-
+ 
 /* ─────────────────────────────────────────────────────────
    FIX 1B: 2048 — touch swipe support for mobile
    Swipe on the grid maps to move direction.
@@ -746,7 +855,7 @@ function renderMemory(container) {
 function render2048(container) {
   const isMobile = window.matchMedia('(pointer: coarse)').matches;
   const inputHint = isMobile ? 'Swipe to slide' : 'Arrow keys to slide';
-
+ 
   let grid = Array(4).fill(null).map(() => Array(4).fill(0)), score = 0;
   container.innerHTML = `
     <h3 style="font-family:var(--ff-display);font-size:1.5rem;color:var(--text);text-align:center;margin-bottom:0.5rem;">2048</h3>
@@ -754,13 +863,13 @@ function render2048(container) {
     <div id="g2048-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-width:340px;margin:0 auto;background:var(--bg3);padding:6px;border-radius:4px;touch-action:none;user-select:none;"></div>
   `;
   const colors = {0:'var(--bg3)',2:'#eee4da',4:'#ede0c8',8:'#f2b179',16:'#f59563',32:'#f67c5f',64:'#f65e3b',128:'#edcf72',256:'#edcc61',512:'#edc850',1024:'#edc53f',2048:'#edc22e'};
-
+ 
   function addRandom() {
     const empty = [];
     grid.forEach((row, r) => row.forEach((val, c) => { if (!val) empty.push([r, c]); }));
     if (empty.length) { const [r, c] = empty[Math.floor(Math.random() * empty.length)]; grid[r][c] = Math.random() < 0.9 ? 2 : 4; }
   }
-
+ 
   function drawGrid() {
     const g = document.getElementById('g2048-grid'); if (!g) return; g.innerHTML = '';
     grid.forEach(row => row.forEach(val => {
@@ -770,16 +879,16 @@ function render2048(container) {
     }));
     document.getElementById('g2048-score').textContent = score;
   }
-
+ 
   function slide(row) {
     let arr = row.filter(v => v);
     for (let i = 0; i < arr.length - 1; i++) { if (arr[i] === arr[i + 1]) { arr[i] *= 2; score += arr[i]; arr.splice(i + 1, 1); } }
     while (arr.length < 4) arr.push(0);
     return arr;
   }
-
+ 
   function transpose(g) { return g[0].map((_, i) => g.map(row => row[i])); }
-
+ 
   function move(dir) {
     const prev = JSON.stringify(grid);
     if (dir === 'left')  grid = grid.map(row => slide(row));
@@ -789,46 +898,46 @@ function render2048(container) {
     if (JSON.stringify(grid) !== prev) addRandom();
     drawGrid();
   }
-
+ 
   addRandom(); addRandom(); drawGrid();
-
+ 
   /* ── Keyboard controls (desktop) ── */
   document.addEventListener('keydown', function keys2048(e) {
     if (!document.getElementById('game-modal').classList.contains('open')) { document.removeEventListener('keydown', keys2048); return; }
     const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
     if (map[e.key]) { e.preventDefault(); move(map[e.key]); }
   });
-
+ 
   /* ── Touch swipe controls (mobile) — FIX 1B ── */
   if (isMobile) {
     const gridEl = document.getElementById('g2048-grid');
     let touchStartX = 0, touchStartY = 0;
     const SWIPE_THRESHOLD = 24; /* min px for valid swipe */
-
+ 
     gridEl.addEventListener('touchstart', (e) => {
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
       e.preventDefault(); /* prevent scroll while interacting with grid */
     }, { passive: false });
-
+ 
     gridEl.addEventListener('touchend', (e) => {
       const dx = e.changedTouches[0].clientX - touchStartX;
       const dy = e.changedTouches[0].clientY - touchStartY;
       const absDx = Math.abs(dx), absDy = Math.abs(dy);
-
+ 
       if (Math.max(absDx, absDy) < SWIPE_THRESHOLD) return;
-
+ 
       if (absDx > absDy) {
         move(dx > 0 ? 'right' : 'left');
       } else {
         move(dy > 0 ? 'down' : 'up');
       }
-
+ 
       e.preventDefault();
     }, { passive: false });
   }
 }
-
+ 
 /* ─── GAME 4: REACTION TIME ─── */
 function renderReaction(container) {
   let state = 'waiting', startTime, times = [];
@@ -860,7 +969,7 @@ function renderReaction(container) {
   window.reactionClick = reactionClick;
   box.onclick = reactionClick;
 }
-
+ 
 /* ─── GAME 5: WORD SCRAMBLE ─── */
 function renderWordScramble(container) {
   const words = ['PLANET', 'SILENT', 'MUSIC', 'OCEAN', 'DREAM', 'LIGHT', 'FLAME', 'STORM', 'GRACE', 'SWIFT'];
@@ -899,7 +1008,7 @@ function renderWordScramble(container) {
     } else { fb.style.color = '#f87171'; fb.textContent = '✗ Try again'; }
   };
 }
-
+ 
 /* ═══════════════════════════════════════════════════════════
    EASTER EGGS
 ═══════════════════════════════════════════════════════════ */
@@ -910,7 +1019,7 @@ const nameClickMessages = [
   "6 clicks... you're definitely onto something.",
   "7 clicks! You found the easter egg. Hello, persistent human. Here is your reward — lean back and calm down.",
 ];
-
+ 
 (function () {
   let typed = '';
   document.addEventListener('keypress', e => {
@@ -921,7 +1030,7 @@ const nameClickMessages = [
     }
   });
 })();
-
+ 
 /* ═══════════════════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════════════════ */
@@ -931,7 +1040,7 @@ window.addEventListener('load', () => {
   const backdrop = document.getElementById('music-backdrop');
   if (backdrop) backdrop.addEventListener('click', closeMusicPanel);
 });
-
+ 
 /* ═══════════════════════════════════════════════════════════
    MUSIC SYSTEM
 ═══════════════════════════════════════════════════════════ */
@@ -940,12 +1049,12 @@ const rainSong   = document.getElementById("rain-song");
 const songBar    = document.getElementById("music-toggle");
 const vinylEl    = document.getElementById("vinyl-player");
 const musicPanel = document.getElementById("music-panel");
-
+ 
 let easterUnlocked = false;
 let musicStarted   = false;
 let userPaused     = false;
 let currentSongId  = 'bg';
-
+ 
 function updateMusicUI() {
   const isPlaying = (bgMusic && !bgMusic.paused && !bgMusic.ended) ||
                     (rainSong && !rainSong.paused && !rainSong.ended);
@@ -965,7 +1074,7 @@ function updateMusicUI() {
   }
   updateMusicPanelState();
 }
-
+ 
 function updateMusicPanelState() {
   const nowEl = document.getElementById('music-panel-now');
   if (!nowEl) return;
@@ -984,7 +1093,7 @@ function updateMusicPanelState() {
     document.getElementById('indicator-bg')?.classList.add('playing');
   }
 }
-
+ 
 songBar.addEventListener("click", () => {
   const isPlaying = (bgMusic && !bgMusic.paused && !bgMusic.ended) ||
                     (rainSong && !rainSong.paused && !rainSong.ended);
@@ -1003,7 +1112,7 @@ songBar.addEventListener("click", () => {
   }
   updateMusicUI();
 });
-
+ 
 rainSong.addEventListener("ended", () => {
   currentSongId = 'bg';
   if (!userPaused) {
@@ -1012,12 +1121,12 @@ rainSong.addEventListener("ended", () => {
   }
   updateMusicUI();
 });
-
+ 
 bgMusic.addEventListener("play",  updateMusicUI);
 bgMusic.addEventListener("pause", updateMusicUI);
 rainSong.addEventListener("play",  updateMusicUI);
 rainSong.addEventListener("pause", updateMusicUI);
-
+ 
 function tryStartBgMusic() {
   if (musicStarted || userPaused) return;
   bgMusic.play()
@@ -1028,11 +1137,11 @@ function tryStartBgMusic() {
     })
     .catch(() => {});
 }
-
+ 
 document.addEventListener("mousemove", tryStartBgMusic, { once: true });
 document.addEventListener("click",     tryStartBgMusic, { once: true });
 document.addEventListener("scroll",    tryStartBgMusic, { once: true, capture: true });
-
+ 
 function openMusicPanel() {
   if (!musicPanel) return;
   musicPanel.classList.add('open');
@@ -1040,14 +1149,14 @@ function openMusicPanel() {
   if (backdrop) backdrop.classList.add('open');
   updateMusicPanelState();
 }
-
+ 
 function closeMusicPanel() {
   if (!musicPanel) return;
   musicPanel.classList.remove('open');
   const backdrop = document.getElementById('music-backdrop');
   if (backdrop) backdrop.classList.remove('open');
 }
-
+ 
 function toggleMusicPanel() {
   if (!musicPanel) return;
   if (musicPanel.classList.contains('open')) {
@@ -1056,19 +1165,19 @@ function toggleMusicPanel() {
     openMusicPanel();
   }
 }
-
+ 
 if (vinylEl) {
   vinylEl.addEventListener("click", () => {
     toggleMusicPanel();
   });
 }
-
+ 
 function showVinyl() {
   if (!vinylEl) return;
   vinylEl.classList.remove("hidden");
   easterUnlocked = true;
 }
-
+ 
 function hideVinyl() {
   if (!vinylEl) return;
   closeMusicPanel();
@@ -1077,7 +1186,7 @@ function hideVinyl() {
     easterUnlocked = false;
   }, 200);
 }
-
+ 
 function playFromPanel(songId) {
   bgMusic.pause();
   rainSong.pause();
@@ -1093,7 +1202,7 @@ function playFromPanel(songId) {
   musicStarted = true;
   updateMusicUI();
 }
-
+ 
 function nameclickHandler() {
   nameClicks++;
   const hint = document.getElementById("name-click-hint");
@@ -1125,3 +1234,293 @@ function nameclickHandler() {
     }, 4000);
   }
 }
+ 
+/* ═══════════════════════════════════════════════════════════
+   WEB AUDIO API — Mechanical Sound System
+   ─────────────────────────────────────────────────────────
+   Synthesises two sounds entirely via the Web Audio API.
+   No external audio files are used.
+ 
+   TICK  — hover: ultra-short transient, ~4 kHz click
+   CLACK — click: slightly deeper, ~1.8 kHz body with
+           a sharper initial attack and small tail
+ 
+   Scope: all interactive elements EXCEPT game canvases.
+   A toggle button is injected into the nav bar.
+═══════════════════════════════════════════════════════════ */
+ 
+let _audioCtx         = null;
+let _soundEnabled     = localStorage.getItem('msm-sound') !== 'off'; // default ON
+let _hoverCooldownMap = new WeakMap(); // per-element hover guard
+ 
+function _getAudioCtx() {
+  if (!_audioCtx) {
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  // Resume if suspended (browser autoplay policy)
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+ 
+/* ── Synthesise a hover tick ── */
+function _playTick() {
+  if (!_soundEnabled) return;
+  try {
+    const ctx  = _getAudioCtx();
+    const now  = ctx.currentTime;
+ 
+    // Short band-pass filtered noise burst — "tick"
+    const buf  = ctx.createBuffer(1, ctx.sampleRate * 0.018, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 6);
+    }
+ 
+    const src    = ctx.createBufferSource();
+    src.buffer   = buf;
+ 
+    const bp     = ctx.createBiquadFilter();
+    bp.type      = 'bandpass';
+    bp.frequency.value = 4200;
+    bp.Q.value         = 2.4;
+ 
+    const gain   = ctx.createGain();
+    gain.gain.setValueAtTime(0.14, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.018);
+ 
+    src.connect(bp);
+    bp.connect(gain);
+    gain.connect(ctx.destination);
+    src.start(now);
+    src.stop(now + 0.02);
+  } catch (_) {}
+}
+ 
+/* ── Synthesise a click clack ── */
+function _playClack() {
+  if (!_soundEnabled) return;
+  try {
+    const ctx  = _getAudioCtx();
+    const now  = ctx.currentTime;
+ 
+    // Body: short sine-ish tone with fast decay
+    const osc        = ctx.createOscillator();
+    osc.type         = 'triangle';
+    osc.frequency.setValueAtTime(1800, now);
+    osc.frequency.exponentialRampToValueAtTime(400, now + 0.04);
+ 
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(0.22, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.055);
+ 
+    // Attack transient: short noise burst
+    const buf  = ctx.createBuffer(1, ctx.sampleRate * 0.01, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 4);
+    }
+    const nSrc  = ctx.createBufferSource();
+    nSrc.buffer = buf;
+ 
+    const hp    = ctx.createBiquadFilter();
+    hp.type     = 'highpass';
+    hp.frequency.value = 2000;
+ 
+    const nGain = ctx.createGain();
+    nGain.gain.setValueAtTime(0.3, now);
+    nGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.01);
+ 
+    // Master limiter-style gain
+    const master = ctx.createGain();
+    master.gain.value = 0.7;
+ 
+    osc.connect(oscGain);
+    oscGain.connect(master);
+    nSrc.connect(hp);
+    hp.connect(nGain);
+    nGain.connect(master);
+    master.connect(ctx.destination);
+ 
+    osc.start(now);
+    osc.stop(now + 0.06);
+    nSrc.start(now);
+    nSrc.stop(now + 0.012);
+  } catch (_) {}
+}
+ 
+/* ── Attach sounds to a single element ── */
+function _attachSounds(el) {
+  // Skip game canvases
+  if (el.tagName === 'CANVAS') return;
+  // Skip if already bound
+  if (el.dataset.soundBound) return;
+  el.dataset.soundBound = 'yes';
+ 
+  el.addEventListener('mouseenter', () => {
+    // Per-element cooldown: no repeat while cursor remains
+    if (_hoverCooldownMap.get(el)) return;
+    _hoverCooldownMap.set(el, true);
+    _playTick();
+  }, { passive: true });
+ 
+  el.addEventListener('mouseleave', () => {
+    _hoverCooldownMap.set(el, false);
+  }, { passive: true });
+ 
+  el.addEventListener('mousedown', () => {
+    _playClack();
+  }, { passive: true });
+}
+ 
+/* ── Bind to all existing interactive elements ── */
+function _bindSoundsToAll() {
+  const sel = [
+    'a', 'button', 'input[type="button"]', 'input[type="submit"]',
+    '.game-card', '.album-card', '.belief-card', '.year-node',
+    '.profile-item', '.list-tab', '.theme-dot', '.music-option',
+    '.nav-link', '#nav-links a', '.nav-item', '[onclick]',
+    '.music-toggle', '#hamburger', '#music-toggle',
+    '.sound-toggle-btn'
+  ].join(', ');
+ 
+  document.querySelectorAll(sel).forEach(_attachSounds);
+}
+ 
+/* ── MutationObserver: bind sounds to dynamically added elements ── */
+const _soundObserver = new MutationObserver((mutations) => {
+  mutations.forEach(m => {
+    m.addedNodes.forEach(node => {
+      if (node.nodeType !== 1) return;
+      if (node.tagName === 'CANVAS') return;
+      const interactive = node.matches('a, button, [onclick], .game-card, .album-card, .belief-card, .year-node, .profile-item, .list-tab, .theme-dot, .music-option')
+        ? [node]
+        : [...node.querySelectorAll('a, button, [onclick], .game-card, .album-card, .belief-card, .year-node, .profile-item, .list-tab, .theme-dot, .music-option')];
+      interactive.forEach(_attachSounds);
+    });
+  });
+});
+_soundObserver.observe(document.body, { childList: true, subtree: true });
+ 
+/* ── Sound Toggle Button — injected into nav bar ── */
+(function injectSoundToggle() {
+  // Inject CSS for the button inline so it fully matches the site theme
+  const style = document.createElement('style');
+  style.textContent = `
+    .sound-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border2, rgba(255,255,255,0.12));
+      background: var(--bg3, rgba(255,255,255,0.04));
+      cursor: pointer;
+      position: relative;
+      transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+      flex-shrink: 0;
+      outline: none;
+      padding: 0;
+    }
+    .sound-toggle-btn:hover {
+      border-color: var(--accent, #c8a96e);
+      box-shadow: 0 0 8px rgba(200, 169, 110, 0.25);
+      background: var(--bg4, rgba(255,255,255,0.08));
+    }
+    .sound-toggle-btn.sound-off {
+      opacity: 0.45;
+    }
+    .sound-toggle-btn.sound-off:hover {
+      opacity: 0.8;
+    }
+    /* Push-button SVG icon inside */
+    .sound-toggle-btn svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+      transition: transform 0.18s ease;
+    }
+    /* Depress animation on click */
+    .sound-toggle-btn:active svg {
+      transform: translateY(1px) scale(0.93);
+    }
+    /* ON state: accent tint on the button cap */
+    .sound-toggle-btn.sound-on .btn-cap {
+      fill: var(--accent, #c8a96e);
+      transition: fill 0.25s ease;
+    }
+    .sound-toggle-btn.sound-off .btn-cap {
+      fill: var(--text3, #555);
+      transition: fill 0.25s ease;
+    }
+    .sound-toggle-btn .btn-body {
+      fill: var(--bg2, #1a1a1a);
+      stroke: var(--border2, rgba(255,255,255,0.12));
+      stroke-width: 1;
+    }
+    .sound-toggle-btn .btn-ring {
+      fill: none;
+      stroke: var(--border2, rgba(255,255,255,0.12));
+      stroke-width: 0.8;
+    }
+  `;
+  document.head.appendChild(style);
+ 
+  // Build the button
+  const btn = document.createElement('button');
+  btn.className    = 'sound-toggle-btn ' + (_soundEnabled ? 'sound-on' : 'sound-off');
+  btn.title        = 'Toggle mechanical sounds';
+  btn.setAttribute('aria-label', 'Toggle mechanical sounds');
+  btn.dataset.soundBound = 'yes'; // prevent double-bind
+ 
+  // Side-view push-button SVG icon
+  btn.innerHTML = `
+    <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <!-- Button body / housing (side profile) -->
+      <rect class="btn-body" x="2" y="7" width="12" height="7" rx="1.5"/>
+      <!-- Button cap (the pressable dome seen from the side) -->
+      <rect class="btn-cap" x="3.5" y="3.5" width="9" height="4.5" rx="2"/>
+      <!-- Small ring detail on cap top -->
+      <ellipse class="btn-ring" cx="8" cy="3.6" rx="3.2" ry="0.9"/>
+    </svg>
+  `;
+ 
+  btn.addEventListener('click', () => {
+    _soundEnabled = !_soundEnabled;
+    localStorage.setItem('msm-sound', _soundEnabled ? 'on' : 'off');
+    btn.classList.toggle('sound-on', _soundEnabled);
+    btn.classList.toggle('sound-off', !_soundEnabled);
+    // Play a confirmation tick when enabling
+    if (_soundEnabled) setTimeout(_playTick, 60);
+  });
+ 
+  // Insert into nav: find the music-toggle button and insert before it
+  function _placeToggle() {
+    const musicToggle = document.getElementById('music-toggle');
+    if (musicToggle && musicToggle.parentNode) {
+      musicToggle.parentNode.insertBefore(btn, musicToggle);
+    } else {
+      // Fallback: append to nav
+      const nav = document.getElementById('nav');
+      if (nav) nav.appendChild(btn);
+    }
+  }
+ 
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _placeToggle);
+  } else {
+    _placeToggle();
+  }
+})();
+ 
+/* ── Initialise sound bindings after DOM is ready ── */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _bindSoundsToAll);
+} else {
+  _bindSoundsToAll();
+}
+// Re-bind after page transitions settle (for dynamically shown pages)
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(_bindSoundsToAll, 2500);
+});
+ 
