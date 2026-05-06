@@ -76,7 +76,7 @@ fetch("data.json")
 
       if (ig && data.socialLinks.instagram) {
         ig.href =
-          "https://www.instagram.com/" +
+          "https://instagram.com/" +
           data.socialLinks.instagram;
       }
 
