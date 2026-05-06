@@ -393,7 +393,7 @@ function updateBirthdayTimer() {
   // ╠══════════════════════════════════════════════════════════════╣
   const checkDate = now;
   // OVERRIDE ↓ Uncomment to test birthday state instantly:
-  // const checkDate = new Date(now.getFullYear(), 7, 29, 13, 0, 0);
+  const checkDate = new Date(now.getFullYear(), 7, 29, 13, 0, 0);
   // ╚══════════════════════════════════════════════════════════════╝
  
   const isBirthday = checkDate.getMonth() === 7 && checkDate.getDate() === 29;
