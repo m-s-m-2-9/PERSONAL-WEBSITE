@@ -1,817 +1,1020 @@
 /* ═══════════════════════════════════════════════════════════
-   js/roro-intro.js  —  MSM Cinematic Splash Screen
+   js/roro-intro.js  —  MSM Cinematic Splash Screen v2
    ─────────────────────────────────────────────────────────
-   INTEGRATION STEPS (read before using):
-   1. Add <script src="js/roro-intro.js"></script>
-      BEFORE <script src="js/main.js"></script> in index.html
-   2. DELETE or HIDE the existing #loading-screen block:
-      <div id="loading-screen"> ... </div>
-      (or leave it — this script hides it automatically)
-   3. Nothing else needs touching.
+   Vanilla JS · Zero dependencies · CSS-variable aware
    ─────────────────────────────────────────────────────────
-   ORDER OF ELEMENTS (top → bottom):
-   i.   M · S · M  (small logo)
-   ii.  WELCOME BACK, NAME  /  WELCOME.  (large display)
-   iii. Context line  (smaller, bold, accent)
-   iv.  Clock  |  Day / Date
-   v.   Loading bar  + percentage
-   vi.  Log messages — one by one (fixed area, no layout shift)
-   vii. On 100%: log area → [ SCRIPT ] button
-   viii. CONTINUE button
+   ⚠  INTEGRATION — add to index.html BEFORE main.js:
+      <script src="js/roro-intro.js"></script>
+   ⚠  DELETE the old #loading-screen block from index.html.
 ═══════════════════════════════════════════════════════════ */
 
 (function () {
   'use strict';
 
-  /* ─── suppress the old loading screen immediately ──── */
-  const _OLD = document.getElementById('loading-screen');
-  if (_OLD) _OLD.style.cssText = 'display:none!important;pointer-events:none!important;';
+  /* ═══════════════════════════════════════════════════════
+     STEP 0 — IMMEDIATE COVER (runs before DOMContentLoaded)
+     Prevents the home page from flashing before the splash
+     is ready. Appended synchronously while body exists.
+  ═══════════════════════════════════════════════════════ */
+  var _immediatecover = document.createElement('div');
+  _immediatecover.style.cssText = [
+    'position:fixed', 'inset:0', 'z-index:999997',
+    'background:var(--bg,#080808)', 'pointer-events:none'
+  ].join(';');
+  document.body.appendChild(_immediatecover);
 
-  /* ═══════════════════════════════════════════════════
-     DATA
-  ═══════════════════════════════════════════════════ */
-
-  const FIRST_WELCOME = [
-    'Welcome.',
-    'You\'ve arrived.',
-    'Something worth seeing awaits.',
-    'An intentional space.',
-    'Not many find their way here.',
-    'Presence acknowledged.',
-    'Built for people who notice things.',
-  ];
-
-  const RETURN_WELCOME = [
-    'Welcome back, {name}.',
-    'Still curious, {name}?',
-    'You returned, {name}.',
-    '{name}. Good to have you back.',
-    'Again, {name}. That means something.',
-    'Back already, {name}.',
-    'The site remembers you, {name}.',
-  ];
-
-  const CONTEXT_LINES = {
-    night:     ['The world is quiet. You\'re still here.', 'Late nights have a clarity daylight rarely offers.', 'Most of the city is asleep.', 'The rare hour. Use it well.'],
-    dawn:      ['Before dawn. The rarest window.', 'You\'re up before most cities are.', 'Pre-dawn. A strange calm settles here.', 'Early enough to see things clearly.'],
-    morning:   ['Morning already in motion.', 'First thoughts of the day carry weight.', 'The day hasn\'t decided what it is yet.', 'Good time to explore things.'],
-    midday:    ['Midday. Half the day already spent.', 'Somewhere between intention and momentum.', 'Noon. A strange pivot in the day.', 'Post-morning clarity. Good timing.'],
-    afternoon: ['The afternoon carries a certain weight.', 'The day has settled into itself now.', 'That quiet hour before the light shifts.', 'Golden hour is not far.'],
-    evening:   ['Evening feels quieter here.', 'The day is softening at its edges.', 'Evenings are for noticing things you missed.', 'Dusk settles differently when you pay attention.'],
-    night2:    ['Night has a particular kind of focus.', 'Late enough to mean something.', 'The city dims. You stay lit.', 'After-hours. This is when real things happen.'],
+  /* ═══════════════════════════════════════════════════════
+     STEP 1 — MUSIC GUARD
+     Intercepts HTMLMediaElement.prototype.play so bg-music
+     cannot auto-start from main.js's interaction listeners
+     (mousemove, click, scroll). Restored on Continue click.
+  ═══════════════════════════════════════════════════════ */
+  window._roroSplashActive = true;
+  var _origPlay = HTMLMediaElement.prototype.play;
+  HTMLMediaElement.prototype.play = function () {
+    if (window._roroSplashActive &&
+        (this.id === 'bg-music' || this.id === 'rain-song')) {
+      return Promise.resolve();
+    }
+    return _origPlay.apply(this, arguments);
   };
 
-  const LOG_LINES = [
-    { tag: 'SYS', msg: 'initialising identity_matrix v2026' },
-    { tag: 'MEM', msg: 'reading 18 years across 6 cities' },
-    { tag: 'IDX', msg: 'indexing journey 2008 → 2026' },
-    { tag: 'REF', msg: 'compiling thoughts & beliefs' },
-    { tag: 'IMG', msg: 'loading captured moments' },
-    { tag: 'NET', msg: 'connecting social presence nodes' },
-    { tag: 'AUD', msg: 'preparing ambient layer' },
-    { tag: 'SEC', msg: 'encrypting private sections' },
-    { tag: 'RUN', msg: 'finalising portfolio render' },
-    { tag: 'OK ', msg: 'all systems nominal · entering' },
-  ];
+  /* ═══════════════════════════════════════════════════════
+     § 0 — INJECTED CSS
+     All colours from site CSS vars — all 4 themes work.
+  ═══════════════════════════════════════════════════════ */
+  var SPLASH_CSS = `
 
-  const FACTS = [
-    'Hint: click the name on the home page exactly 7 times.',
-    'Hint: type the word manomay anywhere. watch the accent.',
-    'A teaspoon of neutron star material weighs ~6 billion tons.',
-    'Venus rotates clockwise — opposite to most planets.',
-    'More stars exist than grains of sand on all Earth\'s beaches.',
-    'The Moon drifts 1.5 inches further from Earth every year.',
-    'The "#" symbol is officially called an octothorpe.',
-    'Some sections here require a password. Contact is how you ask.',
-    'The Clock page has a special state — only on August 29th.',
-    'There are 14 distinct sections. Most visitors find 6 or 7.',
-    'Identical twins do not share fingerprints.',
-    'The Anglo-Zanzibar War lasted 38 minutes — the shortest war ever.',
-    'The Eiffel Tower grows up to 6 inches taller in summer.',
-    'The background music has two tracks. Only one is obvious.',
-    'Every pixel of this site was written by hand. No frameworks.',
-    'The letter J was the last added to the English alphabet.',
-    'The Journey timeline covers 19 chapters — 2008 to present.',
-    'There are four visual themes. Switching changes more than colours.',
-    'The hero name cycles its highlight on each reload.',
-    'Nothing here was accidental. Every element was placed deliberately.',
-    'All clownfish are born male. The dominant one can change sex.',
-    'The human brain burns ~400–500 calories per day just to function.',
-    'Hippos cannot swim — they gallop along riverbeds.',
-    'Bananas grow upward against gravity — negative geotropism.',
-    'The vinyl record isn\'t always visible. Find out why.',
-    'Mechanical click sounds can be toggled in the nav bar.',
-    'Some photo albums require trust. There\'s a reason they\'re locked.',
-    'The Thoughts section has 16 posts across six categories.',
-    'The oldest cat ever recorded lived 38 years and 3 days.',
-    'Humans blink up to 28,800 times per day.',
-    'Egypt is considered the world\'s oldest country, ~3100 BCE.',
-    'Your stomach gets a new lining every 3–4 days.',
-    'The five games are fully real. No half-measures.',
-    'Hint: Knock. Some of the best content sits behind a password.',
-    'A sneeze can reach 100 miles per hour.',
-    'The bumblebee bat weighs 0.05–0.07 ounces — world\'s smallest mammal.',
-  ];
-
-  /* ═══════════════════════════════════════════════════
-     HELPERS
-  ═══════════════════════════════════════════════════ */
-
-  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
-  function loadUser() {
-    try { const r = localStorage.getItem('roroUser'); return r ? JSON.parse(r) : null; }
-    catch { return null; }
-  }
-
-  function getContextLine() {
-    const h = new Date().getHours();
-    let pool;
-    if      (h >= 0  && h < 4)  pool = CONTEXT_LINES.night;
-    else if (h >= 4  && h < 7)  pool = CONTEXT_LINES.dawn;
-    else if (h >= 7  && h < 12) pool = CONTEXT_LINES.morning;
-    else if (h >= 12 && h < 14) pool = CONTEXT_LINES.midday;
-    else if (h >= 14 && h < 18) pool = CONTEXT_LINES.afternoon;
-    else if (h >= 18 && h < 21) pool = CONTEXT_LINES.evening;
-    else                         pool = CONTEXT_LINES.night2;
-    return pick(pool);
-  }
-
-  function formatClock(d) {
-    let h = d.getHours(), m = String(d.getMinutes()).padStart(2, '0');
-    const ap = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    return { time: `${String(h).padStart(2,'0')}:${m}`, ampm: ap };
-  }
-
-  function formatDate(d) {
-    const days  = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
-    const months= ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    return { day: days[d.getDay()], date: `${months[d.getMonth()]} ${d.getDate()}` };
-  }
-
-  /* ═══════════════════════════════════════════════════
-     STYLES  (injected once)
-  ═══════════════════════════════════════════════════ */
-
-  function injectStyles() {
-    if (document.getElementById('roro-css')) return;
-    const s = document.createElement('style');
-    s.id = 'roro-css';
-    s.textContent = `
-#roro-splash {
-  position: fixed;
-  inset: 0;
-  z-index: 100000;
-  background: var(--bg, #080808);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  font-family: var(--ff-mono, 'DM Mono', monospace);
-}
-
-#roro-splash * { cursor: none; }
-
-#roro-splash .rs-grid {
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(var(--border, rgba(255,255,255,0.04)) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border, rgba(255,255,255,0.04)) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 100%);
-  pointer-events: none;
-}
-
-/* film reel strips */
-.rs-film {
-  position: absolute;
-  top: 0; bottom: 0;
-  width: 40px;
-  overflow: hidden;
-  pointer-events: none;
-}
-.rs-film.left  { left: 18px; }
-.rs-film.right { right: 18px; }
-
-.rs-film-track {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 0;
-}
-.rs-film.left  .rs-film-track { animation: filmUp   14s linear infinite; }
-.rs-film.right .rs-film-track { animation: filmDown 14s linear infinite; }
-
-@keyframes filmUp   { from { transform: translateY(0);    } to { transform: translateY(-50%); } }
-@keyframes filmDown { from { transform: translateY(-50%); } to { transform: translateY(0);    } }
-
-.rs-frame {
-  width: 32px;
-  height: 22px;
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 3px;
-  flex-shrink: 0;
-  background: transparent;
-}
-.rs-frame.lit {
-  border-color: rgba(255,255,255,0.16);
-  box-shadow: inset 0 0 6px rgba(255,255,255,0.03);
-}
-
-/* center column — FIXED, never moves */
-.rs-center {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 440px;
-  padding: 0 64px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* logo */
-.rs-logo {
-  font-family: var(--ff-mono, 'DM Mono', monospace);
-  font-size: 0.65rem;
-  letter-spacing: 0.38em;
-  color: rgba(255,255,255,0.22);
-  margin-bottom: 32px;
-  user-select: none;
-}
-
-/* welcome */
-.rs-welcome {
-  font-family: var(--ff-display, 'Cormorant Garamond', serif);
-  font-size: clamp(1.6rem, 4vw, 2.2rem);
-  font-weight: 300;
-  color: var(--text, rgba(255,255,255,0.92));
-  letter-spacing: -0.01em;
-  text-align: center;
-  line-height: 1.15;
-  margin-bottom: 10px;
-  min-height: 1.15em;
-}
-
-/* context */
-.rs-context {
-  font-family: var(--ff-mono, 'DM Mono', monospace);
-  font-size: 0.6rem;
-  letter-spacing: 0.18em;
-  color: var(--accent, rgba(232,213,183,0.82));
-  text-transform: uppercase;
-  font-weight: 500;
-  margin-bottom: 28px;
-  text-align: center;
-  min-height: 1em;
-}
-
-/* clock */
-.rs-clock-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 28px;
-}
-.rs-time-main {
-  font-family: var(--ff-display, 'Cormorant Garamond', serif);
-  font-size: clamp(1.5rem, 4.5vw, 2.2rem);
-  font-weight: 300;
-  color: var(--text, rgba(255,255,255,0.8));
-  letter-spacing: -0.02em;
-  line-height: 1;
-}
-.rs-time-ampm {
-  font-family: var(--ff-mono, 'DM Mono', monospace);
-  font-size: 0.52rem;
-  letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.3);
-  vertical-align: middle;
-  margin-left: 3px;
-}
-.rs-clock-sep {
-  width: 1px;
-  height: 28px;
-  background: rgba(255,255,255,0.1);
-  flex-shrink: 0;
-}
-.rs-clock-right {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.rs-clock-day {
-  font-family: var(--ff-mono, 'DM Mono', monospace);
-  font-size: 0.52rem;
-  letter-spacing: 0.2em;
-  color: rgba(255,255,255,0.28);
-  text-transform: uppercase;
-}
-.rs-clock-date {
-  font-family: var(--ff-mono, 'DM Mono', monospace);
-  font-size: 0.62rem;
-  letter-spacing: 0.1em;
-  color: rgba(255,255,255,0.45);
-}
-
-/* loading bar */
-.rs-bar-row {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 4px;
-}
-.rs-bar-track {
-  flex: 1;
-  height: 1px;
-  background: rgba(255,255,255,0.08);
-  position: relative;
-  overflow: hidden;
-}
-.rs-bar-fill {
-  position: absolute;
-  top: 0; left: 0; bottom: 0;
-  width: 0%;
-  background: var(--accent, rgba(232,213,183,0.7));
-  transition: width 0.25s ease;
-}
-.rs-bar-pct {
-  font-size: 0.52rem;
-  letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.2);
-  min-width: 3.5ch;
-  text-align: right;
-  flex-shrink: 0;
-}
-
-/* ── LOG AREA — FIXED HEIGHT, never causes layout shift ── */
-.rs-log-area {
-  width: 100%;
-  height: 52px;
-  overflow: hidden;
-  margin-top: 16px;
-  margin-bottom: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 4px;
-}
-.rs-log-line {
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-  font-size: 0.56rem;
-  letter-spacing: 0.04em;
-  color: rgba(255,255,255,0.2);
-  line-height: 1.6;
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.25s ease, transform 0.25s ease;
-  white-space: nowrap;
-  overflow: hidden;
-}
-.rs-log-line.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-.rs-log-tag {
-  color: var(--accent, rgba(232,213,183,0.5));
-  font-size: 0.5rem;
-  letter-spacing: 0.12em;
-  flex-shrink: 0;
-  opacity: 0.6;
-}
-.rs-log-msg { color: rgba(255,255,255,0.22); }
-
-/* fact area — same fixed height as log area, sits beneath it */
-.rs-fact-area {
-  width: 100%;
-  height: 20px;
-  margin-top: 6px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.rs-fact {
-  font-size: 0.52rem;
-  letter-spacing: 0.05em;
-  color: rgba(255,255,255,0.13);
-  text-align: center;
-  transition: opacity 0.15s ease;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-.rs-fact.fade { opacity: 0; }
-
-/* ── POST-LOAD: script button + continue ── */
-.rs-post {
-  width: 100%;
-  margin-top: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.5s ease;
-}
-.rs-post.visible {
-  opacity: 1;
-  pointer-events: all;
-}
-
-/* script button — replaces log area when loading done */
-.rs-script-btn {
-  font-family: var(--ff-mono, 'DM Mono', monospace);
-  font-size: 0.54rem;
-  letter-spacing: 0.22em;
-  color: rgba(255,255,255,0.22);
-  background: none;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 3px;
-  padding: 5px 14px;
-  cursor: none;
-  transition: color 0.3s, border-color 0.3s;
-  outline: none;
-}
-.rs-script-btn:hover {
-  color: rgba(255,255,255,0.55);
-  border-color: rgba(255,255,255,0.22);
-}
-.rs-script-btn:active { opacity: 0.7; }
-
-/* script log panel (expands when script btn clicked) */
-.rs-script-log {
-  width: 100%;
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.4s cubic-bezier(0.16,1,0.3,1);
-}
-.rs-script-log.open { max-height: 220px; }
-.rs-script-log-inner {
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 3px;
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  overflow-y: auto;
-  max-height: 200px;
-}
-.rs-script-log-inner::-webkit-scrollbar { width: 2px; }
-.rs-script-log-inner::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 1px; }
-.rs-slog-line {
-  font-size: 0.52rem;
-  letter-spacing: 0.04em;
-  color: rgba(255,255,255,0.2);
-  line-height: 1.7;
-  display: flex;
-  gap: 8px;
-}
-.rs-slog-tag { color: var(--accent, rgba(232,213,183,0.4)); font-size: 0.48rem; flex-shrink: 0; }
-
-/* continue button */
-.rs-continue {
-  font-family: var(--ff-mono, 'DM Mono', monospace);
-  font-size: 0.6rem;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.38);
-  background: none;
-  border: none;
-  padding: 8px 24px;
-  cursor: none;
-  transition: color 0.35s ease, letter-spacing 0.45s ease;
-  outline: none;
-}
-.rs-continue:hover {
-  color: rgba(255,255,255,0.88);
-  letter-spacing: 0.55em;
-}
-.rs-continue:active { opacity: 0.6; }
-
-/* exit transition — slides up like original */
-#roro-splash.rs-exit {
-  transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.76,0,0.24,1);
-  opacity: 0;
-  transform: translateY(-100%);
-  pointer-events: none;
-}
-
-@media (max-width: 480px) {
-  .rs-center { padding: 0 52px; }
-  .rs-film.left  { left: 10px; }
-  .rs-film.right { right: 10px; }
-  .rs-frame { width: 26px; height: 18px; }
-  .rs-logo { font-size: 0.58rem; }
-}
-    `;
-    document.head.appendChild(s);
-  }
-
-  /* ═══════════════════════════════════════════════════
-     BUILD FILM STRIP  (duplicate for seamless loop)
-  ═══════════════════════════════════════════════════ */
-
-  function buildFilmTrack(n, litIndices) {
-    const track = document.createElement('div');
-    track.className = 'rs-film-track';
-    /* duplicate for seamless scroll */
-    for (let pass = 0; pass < 2; pass++) {
-      for (let i = 0; i < n; i++) {
-        const f = document.createElement('div');
-        f.className = 'rs-frame' + (litIndices.includes(i) ? ' lit' : '');
-        track.appendChild(f);
-      }
+    /* ── Custom cursor above splash ─────────────────── */
+    #cursor-dot, #cursor-ring {
+      z-index: 9999999 !important;
     }
-    return track;
+
+    /* ── Root overlay ───────────────────────────────── */
+    #roro-splash {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Subtle grid — same motif as hero section */
+    #roro-splash .rs-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      -webkit-mask-image: radial-gradient(ellipse 65% 55% at 50% 50%, black 15%, transparent 100%);
+      mask-image:         radial-gradient(ellipse 65% 55% at 50% 50%, black 15%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Grain overlay */
+    #roro-splash::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.022'/%3E%3C/svg%3E");
+      opacity: 0.55;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Exit — translates up with fade; homepage hero is already
+       at final position so it appears cleanly underneath */
+    #roro-splash.rs-exit {
+      pointer-events: none;
+      animation: rsExit 0.75s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+    }
+    @keyframes rsExit {
+      0%   { opacity: 1; transform: translateY(0);    }
+      100% { opacity: 0; transform: translateY(-16px); }
+    }
+
+    /* ── Film / camera-reel strips ──────────────────── */
+    .rs-film {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 20px;
+      overflow: hidden;
+      pointer-events: none;
+      opacity: 0;
+      animation: rsFilmFade 1.2s ease 0.6s forwards;
+    }
+    @keyframes rsFilmFade { to { opacity: 1; } }
+    .rs-film--left  { left:  clamp(8px, 2.5vw, 30px); }
+    .rs-film--right { right: clamp(8px, 2.5vw, 30px); }
+
+    /* Inner belt — duplicated frames for seamless loop */
+    .rs-film-belt {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 6px 0;
+    }
+    .rs-film--left  .rs-film-belt { animation: rsRollUp   28s linear infinite; }
+    .rs-film--right .rs-film-belt { animation: rsRollDown 28s linear infinite; }
+    @keyframes rsRollUp   { from { transform: translateY(0);    } to { transform: translateY(-50%); } }
+    @keyframes rsRollDown { from { transform: translateY(-50%); } to { transform: translateY(0);    } }
+
+    /* Individual frame cell */
+    .rs-film-cell {
+      width: 20px;
+      height: 14px;
+      border: 1px solid var(--border2);
+      border-radius: 2px;
+      flex-shrink: 0;
+      opacity: 0.28;
+      position: relative;
+      transition: opacity 0.4s;
+    }
+    /* Every 5th cell gets accent tint — like a frame marker */
+    .rs-film-cell.rs-film-mark {
+      opacity: 0.55;
+      border-color: var(--accent);
+    }
+    .rs-film-cell.rs-film-mark::after {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      background: var(--accent);
+      opacity: 0.07;
+      border-radius: 1px;
+    }
+
+    /* ── Inner column ────────────────────────────────── */
+    .rs-inner {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+      padding: 0 2.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* All children pre-occupy their space so layout never shifts */
+    }
+
+    /* Shared reveal keyframes */
+    @keyframes rsFadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+    @keyframes rsFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ── (i) Logo ─────────────────────────────────── */
+    .rs-logo {
+      font-family: var(--ff-display);
+      font-size: clamp(1rem, 2.8vw, 1.5rem);
+      font-weight: 300;
+      letter-spacing: 0.55em;
+      color: var(--text3);
+      text-align: center;
+      user-select: none;
+      margin-bottom: 2.4rem;
+      opacity: 0;
+      animation: rsFadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+    }
+
+    /* ── (ii) Welcome ─────────────────────────────── */
+    /* Always occupies space — no layout shift */
+    .rs-welcome-wrap {
+      width: 100%;
+      min-height: 4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      margin-bottom: 0.6rem;
+    }
+    .rs-welcome {
+      font-family: var(--ff-display);
+      font-size: clamp(1.9rem, 5.5vw, 2.8rem);
+      font-weight: 400;
+      font-style: italic;
+      color: var(--text);
+      line-height: 1.15;
+      opacity: 0;
+      transform: translateY(10px);
+      transition:
+        opacity   0.9s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .rs-welcome.rs-v { opacity: 1; transform: translateY(0); }
+
+    /* ── (iii) Context ────────────────────────────── */
+    .rs-context-wrap {
+      width: 100%;
+      min-height: 1.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.8rem;
+    }
+    .rs-context {
+      font-family: var(--ff-mono);
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text2);
+      text-align: center;
+      opacity: 0;
+      transform: translateY(8px);
+      transition:
+        opacity   0.8s ease 0.14s,
+        transform 0.8s ease 0.14s;
+    }
+    .rs-context.rs-v { opacity: 1; transform: translateY(0); }
+
+    /* ── (iv) Clock ───────────────────────────────── */
+    .rs-clock-wrap {
+      min-height: 3.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.2rem;
+      margin-bottom: 2rem;
+      opacity: 0;
+      transform: translateY(8px);
+      transition:
+        opacity   0.7s ease 0.2s,
+        transform 0.7s ease 0.2s;
+    }
+    .rs-clock-wrap.rs-v { opacity: 1; transform: translateY(0); }
+
+    /* Time number + AM/PM */
+    .rs-time-group {
+      display: flex;
+      align-items: flex-start;
+      gap: 5px;
+    }
+    .rs-digits {
+      font-family: var(--ff-display);
+      font-size: clamp(2rem, 6vw, 2.9rem);
+      font-weight: 300;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    /* Small superscript-style AM/PM — NOT the giant version */
+    .rs-ampm {
+      font-family: var(--ff-mono);
+      font-size: 0.52rem;
+      letter-spacing: 0.08em;
+      color: var(--text3);
+      text-transform: uppercase;
+      margin-top: 5px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    /* Separator pipe */
+    .rs-clock-sep {
+      font-family: var(--ff-display);
+      font-size: 1.3rem;
+      color: var(--accent);
+      opacity: 0.3;
+      user-select: none;
+      flex-shrink: 0;
+      line-height: 1;
+      align-self: center;
+    }
+
+    /* Day + Date column */
+    .rs-clock-right {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      align-self: center;
+    }
+    .rs-cday {
+      font-family: var(--ff-mono);
+      font-size: 0.56rem;
+      letter-spacing: 0.14em;
+      color: var(--text3);
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .rs-cdate {
+      font-family: var(--ff-display);
+      font-size: 0.95rem;
+      font-weight: 300;
+      color: var(--text2);
+      line-height: 1;
+    }
+
+    /* ── (v) Loading bar ──────────────────────────── */
+    .rs-bar-section {
+      width: 100%;
+      margin-bottom: 0.55rem;
+      opacity: 0;
+      animation: rsFadeIn 0.5s ease 0.3s forwards;
+    }
+    .rs-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+    .rs-bar-track {
+      flex: 1;
+      height: 1px;
+      background: var(--border2);
+      position: relative;
+      overflow: hidden;
+    }
+    .rs-bar-fill {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    /* Moving shimmer on bar */
+    .rs-bar-fill::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      right: -50px; width: 50px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
+      animation: rsBarShimmer 1.8s ease-in-out infinite;
+    }
+    @keyframes rsBarShimmer {
+      0%, 100% { opacity: 0; }
+      50%       { opacity: 1; }
+    }
+    .rs-pct {
+      font-family: var(--ff-mono);
+      font-size: 0.56rem;
+      color: var(--text3);
+      letter-spacing: 0.06em;
+      min-width: 3.5ch;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ── (vi) Loading text — fixed height, no layout shift */
+    .rs-log-area {
+      width: 100%;
+      height: 20px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 1.6rem;
+      opacity: 0;
+      animation: rsFadeIn 0.4s ease 0.4s forwards;
+    }
+
+    /* Flying text item — fills container, centered */
+    .rs-fly-item {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--ff-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.07em;
+      color: var(--text3);
+      pointer-events: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .rs-fly-item.rs-fi {
+      animation: rsFlyIn  0.13s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .rs-fly-item.rs-fo {
+      animation: rsFlyOut 0.13s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+    }
+    @keyframes rsFlyIn  {
+      from { transform: translateY(100%); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    @keyframes rsFlyOut {
+      from { transform: translateY(0);     opacity: 1; }
+      to   { transform: translateY(-100%); opacity: 0; }
+    }
+
+    /* ── (vii) SCRIPT button ──────────────────────── */
+    .rs-script-wrap {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 1.4rem;
+    }
+    .rs-script-btn {
+      display: none; /* shown after load */
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      background: none;
+      border: 1px solid var(--border2);
+      border-radius: 3px;
+      padding: 5px 14px 5px 12px;
+      font-family: var(--ff-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--text3);
+      text-transform: uppercase;
+      outline: none;
+      transition: border-color 0.25s, color 0.25s, background 0.25s;
+      user-select: none;
+      position: relative;
+    }
+    .rs-script-btn.rs-active { display: flex; }
+    .rs-script-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(200,169,110,0.04);
+    }
+    /* Pulsing dot on the button — "thinking" indicator */
+    .rs-script-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      opacity: 0.55;
+      flex-shrink: 0;
+      animation: rsScriptPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes rsScriptPulse {
+      0%, 100% { opacity: 0.35; transform: scale(1);    }
+      50%       { opacity: 0.8;  transform: scale(1.25); }
+    }
+
+    /* Expanded log panel */
+    .rs-script-log {
+      display: none;
+      width: 100%;
+      margin-top: 8px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 10px 14px;
+      max-height: 110px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border2) transparent;
+    }
+    .rs-script-log::-webkit-scrollbar       { width: 2px; }
+    .rs-script-log::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 1px; }
+    .rs-script-log.rs-open {
+      display: block;
+      animation: rsFadeUp 0.25s ease forwards;
+    }
+    .rs-script-entry {
+      font-family: var(--ff-mono);
+      font-size: 0.54rem;
+      color: var(--text3);
+      letter-spacing: 0.05em;
+      padding: 2px 0;
+      line-height: 1.7;
+      opacity: 0.75;
+    }
+    .rs-script-entry::before {
+      content: '▸ ';
+      color: var(--accent);
+      opacity: 0.55;
+    }
+
+    /* ── (viii) Continue — NO border lines above/below ─ */
+    .rs-continue {
+      width: 100%;
+      background: none;
+      border: none;            /* no top/bottom border */
+      color: var(--text3);
+      font-family: var(--ff-mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      padding: 13px 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      opacity: 0;
+      pointer-events: none;
+      outline: none;
+      transform: translateY(8px);
+      transition:
+        opacity   0.7s ease,
+        transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+        color     0.3s ease;
+    }
+    .rs-continue.rs-v {
+      opacity: 1;
+      pointer-events: all;
+      transform: translateY(0);
+    }
+    .rs-continue:hover { color: var(--text); }
+    .rs-continue:hover .rs-c-line { background: var(--accent); opacity: 0.45; }
+    /* The ─────── lines flanking CONTINUE */
+    .rs-c-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border2);
+      max-width: 90px;
+      transition: background 0.3s, opacity 0.3s;
+    }
+    .rs-c-word { padding: 0 18px; flex-shrink: 0; }
+
+    /* ── Mobile ─────────────────────────────────────── */
+    @media (max-width: 520px) {
+      .rs-inner { padding: 0 1.4rem; }
+      .rs-film--left, .rs-film--right { display: none; }
+    }
+  `;
+
+  /* ═══════════════════════════════════════════════════════
+     § 1 — DATA
+  ═══════════════════════════════════════════════════════ */
+
+  var LOADING_MSGS = [
+    "Convincing AI not to turn evil...",
+    "Marinating website...",
+    "Debugging the debugger...",
+    "Aligning satellite dishes...",
+    "Checking to see if anyone is still reading this...",
+    "Compiling pixels into a masterpiece...",
+    "Brewing coffee for the server...",
+    "Recalibrating the flux capacitor...",
+    "Deleting 'Untitled_Final_v2_REAL_FINAL.js'...",
+    "Feeding the hamsters that power the engine..."
+  ];
+
+  var FIRST_LINES = [
+    "Welcome.",
+    "You've arrived.",
+    "Something worth seeing awaits.",
+    "An intentional space.",
+    "Not many find their way here.",
+    "Presence acknowledged.",
+    "Built for people who notice things."
+  ];
+
+  var RETURN_LINES = [
+    "Welcome back, {name}.",
+    "Still curious, {name}?",
+    "You returned, {name}.",
+    "{name}. Good to have you back.",
+    "Again, {name}. That means something.",
+    "Back already, {name}.",
+    "The site remembers you, {name}."
+  ];
+
+  var CTX_BY_HOUR = {
+    night:     ["The world is quiet. You're still here.", "Building at midnight. That's a certain kind of ambition.", "Most of the city is asleep right now.", "Late nights have a clarity daylight rarely offers.", "The rare hour. Use it."],
+    dawn:      ["Before dawn. The rarest window.", "You're up before most cities are.", "The world resets in a few hours.", "Pre-dawn. A strange calm settles here.", "Early enough to see things clearly."],
+    morning:   ["Morning already in motion.", "First thoughts of the day carry weight.", "The day hasn't decided what it is yet.", "Good time to build. Or explore.", "Morning light is honest."],
+    midday:    ["Midday. Half the day already spent.", "Somewhere between intention and momentum.", "The machine is running. You found a pause.", "Noon. A strange pivot point.", "Post-morning clarity. Good timing."],
+    afternoon: ["The afternoon carries a certain weight.", "The day has settled into itself now.", "That quiet hour before the light shifts.", "Golden hour is not far.", "Afternoons here feel slightly different."],
+    evening:   ["Evening feels quieter here.", "The day is softening at its edges.", "Evenings are for noticing things you missed.", "Dusk settles differently when you're paying attention.", "End-of-day clarity. This site suits it."],
+    latenight: ["Night has a particular kind of focus.", "Late enough to mean something.", "The city dims. You stay lit.", "Burning the midnight oil. Noted.", "After-hours. This is when real things happen."]
+  };
+
+  /* 7-second milestones → 100% at exactly 7000ms */
+  var PROGRESS_MILESTONES = [
+    [0,    0],
+    [500,  7],
+    [1000, 17],
+    [1600, 30],
+    [2300, 44],
+    [3100, 57],
+    [3900, 68],
+    [4700, 78],
+    [5400, 87],
+    [6000, 93],
+    [6600, 97],
+    [7000, 100]
+  ];
+
+  /* ═══════════════════════════════════════════════════════
+     § 2 — RoroSplash CLASS
+  ═══════════════════════════════════════════════════════ */
+
+  function RoroSplash() {
+    this._user        = this._loadUser();
+    this._msgIdx      = Math.floor(Math.random() * LOADING_MSGS.length);
+    this._logLines    = [];
+    this._flyTimer    = null;
+    this._clockTimer  = null;
+    this._isDone      = false;
+    this._scriptOpen  = false;
+
+    this._injectStyles();
+    this._hideOldSplash();
+    this._buildDOM();
+    this._start();
   }
 
-  /* ═══════════════════════════════════════════════════
-     BUILD DOM
-  ═══════════════════════════════════════════════════ */
+  /* ── Persistence ──────────────────────────────────── */
+  RoroSplash.prototype._loadUser = function () {
+    try { return JSON.parse(localStorage.getItem('roroUser') || 'null'); }
+    catch (e) { return null; }
+  };
 
-  function buildDOM(user) {
-    const root = document.createElement('div');
+  /* ── Suppress old loading screen ─────────────────── */
+  RoroSplash.prototype._hideOldSplash = function () {
+    var old = document.getElementById('loading-screen');
+    if (old) old.style.cssText = 'display:none!important;pointer-events:none!important;';
+  };
+
+  /* ── CSS injection ───────────────────────────────── */
+  RoroSplash.prototype._injectStyles = function () {
+    if (document.getElementById('rs-css')) return;
+    var el = document.createElement('style');
+    el.id = 'rs-css';
+    el.textContent = SPLASH_CSS;
+    document.head.appendChild(el);
+  };
+
+  /* ── Film strip builder ───────────────────────────── */
+  RoroSplash.prototype._buildFilmStrip = function (side) {
+    var wrap = document.createElement('div');
+    wrap.className = 'rs-film rs-film--' + side;
+
+    var belt = document.createElement('div');
+    belt.className = 'rs-film-belt';
+
+    /* Generate 60 cells, duplicated for seamless loop */
+    var cells = [];
+    for (var i = 0; i < 60; i++) {
+      var cell = document.createElement('div');
+      cell.className = 'rs-film-cell' + (i % 5 === 0 ? ' rs-film-mark' : '');
+      cells.push(cell);
+    }
+    /* Duplicate for seamless infinite scroll */
+    cells.concat(cells.slice()).forEach(function (c) { belt.appendChild(c.cloneNode(true)); });
+
+    wrap.appendChild(belt);
+    return wrap;
+  };
+
+  /* ── Full DOM construction ───────────────────────── */
+  RoroSplash.prototype._buildDOM = function () {
+    var root = document.createElement('div');
     root.id = 'roro-splash';
 
-    const welcomeText = (user && user.name)
-      ? pick(RETURN_WELCOME).replace(/\{name\}/g, user.name)
-      : pick(FIRST_WELCOME);
+    /* Grid */
+    var grid = document.createElement('div');
+    grid.className = 'rs-grid';
+    root.appendChild(grid);
 
-    const contextText = getContextLine();
+    /* Film strips */
+    root.appendChild(this._buildFilmStrip('left'));
+    root.appendChild(this._buildFilmStrip('right'));
 
-    const now = new Date();
-    const { time, ampm } = formatClock(now);
-    const { day, date }   = formatDate(now);
+    /* Inner column */
+    var inner = document.createElement('div');
+    inner.className = 'rs-inner';
 
-    root.innerHTML = `
-      <div class="rs-grid" aria-hidden="true"></div>
+    inner.innerHTML = [
+      /* (i) Logo */
+      '<div class="rs-logo" aria-label="MSM">M &middot; S &middot; M</div>',
 
-      <div class="rs-film left"  aria-hidden="true"></div>
-      <div class="rs-film right" aria-hidden="true"></div>
+      /* (ii) Welcome — pre-allocated height */
+      '<div class="rs-welcome-wrap"><div class="rs-welcome" id="rs-welcome"></div></div>',
 
-      <div class="rs-center">
-        <div class="rs-logo" aria-label="MSM">M &nbsp;&middot;&nbsp; S &nbsp;&middot;&nbsp; M</div>
+      /* (iii) Context — pre-allocated height */
+      '<div class="rs-context-wrap"><div class="rs-context" id="rs-context"></div></div>',
 
-        <div class="rs-welcome"  id="rs-welcome">${welcomeText}</div>
-        <div class="rs-context"  id="rs-context">${contextText}</div>
+      /* (iv) Clock — pre-allocated height */
+      '<div class="rs-clock-wrap" id="rs-clock-wrap">',
+        '<div class="rs-time-group">',
+          '<span class="rs-digits" id="rs-digits"></span>',
+          '<span class="rs-ampm"   id="rs-ampm"></span>',
+        '</div>',
+        '<div class="rs-clock-sep">|</div>',
+        '<div class="rs-clock-right">',
+          '<div class="rs-cday"  id="rs-cday"></div>',
+          '<div class="rs-cdate" id="rs-cdate"></div>',
+        '</div>',
+      '</div>',
 
-        <div class="rs-clock-row" id="rs-clock-row">
-          <div>
-            <span class="rs-time-main" id="rs-time">${time}</span><span class="rs-time-ampm" id="rs-ampm">${ampm}</span>
-          </div>
-          <div class="rs-clock-sep"></div>
-          <div class="rs-clock-right">
-            <div class="rs-clock-day"  id="rs-day">${day}</div>
-            <div class="rs-clock-date" id="rs-date">${date}</div>
-          </div>
-        </div>
+      /* (v) Loading bar */
+      '<div class="rs-bar-section">',
+        '<div class="rs-bar-row">',
+          '<div class="rs-bar-track" id="rs-bar-track">',
+            '<div class="rs-bar-fill" id="rs-bar-fill"></div>',
+          '</div>',
+          '<div class="rs-pct" id="rs-pct">0%</div>',
+        '</div>',
+      '</div>',
 
-        <div class="rs-bar-row">
-          <div class="rs-bar-track"><div class="rs-bar-fill" id="rs-bar"></div></div>
-          <div class="rs-bar-pct"  id="rs-pct">0%</div>
-        </div>
+      /* (vi) Flying loading text — fixed-height area */
+      '<div class="rs-log-area" id="rs-log-area"></div>',
 
-        <!-- FIXED-HEIGHT LOG AREA — never shifts layout -->
-        <div class="rs-log-area" id="rs-log-area">
-          <div class="rs-log-line" id="rs-log-0"><span class="rs-log-tag"></span><span class="rs-log-msg"></span></div>
-          <div class="rs-log-line" id="rs-log-1"><span class="rs-log-tag"></span><span class="rs-log-msg"></span></div>
-        </div>
+      /* (vii) SCRIPT button + log panel */
+      '<div class="rs-script-wrap">',
+        '<button class="rs-script-btn" id="rs-script-btn" type="button" aria-expanded="false">',
+          '<span class="rs-script-dot"></span>',
+          '<span>SCRIPT</span>',
+        '</button>',
+        '<div class="rs-script-log" id="rs-script-log" role="log" aria-live="polite"></div>',
+      '</div>',
 
-        <!-- FACT AREA — fixed height, no layout impact -->
-        <div class="rs-fact-area" id="rs-fact-area">
-          <div class="rs-fact" id="rs-fact"></div>
-        </div>
+      /* (viii) Continue — no border above or below */
+      '<button class="rs-continue" id="rs-continue" type="button">',
+        '<span class="rs-c-line"></span>',
+        '<span class="rs-c-word">CONTINUE</span>',
+        '<span class="rs-c-line"></span>',
+      '</button>'
+    ].join('');
 
-        <!-- POST-LOAD (hidden until done) -->
-        <div class="rs-post" id="rs-post">
-          <button class="rs-script-btn" id="rs-script-btn" aria-label="Expand loading log">SCRIPT</button>
-          <div class="rs-script-log" id="rs-script-log">
-            <div class="rs-script-log-inner" id="rs-script-log-inner"></div>
-          </div>
-          <button class="rs-continue" id="rs-continue" aria-label="Enter site">CONTINUE</button>
-        </div>
-      </div>
-    `;
-
+    root.appendChild(inner);
     document.body.appendChild(root);
+    this._root = root;
 
-    /* inject film strips */
-    const litL = [1, 4, 7, 10, 13];
-    const litR = [2, 5, 8, 11, 14];
-    const filmCount = 18;
-    root.querySelector('.rs-film.left').appendChild(buildFilmTrack(filmCount, litL));
-    root.querySelector('.rs-film.right').appendChild(buildFilmTrack(filmCount, litR));
+    /* Cache references */
+    this._welcomeEl  = root.querySelector('#rs-welcome');
+    this._contextEl  = root.querySelector('#rs-context');
+    this._clockWrap  = root.querySelector('#rs-clock-wrap');
+    this._digitsEl   = root.querySelector('#rs-digits');
+    this._ampmEl     = root.querySelector('#rs-ampm');
+    this._cdayEl     = root.querySelector('#rs-cday');
+    this._cdateEl    = root.querySelector('#rs-cdate');
+    this._barFill    = root.querySelector('#rs-bar-fill');
+    this._barTrack   = root.querySelector('#rs-bar-track');
+    this._pctEl      = root.querySelector('#rs-pct');
+    this._logArea    = root.querySelector('#rs-log-area');
+    this._scriptBtn  = root.querySelector('#rs-script-btn');
+    this._scriptLog  = root.querySelector('#rs-script-log');
+    this._continueBtn = root.querySelector('#rs-continue');
+  };
 
-    return root;
-  }
+  /* ── Start sequence ──────────────────────────────── */
+  RoroSplash.prototype._start = function () {
+    var self = this;
 
-  /* ═══════════════════════════════════════════════════
-     MAIN CONTROLLER
-  ═══════════════════════════════════════════════════ */
+    /* Start clock immediately */
+    this._updateClock();
+    this._clockTimer = setInterval(function () { self._updateClock(); }, 1000);
 
-  function run() {
-    injectStyles();
+    /* Start flying text */
+    this._cycleFlyText();
 
-    /* make sure cursor elements are above the splash */
-    const cursorDot  = document.getElementById('cursor-dot');
-    const cursorRing = document.getElementById('cursor-ring');
-    if (cursorDot)  cursorDot.style.zIndex  = '100002';
-    if (cursorRing) cursorRing.style.zIndex = '100001';
+    /* Run progress milestones */
+    this._runProgress();
 
-    const user = loadUser();
-    const root = buildDOM(user);
+    /* SCRIPT toggle */
+    this._scriptBtn.addEventListener('click', function () { self._toggleScript(); });
 
-    /* element refs */
-    const barEl        = root.querySelector('#rs-bar');
-    const pctEl        = root.querySelector('#rs-pct');
-    const log0El       = root.querySelector('#rs-log-0');
-    const log1El       = root.querySelector('#rs-log-1');
-    const factEl       = root.querySelector('#rs-fact');
-    const postEl       = root.querySelector('#rs-post');
-    const scriptBtnEl  = root.querySelector('#rs-script-btn');
-    const scriptLogEl  = root.querySelector('#rs-script-log');
-    const scriptInner  = root.querySelector('#rs-script-log-inner');
-    const continueEl   = root.querySelector('#rs-continue');
-    const timeEl       = root.querySelector('#rs-time');
-    const ampmEl       = root.querySelector('#rs-ampm');
-    const dayEl        = root.querySelector('#rs-day');
-    const dateEl       = root.querySelector('#rs-date');
+    /* Continue */
+    this._continueBtn.addEventListener('click', function () { self._handleContinue(); });
+  };
 
-    /* ── live clock ── */
-    function tickClock() {
-      const n = new Date();
-      const { time, ampm } = formatClock(n);
-      const { day, date }  = formatDate(n);
-      timeEl.textContent = time;
-      ampmEl.textContent = ampm;
-      dayEl.textContent  = day;
-      dateEl.textContent = date;
-    }
-    const clockInterval = setInterval(tickClock, 1000);
-
-    /* ── fact rotation ── */
-    let factIdx = Math.floor(Math.random() * FACTS.length);
-    factEl.textContent = FACTS[factIdx];
-
-    const factInterval = setInterval(() => {
-      factEl.classList.add('fade');
-      setTimeout(() => {
-        factIdx = (factIdx + 1) % FACTS.length;
-        factEl.textContent = FACTS[factIdx];
-        factEl.classList.remove('fade');
-      }, 160);
-    }, 2800);
-
-    /* ── log messages — two visible at a time ── */
-    let logSlot   = 0;   /* which slot (0 or 1) is "top" */
-    let logFired  = 0;   /* how many log messages shown so far */
-    const allLogs = [];  /* accumulated for SCRIPT panel */
-
-    function showLog(entry) {
-      allLogs.push(entry);
-
-      /* slot 0 = top line, slot 1 = bottom line
-         each new message pushes into the bottom slot,
-         old bottom becomes top */
-      const top    = root.querySelector(`#rs-log-${logSlot}`);
-      const bottom = root.querySelector(`#rs-log-${1 - logSlot}`);
-
-      /* fade out top */
-      top.classList.remove('visible');
-
-      /* update bottom with new content */
-      setTimeout(() => {
-        bottom.querySelector('.rs-log-tag').textContent = entry.tag;
-        bottom.querySelector('.rs-log-msg').textContent = entry.msg;
-        bottom.classList.add('visible');
-        logSlot = 1 - logSlot;
-      }, 80);
-    }
-
-    /* ── loading progress (7 seconds to 100%) ── */
-    const LOAD_MS = 7000;
-    const startTime = Date.now();
-    let progressDone = false;
-
-    const barInterval = setInterval(() => {
-      const elapsed  = Date.now() - startTime;
-      const progress = Math.min(100, (elapsed / LOAD_MS) * 100);
-
-      barEl.style.width = progress + '%';
-      pctEl.textContent = Math.floor(progress) + '%';
-
-      /* fire log messages spaced across the 7 seconds */
-      const expectedLogs = Math.floor((progress / 100) * LOG_LINES.length);
-      while (logFired < expectedLogs && logFired < LOG_LINES.length) {
-        showLog(LOG_LINES[logFired]);
-        logFired++;
-      }
-
-      if (progress >= 100 && !progressDone) {
-        progressDone = true;
-        clearInterval(barInterval);
-
-        /* hide the log area after a brief hold, then show post-load */
-        setTimeout(() => {
-          /* fade log area out */
-          const logArea = root.querySelector('#rs-log-area');
-          const factArea = root.querySelector('#rs-fact-area');
-          logArea.style.transition  = 'opacity 0.3s ease';
-          factArea.style.transition = 'opacity 0.3s ease';
-          logArea.style.opacity  = '0';
-          factArea.style.opacity = '0';
-
-          setTimeout(() => {
-            logArea.style.display  = 'none';
-            factArea.style.display = 'none';
-            /* show post section */
-            postEl.classList.add('visible');
-          }, 320);
-
-          /* stop fact rotation */
-          clearInterval(factInterval);
-        }, 600);
-      }
-    }, 40);
-
-    /* ── SCRIPT toggle ── */
-    let scriptOpen = false;
-    scriptBtnEl.addEventListener('click', () => {
-      scriptOpen = !scriptOpen;
-      if (scriptOpen) {
-        scriptInner.innerHTML = '';
-        allLogs.forEach(e => {
-          const line = document.createElement('div');
-          line.className = 'rs-slog-line';
-          line.innerHTML = `<span class="rs-slog-tag">${e.tag}</span><span>${e.msg}</span>`;
-          scriptInner.appendChild(line);
-        });
-        scriptLogEl.classList.add('open');
-      } else {
-        scriptLogEl.classList.remove('open');
-      }
-    });
-
-    /* ── CONTINUE — the ONLY place music starts ── */
-    continueEl.addEventListener('click', () => {
-      /* start background music only here */
-      const bgMusic = document.getElementById('bg-music');
-      if (bgMusic) bgMusic.play().catch(() => {});
-
-      /* animate splash out */
-      root.classList.add('rs-exit');
-
-      /* cleanup + fire hero animations after exit */
-      setTimeout(() => {
-        clearInterval(clockInterval);
-        clearInterval(factInterval);
-        root.remove();
-
-        const cssEl = document.getElementById('roro-css');
-        if (cssEl) cssEl.remove();
-
-        /* restore cursor z-indexes */
-        if (cursorDot)  cursorDot.style.zIndex  = '99999';
-        if (cursorRing) cursorRing.style.zIndex = '99998';
-
-        /* fire the existing homepage animation */
-        if (typeof window.startHeroAnimations === 'function') {
-          window.startHeroAnimations();
+  /* ── Progress bar ────────────────────────────────── */
+  RoroSplash.prototype._runProgress = function () {
+    var self = this;
+    PROGRESS_MILESTONES.forEach(function (m) {
+      setTimeout(function () {
+        self._setProgress(m[1]);
+        if (m[1] === 100) {
+          setTimeout(function () { self._onLoadComplete(); }, 320);
         }
-      }, 580);
+      }, m[0]);
     });
-  }
+  };
 
-  /* ═══════════════════════════════════════════════════
-     AUTO-INIT on DOMContentLoaded
-  ═══════════════════════════════════════════════════ */
-  window.initRoroSplash = run;
+  RoroSplash.prototype._setProgress = function (pct) {
+    this._barFill.style.width = pct + '%';
+    this._pctEl.textContent   = pct + '%';
+    this._barTrack.setAttribute('aria-valuenow', pct);
+  };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', run);
-  } else {
-    run();
-  }
+  /* ── Flying loading text ─────────────────────────── */
+  RoroSplash.prototype._cycleFlyText = function () {
+    if (this._isDone) return;
+    var self = this;
+    var text = LOADING_MSGS[this._msgIdx % LOADING_MSGS.length];
+    this._msgIdx++;
+    this._logLines.push(text);
+    this._showFlyItem(text);
+    this._flyTimer = setTimeout(function () { self._cycleFlyText(); }, 680);
+  };
+
+  RoroSplash.prototype._showFlyItem = function (text) {
+    var self = this;
+    var el = document.createElement('div');
+    el.className   = 'rs-fly-item';
+    el.textContent = text;
+    this._logArea.appendChild(el);
+
+    /* Fly in */
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { el.classList.add('rs-fi'); });
+    });
+
+    /* Fly out */
+    setTimeout(function () {
+      el.classList.remove('rs-fi');
+      el.classList.add('rs-fo');
+      setTimeout(function () { if (el.parentNode) el.remove(); }, 140);
+    }, 540);
+  };
+
+  RoroSplash.prototype._stopFlyText = function () {
+    this._isDone = true;
+    clearTimeout(this._flyTimer);
+    var remaining = this._logArea.querySelectorAll('.rs-fly-item');
+    remaining.forEach(function (el) {
+      el.classList.add('rs-fo');
+      setTimeout(function () { if (el.parentNode) el.remove(); }, 140);
+    });
+  };
+
+  /* ── Load complete ───────────────────────────────── */
+  RoroSplash.prototype._onLoadComplete = function () {
+    var self = this;
+    this._stopFlyText();
+
+    /* Fade out log area, then show SCRIPT button */
+    this._logArea.style.transition = 'opacity 0.3s ease';
+    this._logArea.style.opacity    = '0';
+
+    setTimeout(function () {
+      self._logArea.style.display = 'none';
+      self._scriptBtn.classList.add('rs-active');
+    }, 320);
+
+    /* Reveal post-load content staggered */
+    this._revealPostLoad();
+
+    /* Continue button after 2.2s */
+    setTimeout(function () { self._showContinue(); }, 2200);
+  };
+
+  /* ── SCRIPT button ───────────────────────────────── */
+  RoroSplash.prototype._toggleScript = function () {
+    this._scriptOpen = !this._scriptOpen;
+
+    if (this._scriptOpen) {
+      /* Populate log */
+      var frag = document.createDocumentFragment();
+      this._logLines.forEach(function (line) {
+        var d = document.createElement('div');
+        d.className   = 'rs-script-entry';
+        d.textContent = line;
+        frag.appendChild(d);
+      });
+      this._scriptLog.innerHTML = '';
+      this._scriptLog.appendChild(frag);
+      this._scriptLog.classList.add('rs-open');
+      this._scriptBtn.setAttribute('aria-expanded', 'true');
+    } else {
+      this._scriptLog.classList.remove('rs-open');
+      this._scriptBtn.setAttribute('aria-expanded', 'false');
+      var log = this._scriptLog;
+      setTimeout(function () { log.innerHTML = ''; }, 260);
+    }
+  };
+
+  /* ── Post-load reveal (staggered, no layout shift) ─ */
+  RoroSplash.prototype._revealPostLoad = function () {
+    var self = this;
+
+    setTimeout(function () {
+      self._welcomeEl.textContent = self._welcomeLine();
+      self._welcomeEl.classList.add('rs-v');
+    }, 200);
+
+    setTimeout(function () {
+      self._contextEl.textContent = self._contextLine();
+      self._contextEl.classList.add('rs-v');
+    }, 400);
+
+    setTimeout(function () {
+      self._clockWrap.classList.add('rs-v');
+    }, 600);
+  };
+
+  /* ── Continue button ─────────────────────────────── */
+  RoroSplash.prototype._showContinue = function () {
+    this._continueBtn.classList.add('rs-v');
+  };
+
+  RoroSplash.prototype._handleContinue = function () {
+    /* Unblock music and play it */
+    window._roroSplashActive = false;
+    var bgMusic = document.getElementById('bg-music');
+    if (bgMusic) bgMusic.play().catch(function () {});
+
+    /* Animate splash out */
+    this._root.classList.add('rs-exit');
+
+    /* Cleanup and trigger hero */
+    var self = this;
+    setTimeout(function () {
+      clearInterval(self._clockTimer);
+      clearTimeout(self._flyTimer);
+      if (self._root.parentNode) self._root.remove();
+
+      /* Remove injected CSS */
+      var css = document.getElementById('rs-css');
+      if (css) css.remove();
+
+      /* Restore and run hero animations */
+      if (typeof window._roroRunHero === 'function') {
+        window._roroRunHero();
+      }
+
+      /* Restore play method */
+      HTMLMediaElement.prototype.play = _origPlay;
+    }, 780);
+  };
+
+  /* ── Live clock ──────────────────────────────────── */
+  RoroSplash.prototype._updateClock = function () {
+    var now  = new Date();
+    var h    = now.getHours();
+    var m    = String(now.getMinutes()).padStart(2, '0');
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+
+    var DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    this._digitsEl.textContent = h + ':' + m;
+    this._ampmEl.textContent   = ampm;
+    this._cdayEl.textContent   = DAYS[now.getDay()];
+    this._cdateEl.textContent  = MONTHS[now.getMonth()] + ' ' + now.getDate();
+  };
+
+  /* ── Content generators ──────────────────────────── */
+  RoroSplash.prototype._welcomeLine = function () {
+    if (this._user && this._user.name) {
+      var tpl = RETURN_LINES[Math.floor(Math.random() * RETURN_LINES.length)];
+      return tpl.replace('{name}', this._user.name);
+    }
+    return FIRST_LINES[Math.floor(Math.random() * FIRST_LINES.length)];
+  };
+
+  RoroSplash.prototype._contextLine = function () {
+    var h = new Date().getHours();
+    var pool;
+    if      (h >= 0  && h < 4)  pool = CTX_BY_HOUR.night;
+    else if (h >= 4  && h < 7)  pool = CTX_BY_HOUR.dawn;
+    else if (h >= 7  && h < 12) pool = CTX_BY_HOUR.morning;
+    else if (h >= 12 && h < 14) pool = CTX_BY_HOUR.midday;
+    else if (h >= 14 && h < 18) pool = CTX_BY_HOUR.afternoon;
+    else if (h >= 18 && h < 21) pool = CTX_BY_HOUR.evening;
+    else                         pool = CTX_BY_HOUR.latenight;
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+
+  /* ═══════════════════════════════════════════════════════
+     § 3 — BOOT
+     DOMContentLoaded fires after all scripts run.
+     At this point main.js has defined startHeroAnimations,
+     so we can wrap it safely.
+  ═══════════════════════════════════════════════════════ */
+  document.addEventListener('DOMContentLoaded', function () {
+
+    /* Remove immediate cover now that splash is ready */
+    if (_immediatecover && _immediatecover.parentNode) {
+      _immediatecover.remove();
+    }
+
+    /* Wrap startHeroAnimations to defer it until Continue click */
+    var _origHero = window.startHeroAnimations;
+    window.startHeroAnimations = function () {
+      /* noop — called by main.js window.load handler silently */
+    };
+    window._roroRunHero = function () {
+      window.startHeroAnimations = _origHero; /* restore original */
+      if (typeof _origHero === 'function') _origHero();
+    };
+
+    /* Launch splash */
+    window._roroSplashInstance = new RoroSplash();
+  });
+
+  /* Public init handle */
+  window.initRoroSplash = function () {
+    window._roroSplashInstance = new RoroSplash();
+  };
 
 })();
 
 /*
-  ═══════════════════════════════════════════════════════
-  QUICK CHECKLIST — DO THESE THREE THINGS:
-  ═══════════════════════════════════════════════════════
+  ═══════════════════════════════════════════════════════════
+  INTEGRATION CHECKLIST
+  ═══════════════════════════════════════════════════════════
 
-  1. In index.html, add this line BEFORE main.js:
+  1. In index.html, BEFORE <script src="js/main.js">:
        <script src="js/roro-intro.js"></script>
 
-  2. In index.html, DELETE (or comment out) this block:
+  2. DELETE this block entirely from index.html:
        <div id="loading-screen">
          <div class="loading-name">M · S · M</div>
          <div class="loading-bar-wrap">
@@ -820,9 +1023,18 @@
          <div class="loading-pct" id="loading-pct">0%</div>
        </div>
 
-  3. To store a user's name for the "Welcome back" personalisation,
-     save this anywhere in your code after they give their name:
-       localStorage.setItem('roroUser', JSON.stringify({ name: 'Manomay' }))
+  3. No changes to main.js, pages.css, or tokens.css needed.
 
-  ═══════════════════════════════════════════════════════
+  WHAT THIS FILE DOES:
+  ▸ Adds an immediate black cover to body synchronously
+    (prevents any flash of the home page)
+  ▸ Intercepts HTMLMediaElement.prototype.play so bg-music
+    cannot start from main.js's mousemove/click listeners
+  ▸ On DOMContentLoaded, wraps window.startHeroAnimations
+    so the hero animations fire ONLY when Continue is clicked
+    — giving a clean, proper transition to the homepage
+  ▸ On Continue: unblocks music, plays it, animates out the
+    splash, then calls the real startHeroAnimations so the
+    hero name/tagline animate in naturally
+  ═══════════════════════════════════════════════════════════
 */
