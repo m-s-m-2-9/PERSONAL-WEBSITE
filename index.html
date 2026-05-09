@@ -21,15 +21,11 @@
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════════════
-     REPLACE YOUR OLD loading-screen BLOCK WITH THIS
-     Copy everything from the opening style tag to the
-     closing script tag and paste into index.html
-═══════════════════════════════════════════════════════ -->
-
 <style>
-  /* ── Keep loading screen visible after main.js adds 'done' ── */
-  /* main.js auto-hides it — we block that until CONTINUE is clicked */
+  /* ── Cursor always visible above loading screen ── */
+  #cursor-dot, #cursor-ring { z-index: 9999999 !important; }
+
+  /* ── Keep loading screen alive after main.js adds 'done' ── */
   #loading-screen.done:not(.ls-gone) {
     opacity: 1 !important;
     display: flex !important;
@@ -38,102 +34,113 @@
     transform: none !important;
     transition: none !important;
   }
-  /* Our manual exit class */
   #loading-screen.ls-gone {
     opacity: 0 !important;
     pointer-events: none !important;
-    visibility: hidden !important;
-    transition: opacity 0.6s ease !important;
+    transition: opacity 0.55s ease !important;
   }
 
-  /* ── Context line ── */
-  #ls-ctx {
+  /* ── Welcome line ── */
+  #ls-welcome {
     font-family: var(--ff-display);
-    font-size: clamp(1rem, 2.8vw, 1.35rem);
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
     font-weight: 300;
     font-style: italic;
-    color: var(--text2);
+    color: var(--text);
     text-align: center;
-    margin-top: 1.8rem;
-    max-width: 380px;
-    line-height: 1.5;
+    margin-top: 2rem;
     letter-spacing: 0.01em;
+    line-height: 1.2;
     opacity: 0;
-    transform: translateY(6px);
-    transition: opacity 0.8s ease, transform 0.8s ease;
+    transform: translateY(8px);
+    transition: opacity 0.9s ease, transform 0.9s ease;
+    max-width: 420px;
   }
-  #ls-ctx.ls-show {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  #ls-welcome.ls-in { opacity: 1; transform: translateY(0); }
 
-  /* ── Facts / hints line ── */
+  /* ── Context line — single line, never wraps ── */
+  #ls-ctx {
+    font-family: var(--ff-mono);
+    font-size: 0.58rem;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text3);
+    text-align: center;
+    margin-top: 0.55rem;
+    max-width: 420px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0;
+    transition: opacity 0.8s ease 0.12s;
+  }
+  #ls-ctx.ls-in { opacity: 1; }
+
+  /* ── Thin divider between context and facts ── */
+  #ls-rule {
+    width: 40px;
+    height: 1px;
+    background: var(--border2);
+    margin: 1.4rem auto 1.2rem;
+    opacity: 0;
+    transform: scaleX(0);
+    transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16,1,0.3,1);
+  }
+  #ls-rule.ls-in { opacity: 1; transform: scaleX(1); }
+
+  /* ── Facts / hints — always one line ── */
   #ls-fact {
     font-family: var(--ff-mono);
-    font-size: 0.56rem;
+    font-size: 0.54rem;
     color: var(--text3);
-    letter-spacing: 0.07em;
+    letter-spacing: 0.06em;
     text-align: center;
-    margin-top: 0.9rem;
     max-width: 380px;
-    line-height: 1.6;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     opacity: 0;
     transition: opacity 0.12s ease;
+    margin-bottom: 2rem;
   }
-  #ls-fact.ls-show {
-    opacity: 1;
-  }
+  #ls-fact.ls-in { opacity: 1; }
 
-  /* ── Continue button ── */
+  /* ── Continue ── */
   #ls-cont {
-    margin-top: 2rem;
     background: none;
     border: none;
     color: var(--text3);
     font-family: var(--ff-mono);
-    font-size: 0.63rem;
-    letter-spacing: 0.32em;
+    font-size: 0.62rem;
+    letter-spacing: 0.3em;
     text-transform: uppercase;
     cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 12px 0;
-    width: 100%;
-    max-width: 320px;
+    padding: 11px 0;
+    width: 260px;
     outline: none;
     opacity: 0;
     pointer-events: none;
     transform: translateY(6px);
-    transition: opacity 0.7s ease, transform 0.7s ease, color 0.3s ease;
+    transition: opacity 0.7s ease, transform 0.7s ease, color 0.25s ease;
   }
-  #ls-cont.ls-show {
+  #ls-cont.ls-in {
     opacity: 1;
     pointer-events: all;
     transform: translateY(0);
   }
-  #ls-cont:hover {
-    color: var(--text);
-  }
-  #ls-cont:hover .ls-dash {
-    background: var(--accent);
-    opacity: 0.45;
-  }
-  .ls-dash {
+  #ls-cont:hover { color: var(--text); }
+  #ls-cont:hover .lsd { background: var(--accent); opacity: 0.4; }
+  .lsd {
     flex: 1;
     height: 1px;
     background: var(--border2);
-    max-width: 70px;
     display: block;
-    transition: background 0.3s ease, opacity 0.3s ease;
+    transition: background 0.25s, opacity 0.25s;
   }
-  .ls-word {
-    padding: 0 16px;
-    flex-shrink: 0;
-  }
+  .lsw { padding: 0 14px; flex-shrink: 0; }
 </style>
 
 <!-- LOADING SCREEN -->
@@ -144,23 +151,208 @@
   </div>
   <div class="loading-pct" id="loading-pct">0%</div>
 
-  <!-- Context awareness with name -->
+  <div id="ls-welcome"></div>
   <div id="ls-ctx"></div>
-
-  <!-- Cycling facts / easter egg hints -->
+  <div id="ls-rule"></div>
   <div id="ls-fact"></div>
 
-  <!-- Continue button — music ONLY plays when this is clicked -->
   <button id="ls-cont" type="button" onclick="lsContinue()">
-    <span class="ls-dash"></span>
-    <span class="ls-word">CONTINUE</span>
-    <span class="ls-dash"></span>
+    <span class="lsd"></span>
+    <span class="lsw">CONTINUE</span>
+    <span class="lsd"></span>
   </button>
 </div>
 
 <script>
 (function () {
 
+  /* ── Block music until CONTINUE is clicked ── */
+  var _op = HTMLMediaElement.prototype.play;
+  window._lsBlocked = true;
+  HTMLMediaElement.prototype.play = function () {
+    if (window._lsBlocked && (this.id === 'bg-music' || this.id === 'rain-song')) {
+      return Promise.resolve();
+    }
+    return _op.apply(this, arguments);
+  };
+
+  /* ── Defer startHeroAnimations until CONTINUE ── */
+  document.addEventListener('DOMContentLoaded', function () {
+    var _oh = window.startHeroAnimations;
+    window.startHeroAnimations = function () {};
+    window._lsHero = function () {
+      window.startHeroAnimations = _oh;
+      if (typeof _oh === 'function') _oh();
+    };
+  });
+
+  /* ── Data ── */
+  var FIRST = [
+    "Welcome.", "You've arrived.",
+    "Something worth seeing awaits.",
+    "Not many find their way here.",
+    "Built for people who notice things.",
+    "Presence acknowledged."
+  ];
+
+  var RETURN = [
+    "Welcome back, {n}.", "Still curious, {n}?",
+    "You returned, {n}.", "{n}. Good to have you back.",
+    "Again, {n}.", "The site remembers you, {n}.", "Back already, {n}."
+  ];
+
+  /* Short context lines — guaranteed single-line at any screen size */
+  var CTX = {
+    night:     ["The world is quiet.", "Late nights have clarity.", "The rare hour.", "Most cities are asleep.", "Midnight ambition."],
+    dawn:      ["Before dawn.", "You're up early.", "Pre-dawn calm.", "Rarest window.", "Before the city wakes."],
+    morning:   ["Morning in motion.", "First thoughts carry weight.", "The day is undecided.", "Good time to build.", "Morning light is honest."],
+    midday:    ["Midday. Half gone already.", "The machine is running.", "Between intention and momentum.", "Post-morning clarity.", "Noon pivot."],
+    afternoon: ["Afternoon carries weight.", "Day settling in.", "Before the light shifts.", "Golden hour is near.", "Afternoons here feel different."],
+    evening:   ["Evening feels quieter here.", "Day softening at edges.", "Evenings reveal missed things.", "Dusk, paying attention.", "End-of-day clarity."],
+    latenight: ["Night has focus.", "Late enough to mean something.", "The city dims.", "Midnight oil.", "After-hours."]
+  };
+
+  var FACTS = [
+    "A teaspoon of neutron star material weighs ~6 billion tons",
+    "Venus rotates clockwise — opposite to most planets",
+    "More stars exist than grains of sand on all Earth's beaches",
+    "The Moon drifts ~1.5 inches further from Earth every year",
+    "A human sneeze can reach 100 miles per hour",
+    "Bananas grow upward against gravity — negative geotropism",
+    "The bumblebee bat is the world's smallest mammal",
+    "All clownfish are born male — dominant one can change sex",
+    "Hippos gallop along riverbeds — they can't actually swim",
+    "The oldest cat ever recorded lived 38 years and 3 days",
+    "Humans blink up to 28,800 times per day",
+    "Your stomach gets a new lining every 3–4 days",
+    "Identical twins do not share fingerprints",
+    "The Anglo-Zanzibar War lasted exactly 38 minutes",
+    "The Eiffel Tower grows up to 6 inches taller in summer",
+    "The letter J was the last added to the English alphabet",
+    "The # symbol is officially called an octothorpe",
+    "Egypt is considered the world's oldest country — ~3100 BCE",
+    "About 10% of all people are left-handed",
+    "HINT: Click the name on the homepage exactly 7 times",
+    "HINT: Type 'manomay' on your keyboard anywhere on the site",
+    "Some sections require a password — Contact page is how you ask",
+    "The Clock page activates something hidden on August 29th",
+    "There are 14 sections. Most visitors find 6 or 7",
+    "The background music has two tracks — only one is obvious",
+    "Every pixel was hand-coded. No templates. No frameworks.",
+    "The Journey timeline covers 19 chapters from 2008 to now",
+    "RoRo is the site's intelligence layer — try asking it something",
+    "Some photo albums are locked. There's a reason for that.",
+    "There are 4 visual themes. Try switching between them.",
+    "Five fully playable games are built into this site",
+    "The hero name shifts which word is highlighted on each reload",
+    "The vinyl record in the bottom-left isn't always visible",
+    "Nothing here was accidental. Every element was placed deliberately.",
+    "The Thoughts section has 16 posts across 6 personal categories",
+    "The mechanical click sound in the nav can be toggled off",
+    "Some of the best content here is behind a password. Knock.",
+    "The footer says it: built with intention, not a template",
+    "RoRo stands for nothing specific. It just felt right.",
+    "Nothing on this site is filler. Everything means something."
+  ];
+
+  /* ── Build content ── */
+  var user = null;
+  try { user = JSON.parse(localStorage.getItem('roroUser') || 'null'); } catch (e) {}
+
+  var h = new Date().getHours();
+  var pool = h < 4  ? CTX.night :
+             h < 7  ? CTX.dawn  :
+             h < 12 ? CTX.morning :
+             h < 14 ? CTX.midday :
+             h < 18 ? CTX.afternoon :
+             h < 21 ? CTX.evening : CTX.latenight;
+
+  var ctxLine = pool[Math.floor(Math.random() * pool.length)];
+
+  var welcomeLine = (user && user.name)
+    ? RETURN[Math.floor(Math.random() * RETURN.length)].replace('{n}', user.name)
+    : FIRST[Math.floor(Math.random() * FIRST.length)];
+
+  var wEl   = document.getElementById('ls-welcome');
+  var cEl   = document.getElementById('ls-ctx');
+  var rEl   = document.getElementById('ls-rule');
+  var fEl   = document.getElementById('ls-fact');
+  var btn   = document.getElementById('ls-cont');
+
+  /* Set text */
+  wEl.textContent = welcomeLine;
+  cEl.textContent = ctxLine;
+
+  /* Reveal welcome + context */
+  setTimeout(function () { wEl.classList.add('ls-in'); }, 450);
+  setTimeout(function () { cEl.classList.add('ls-in'); }, 650);
+  setTimeout(function () { rEl.classList.add('ls-in'); }, 820);
+
+  /* Facts */
+  var fi = Math.floor(Math.random() * FACTS.length);
+  fEl.textContent = '\u00b7\u2009' + FACTS[fi];
+  setTimeout(function () {
+    fEl.classList.add('ls-in');
+    setInterval(function () {
+      fEl.style.opacity = '0';
+      setTimeout(function () {
+        fi = (fi + 1) % FACTS.length;
+        fEl.textContent = '\u00b7\u2009' + FACTS[fi];
+        fEl.style.opacity = '1';
+      }, 130);
+    }, 2800);
+  }, 1000);
+
+  /* Watch for 100%, show Continue */
+  var _ck = setInterval(function () {
+    var p = document.getElementById('loading-pct');
+    if (p && p.textContent.trim() === '100%') {
+      clearInterval(_ck);
+      setTimeout(function () { btn.classList.add('ls-in'); }, 420);
+    }
+  }, 60);
+
+  /* ── Continue handler ── */
+  window.lsContinue = function () {
+    var overlay = document.getElementById('transition-overlay');
+    var screen  = document.getElementById('loading-screen');
+
+    /* Music — ONLY here */
+    window._lsBlocked = false;
+    var bgm = document.getElementById('bg-music');
+    if (bgm) bgm.play().catch(function () {});
+
+    /* Page transition (same cream overlay as page switches) */
+    if (overlay) {
+      overlay.style.transition      = 'transform 0.4s cubic-bezier(0.76,0,0.24,1)';
+      overlay.style.transformOrigin = 'bottom';
+      overlay.style.transform       = 'scaleY(1)';
+
+      setTimeout(function () {
+        screen.classList.add('ls-gone');
+
+        /* Hero animations fire as overlay reveals homepage */
+        if (typeof window._lsHero === 'function') window._lsHero();
+        else if (typeof window.startHeroAnimations === 'function') window.startHeroAnimations();
+
+        setTimeout(function () {
+          overlay.style.transition      = 'transform 0.5s cubic-bezier(0.76,0,0.24,1)';
+          overlay.style.transformOrigin = 'top';
+          overlay.style.transform       = 'scaleY(0)';
+        }, 60);
+      }, 420);
+
+    } else {
+      screen.classList.add('ls-gone');
+      if (typeof window._lsHero === 'function') window._lsHero();
+      else if (typeof window.startHeroAnimations === 'function') window.startHeroAnimations();
+    }
+
+    setTimeout(function () { HTMLMediaElement.prototype.play = _op; }, 600);
+  };
+
+})();
+</script>
   /* ── 1. Block music until Continue is clicked ───────────────────
      main.js adds mousemove/click/scroll listeners that start
      bg-music. We intercept play() and block it until Continue. */
