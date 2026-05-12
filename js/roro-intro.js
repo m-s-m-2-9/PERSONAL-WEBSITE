@@ -360,107 +360,11 @@ const introStyles = `
   opacity:1;
 }
 
-</style>
-`;
-
-document.head.insertAdjacentHTML("beforeend", introStyles);
+/* DO NOT CLOSE THE STYLE TAG HERE */
 
 /* ════════════════════════════════════════
    HTML
 ════════════════════════════════════════ */
-
-const introHTML = `
-<div id="rs-intro" class="rs-show">
-
-  <div class="rs-intro-grid"></div>
-  <div class="rs-intro-grain"></div>
-
-  <div class="rs-intro-stage">
-
-    <div id="rs-intro-line"></div>
-
-    <div class="rs-intro-name-wrap">
-
-      <!-- MSM -->
-
-      <div id="rs-intro-initials">
-
-        <span class="rs-intro-letter">M</span>
-        <span class="rs-intro-dot">·</span>
-
-        <span class="rs-intro-letter">S</span>
-        <span class="rs-intro-dot">·</span>
-
-        <span class="rs-intro-letter">M</span>
-
-      </div>
-
-      <!-- FULL NAME -->
-
-      <div id="rs-intro-fullname">
-
-        <div class="rs-name-word">
-
-          <span class="rs-name-initial">M</span>
-
-          <span class="rs-name-rest">
-            <span class="rs-char">a</span>
-            <span class="rs-char">n</span>
-            <span class="rs-char">o</span>
-            <span class="rs-char">m</span>
-            <span class="rs-char">a</span>
-            <span class="rs-char">y</span>
-          </span>
-
-        </div>
-
-        &nbsp;
-
-        <div class="rs-name-word">
-
-          <span class="rs-name-initial">S</span>
-
-          <span class="rs-name-rest">
-            <span class="rs-char">h</span>
-            <span class="rs-char">a</span>
-            <span class="rs-char">i</span>
-            <span class="rs-char">l</span>
-            <span class="rs-char">e</span>
-            <span class="rs-char">n</span>
-            <span class="rs-char">d</span>
-            <span class="rs-char">r</span>
-            <span class="rs-char">a</span>
-          </span>
-
-        </div>
-
-        &nbsp;
-
-        <div class="rs-name-word">
-
-          <span class="rs-name-initial">M</span>
-
-          <span class="rs-name-rest">
-            <span class="rs-char">i</span>
-            <span class="rs-char">s</span>
-            <span class="rs-char">r</span>
-            <span class="rs-char">a</span>
-          </span>
-
-        </div>
-
-      </div>
-
-    </div>
-
-    <div id="rs-intro-underline"></div>
-
-  </div>
-
-</div>
-`;
-
-document.body.insertAdjacentHTML("afterbegin", introHTML);
 
 /* ════════════════════════════════════════
    TIMELINE
@@ -785,7 +689,11 @@ setTimeout(() => {
       .rs-ghost-ampm  { font-size: clamp(8vw, 11vw, 14vw); }
       .rs-ghost-meta  { font-size: clamp(2vw, 3.5vw, 4.5vw); }
     }
-  `;
+
+  </style>
+`;
+
+document.head.insertAdjacentHTML("beforeend", introStyles);
 
   /* ════════════════════════════════════════════════════════════════
      § DATA — all text arrays, unchanged from original
@@ -1192,7 +1100,7 @@ setTimeout(() => {
     var initials  = document.getElementById('rs-intro-initials');
     var fullname  = document.getElementById('rs-intro-fullname');
     var underline = document.getElementById('rs-intro-underline');
-    var wordRows  = fullname.querySelectorAll('.rs-intro-word-row');
+    /* no-op */
 
     /* Intro is visible */
     intro.classList.add('rs-show');
