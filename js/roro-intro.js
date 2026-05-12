@@ -29,8 +29,12 @@
   };
 
   /* ════════════════════════════════════════════════════════════════
-     § CSS — All styling injected here. Every colour is a CSS
-     variable so all four themes work automatically.
+     § CSS
+     CHANGES:
+     - .rs-logo  → accent colour, font-weight 700, glow/shadow
+     - .rs-ghost → restructured as flex column for time + meta lines
+     - .rs-ghost-time / .rs-ghost-meta → new sub-elements
+     - .rs-clock-shell and children → REMOVED (clock lives in ghost only)
   ════════════════════════════════════════════════════════════════ */
   var CSS = `
     /* ── Cursor always on top ── */
@@ -65,26 +69,45 @@
       opacity:0.5;pointer-events:none;z-index:0;
     }
 
-    /* ── Ghost clock — the jaw-dropper ── */
-    /* A massive, almost-invisible time string lives behind everything. */
-    /* It updates live. Creates depth and a sense of cinematic scale.  */
+    /* ── Ghost clock — now shows FULL time + day + date as layered ghost ── */
+    /* Two child spans: rs-ghost-time (huge) and rs-ghost-meta (small below) */
     .rs-ghost{
       position:fixed;
       top:50%;left:50%;
-      transform:translate(-50%,-53%);
-      font-family:var(--ff-display);
-      font-size:clamp(11vw,17vw,22vw);
-      font-weight:300;
-      color:var(--text);
+      transform:translate(-50%,-52%);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:0.5rem;
       opacity:0;
-      letter-spacing:-0.04em;
-      line-height:1;
-      white-space:nowrap;
       user-select:none;pointer-events:none;
       z-index:0;
       transition:opacity 2.5s ease;
     }
     .rs-ghost.rs-on{opacity:0.042}
+
+    /* The big clock numerals — same massive feel as before */
+    .rs-ghost-time{
+      font-family:var(--ff-display);
+      font-size:clamp(14vw,20vw,26vw);
+      font-weight:300;
+      color:var(--text);
+      letter-spacing:-0.04em;
+      line-height:1;
+      white-space:nowrap;
+    }
+
+    /* Day · Month Date in small monospaced ghost text below the digits */
+    .rs-ghost-meta{
+      font-family:var(--ff-mono);
+      font-size:clamp(1.4vw,2.2vw,3vw);
+      font-weight:400;
+      color:var(--text);
+      letter-spacing:0.38em;
+      text-transform:uppercase;
+      white-space:nowrap;
+      line-height:1;
+    }
 
     /* ── Scan line — subtle CRT sweep ── */
     .rs-scan{
@@ -154,7 +177,6 @@
       width:auto;height:auto;
       border:none;left:3px;right:3px;
     }
-    /* Reset the ::before for accent frames */
     .rs-frame.rs-f-accent::before{
       display:block;
     }
@@ -175,30 +197,35 @@
     }
     @keyframes rsFadeIn{from{opacity:0}to{opacity:1}}
 
-    /* ══ (i) LOGO ══════════════════════════════════════════ */
+    /* ══ (i) LOGO — BOLD, BRIGHT, COMMANDING ══════════════════════ */
+    /* This is the first thing eyes land on. Make it impossible to miss. */
     .rs-logo{
       font-family:var(--ff-display);
-      font-size:clamp(0.7rem,1.6vw,0.95rem);
-      font-weight:300;
-      letter-spacing:0.7em;
-      color:var(--text3);
+      font-size:clamp(1.05rem,2.4vw,1.5rem);
+      font-weight:700;
+      letter-spacing:0.75em;
+      color:var(--accent);
       text-align:center;
       user-select:none;
-      margin-bottom:0.6rem;
+      margin-bottom:0.55rem;
       opacity:0;
       animation:rsFadeIn 1.2s ease 0.1s forwards;
+      text-shadow:
+        0 0 18px var(--accent),
+        0 0 48px rgba(200,169,110,0.22),
+        0 0 90px rgba(200,169,110,0.08);
     }
-    /* Rule below logo */
+    /* Accent rule below logo — slightly thicker and glowing */
     .rs-logo-hr{
-      width:32px;height:1px;
+      width:44px;height:1px;
       background:var(--accent);
       opacity:0;
-      margin-bottom:2rem;
+      margin-bottom:2.2rem;
+      box-shadow:0 0 8px var(--accent),0 0 20px rgba(200,169,110,0.3);
       animation:rsFadeIn 1s ease 0.5s forwards;
     }
 
-    /* ══ (ii) WELCOME ══════════════════════════════════════ */
-    /* PRE-ALLOCATED — always occupies height, no layout shift */
+    /* ══ (ii) WELCOME ══════════════════════════════════════════════ */
     .rs-welcome-shell{
       width:100%;
       min-height:4.8rem;
@@ -207,7 +234,6 @@
       margin-bottom:0.65rem;
       position:relative;
     }
-    /* Ambient glow behind welcome text */
     .rs-welcome-shell::before{
       content:'';
       position:absolute;
@@ -230,7 +256,7 @@
     }
     .rs-welcome.rs-on{opacity:1;transform:translateY(0)}
 
-    /* ══ (iii) CONTEXT ════════════════════════════════════ */
+    /* ══ (iii) CONTEXT ═════════════════════════════════════════════ */
     .rs-ctx-shell{
       width:100%;
       min-height:1.6rem;
@@ -247,52 +273,10 @@
     }
     .rs-ctx.rs-on{opacity:1;transform:translateY(0)}
 
-    /* ══ (iv) CLOCK ═══════════════════════════════════════ */
-    .rs-clock-shell{
-      min-height:3.8rem;
-      display:flex;align-items:center;justify-content:center;
-      gap:1.2rem;
-      margin-bottom:1.3rem;
-      opacity:0;transform:translateY(8px);
-      transition:opacity 0.85s ease 0.18s,transform 0.85s ease 0.18s;
-    }
-    .rs-clock-shell.rs-on{opacity:1;transform:translateY(0)}
-    .rs-time-g{display:flex;align-items:flex-start;gap:5px}
-    .rs-digits{
-      font-family:var(--ff-display);
-      font-size:clamp(1.9rem,5.5vw,2.8rem);
-      font-weight:300;color:var(--text);
-      letter-spacing:-0.03em;line-height:1;
-    }
-    /* AM/PM — the tiny superscript, NOT huge */
-    .rs-ampm{
-      font-family:var(--ff-mono);
-      font-size:0.48rem;color:var(--text3);
-      letter-spacing:0.08em;text-transform:uppercase;
-      margin-top:5px;line-height:1;flex-shrink:0;
-    }
-    .rs-pipe{
-      font-family:var(--ff-display);font-size:1.2rem;
-      color:var(--accent);opacity:0.25;
-      user-select:none;flex-shrink:0;align-self:center;
-    }
-    .rs-dr{display:flex;flex-direction:column;gap:3px;align-self:center}
-    .rs-day{
-      font-family:var(--ff-mono);font-size:0.53rem;
-      letter-spacing:0.16em;color:var(--text3);
-      text-transform:uppercase;line-height:1;
-    }
-    .rs-date{
-      font-family:var(--ff-display);font-size:0.92rem;
-      font-weight:300;color:var(--text2);line-height:1;
-    }
-
-    /* ══ FACTS LINE — fixed single-line height ════════════ */
-    /* Sits between clock and loading bar.                   */
-    /* ALWAYS occupies space — never causes layout shift.    */
+    /* ══ FACTS LINE — fixed single-line height ═════════════════════ */
     .rs-facts-shell{
       width:100%;
-      height:20px;         /* fixed — never grows */
+      height:20px;
       overflow:hidden;
       margin-bottom:1.4rem;
       opacity:0;
@@ -311,14 +295,13 @@
       transition:opacity 0.09s ease;
     }
     .rs-fact-txt.rs-fade{opacity:0}
-    /* Accent dot prefix rendered in CSS */
     .rs-fact-txt::before{
       content:'·  ';
       color:var(--accent);
       opacity:0.6;
     }
 
-    /* ══ (v) PROGRESS BAR ════════════════════════════════ */
+    /* ══ (v) PROGRESS BAR ══════════════════════════════════════════ */
     .rs-bar-shell{
       width:100%;margin-bottom:0.5rem;
       opacity:0;animation:rsFadeIn 0.5s ease 0.25s forwards;
@@ -346,7 +329,7 @@
       min-width:3.5ch;text-align:right;flex-shrink:0;
     }
 
-    /* ══ (vi) FLYING LOG TEXT — fixed height ═════════════ */
+    /* ══ (vi) FLYING LOG TEXT — fixed height ═══════════════════════ */
     .rs-log-shell{
       width:100%;height:20px;overflow:hidden;
       position:relative;margin-bottom:1.3rem;
@@ -365,7 +348,7 @@
     @keyframes rsFlyIn {from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
     @keyframes rsFlyOut{from{transform:translateY(0);opacity:1}to{transform:translateY(-100%);opacity:0}}
 
-    /* ══ (vii) SCRIPT BUTTON ════════════════════════════ */
+    /* ══ (vii) SCRIPT BUTTON ════════════════════════════════════════ */
     .rs-script-shell{
       width:100%;display:flex;flex-direction:column;
       align-items:center;margin-bottom:1.1rem;
@@ -407,7 +390,7 @@
     }
     .rs-entry::before{content:'▸  ';color:var(--accent);opacity:0.5}
 
-    /* ══ (viii) CONTINUE — no border-top, no border-bottom ═ */
+    /* ══ (viii) CONTINUE ════════════════════════════════════════════ */
     .rs-continue{
       width:100%;background:none;border:none;
       color:var(--text3);
@@ -429,12 +412,13 @@
     @media(max-width:540px){
       .rs-inner{padding:0 1.4rem}
       .rs-film--l,.rs-film--r{display:none}
-      .rs-ghost{font-size:clamp(14vw,22vw,28vw)}
+      .rs-ghost-time{font-size:clamp(17vw,24vw,30vw)}
+      .rs-ghost-meta{font-size:clamp(2.2vw,3.5vw,4.5vw)}
     }
   `;
 
   /* ════════════════════════════════════════════════════════════════
-     § DATA
+     § DATA — unchanged
   ════════════════════════════════════════════════════════════════ */
   var MSGS = [
     "Convincing AI not to turn evil...",
@@ -475,7 +459,6 @@
     latenight: ["Night has a particular kind of focus.", "Late enough to mean something.", "The city dims. You stay lit.", "Burning the midnight oil. Noted.", "After-hours. This is when real things happen."]
   };
 
-  /* 40 facts + easter egg hints — all visible during splash */
   var FACTS = [
     "A teaspoon of neutron star material weighs around 6 billion tons",
     "Venus rotates clockwise — opposite to most planets",
@@ -519,7 +502,6 @@
     "The footer says it plainly: built with intention, not a template"
   ];
 
-  /* 7-second loading milestones */
   var MILESTONES = [
     [0,0],[500,7],[1000,16],[1600,29],[2300,43],
     [3100,57],[3900,68],[4700,78],[5400,87],[6000,93],[6600,97],[7000,100]
@@ -569,19 +551,26 @@
     for (var i = 0; i < 60; i++) {
       html += '<div class="rs-frame' + (i % 5 === 0 ? ' rs-f-accent' : '') + '"></div>';
     }
-    /* Duplicate for seamless infinite scroll */
     belt.innerHTML = html + html;
     wrap.appendChild(belt);
     return wrap;
   };
 
-  /* ── Build full DOM ── */
+  /* ── Build full DOM ──
+     CHANGE: Ghost now has two child spans (time + meta).
+             Clock shell with visible time/day/date is REMOVED entirely.
+             Order: logo → hr → welcome → context → facts → bar → log → script → continue
+  ── */
   RoroSplash.prototype._dom = function () {
     var root = document.createElement('div');
     root.id = 'roro-splash';
 
+    /* Ghost has two spans: big time, small meta (AM/PM · DAY · MONTH DATE) */
     root.innerHTML = '<div class="rs-grid"></div>' +
-      '<div class="rs-ghost" id="rs-ghost" aria-hidden="true"></div>' +
+      '<div class="rs-ghost" id="rs-ghost" aria-hidden="true">' +
+        '<span class="rs-ghost-time" id="rs-ghost-time"></span>' +
+        '<span class="rs-ghost-meta" id="rs-ghost-meta"></span>' +
+      '</div>' +
       '<div class="rs-scan" aria-hidden="true"></div>';
 
     root.appendChild(this._strip('l'));
@@ -597,13 +586,7 @@
       '<div class="rs-welcome-shell" id="rs-ws"><div class="rs-welcome" id="rs-welcome"></div></div>' +
       /* (iii) Context */
       '<div class="rs-ctx-shell"><div class="rs-ctx" id="rs-ctx"></div></div>' +
-      /* (iv) Clock */
-      '<div class="rs-clock-shell" id="rs-clock-shell">' +
-        '<div class="rs-time-g"><span class="rs-digits" id="rs-digits"></span><span class="rs-ampm" id="rs-ampm"></span></div>' +
-        '<div class="rs-pipe" aria-hidden="true">|</div>' +
-        '<div class="rs-dr"><div class="rs-day" id="rs-day"></div><div class="rs-date" id="rs-date"></div></div>' +
-      '</div>' +
-      /* Facts */
+      /* Facts — no clock between context and facts anymore */
       '<div class="rs-facts-shell" id="rs-facts-shell"><div class="rs-fact-txt" id="rs-fact-txt"></div></div>' +
       /* (v) Bar */
       '<div class="rs-bar-shell">' +
@@ -632,58 +615,65 @@
     document.body.appendChild(root);
     this._root = root;
 
-    /* Refs */
-    this._ghost    = root.querySelector('#rs-ghost');
-    this._ws       = root.querySelector('#rs-ws');
-    this._welcome  = root.querySelector('#rs-welcome');
-    this._ctx      = root.querySelector('#rs-ctx');
-    this._clkShell = root.querySelector('#rs-clock-shell');
-    this._digits   = root.querySelector('#rs-digits');
-    this._ampm     = root.querySelector('#rs-ampm');
-    this._day      = root.querySelector('#rs-day');
-    this._date     = root.querySelector('#rs-date');
-    this._factsS   = root.querySelector('#rs-facts-shell');
-    this._factsT   = root.querySelector('#rs-fact-txt');
-    this._fill     = root.querySelector('#rs-fill');
-    this._track    = root.querySelector('#rs-track');
-    this._pct      = root.querySelector('#rs-pct');
-    this._logS     = root.querySelector('#rs-log-shell');
-    this._scriptB  = root.querySelector('#rs-script-btn');
-    this._scriptL  = root.querySelector('#rs-script-log');
-    this._cont     = root.querySelector('#rs-continue');
+    /* Refs — ghost now has time + meta sub-elements */
+    this._ghost     = root.querySelector('#rs-ghost');
+    this._ghostTime = root.querySelector('#rs-ghost-time');
+    this._ghostMeta = root.querySelector('#rs-ghost-meta');
+    this._ws        = root.querySelector('#rs-ws');
+    this._welcome   = root.querySelector('#rs-welcome');
+    this._ctx       = root.querySelector('#rs-ctx');
+    this._factsS    = root.querySelector('#rs-facts-shell');
+    this._factsT    = root.querySelector('#rs-fact-txt');
+    this._fill      = root.querySelector('#rs-fill');
+    this._track     = root.querySelector('#rs-track');
+    this._pct       = root.querySelector('#rs-pct');
+    this._logS      = root.querySelector('#rs-log-shell');
+    this._scriptB   = root.querySelector('#rs-script-btn');
+    this._scriptL   = root.querySelector('#rs-script-log');
+    this._cont      = root.querySelector('#rs-continue');
   };
 
-  /* ── Remove the HTML cover div, show splash ── */
+  /* ── Remove the HTML cover div, show splash ──
+     CHANGE: Cover is removed AFTER the splash opacity transition fully
+             completes (460ms), not simultaneously. This eliminates the
+             brief window where both are transparent and the homepage shows.
+  ── */
   RoroSplash.prototype._revealSplash = function () {
     var self = this;
-    /* Remove old loading-screen if present (keep it alive til we're visible) */
     var oldLS = document.getElementById('loading-screen');
     if (oldLS) oldLS.style.cssText = 'display:none!important';
 
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
-        /* Show our splash */
+        /* Start splash fade-in (0.4s transition) */
         self._root.classList.add('rs-show');
-        /* Remove the #roro-cover guard div (added to HTML by user) */
+
         var cover = document.getElementById('roro-cover');
         if (cover) {
-          cover.style.transition = 'opacity 0.3s ease';
-          cover.style.opacity = '0';
-          setTimeout(function () { if (cover.parentNode) cover.remove(); }, 320);
+          /* Wait until splash is fully opaque (0.4s + 60ms buffer),
+             then remove the cover instantly — no cross-fade overlap,
+             no flash of homepage underneath. */
+          setTimeout(function () {
+            if (cover.parentNode) cover.remove();
+          }, 460);
         }
       });
     });
   };
 
-  /* ── Start all sequences ── */
+  /* ── Start all sequences ──
+     CHANGE: Removed the clock shell reveal (setTimeout at 780ms).
+             Facts shell now reveals at 780ms (filled the freed slot).
+             All other logic is identical.
+  ── */
   RoroSplash.prototype._run = function () {
     var self = this;
 
-    /* Clock starts immediately */
+    /* Clock ticks immediately — updates ghost only now */
     this._tick();
     this._clockInt = setInterval(function () { self._tick(); }, 1000);
 
-    /* Ghost clock fades in slowly */
+    /* Ghost fades in slowly */
     setTimeout(function () { self._ghost.classList.add('rs-on'); }, 200);
 
     /* Flying messages */
@@ -696,7 +686,7 @@
     /* Progress bar */
     this._progress();
 
-    /* Sequential element reveals — all pre-allocated, zero layout shift */
+    /* Sequential element reveals */
     setTimeout(function () {
       self._welcome.textContent = self._getWelcome();
       self._welcome.classList.add('rs-on');
@@ -708,18 +698,18 @@
       self._ctx.classList.add('rs-on');
     }, 560);
 
-    setTimeout(function () { self._clkShell.classList.add('rs-on'); }, 780);
-
+    /* Clock shell reveal removed — ghost handles all time display now */
+    /* Facts slide in at 780ms (previously 980ms), filling the freed slot */
     setTimeout(function () {
       self._factsS.classList.add('rs-on');
-    }, 980);
+    }, 780);
 
     /* Events */
     this._scriptB.addEventListener('click', function () { self._toggleLog(); });
     this._cont.addEventListener('click', function () { self._finish(); });
   };
 
-  /* ── Progress milestones ── */
+  /* ── Progress milestones — unchanged ── */
   RoroSplash.prototype._progress = function () {
     var self = this;
     MILESTONES.forEach(function (m) {
@@ -732,7 +722,7 @@
     });
   };
 
-  /* ── Cycle flying messages ── */
+  /* ── Cycle flying messages — unchanged ── */
   RoroSplash.prototype._nextMsg = function () {
     if (this._isDone) return;
     var self = this;
@@ -766,7 +756,7 @@
     });
   };
 
-  /* ── Cycle facts ── */
+  /* ── Cycle facts — unchanged ── */
   RoroSplash.prototype._nextFact = function () {
     var self = this;
     this._factsT.classList.add('rs-fade');
@@ -777,7 +767,7 @@
     }, 100);
   };
 
-  /* ── Load complete ── */
+  /* ── Load complete — unchanged ── */
   RoroSplash.prototype._done = function () {
     var self = this;
     this._stopFly();
@@ -790,7 +780,7 @@
     setTimeout(function () { self._cont.classList.add('rs-show'); }, 1900);
   };
 
-  /* ── Toggle log panel ── */
+  /* ── Toggle log panel — unchanged ── */
   RoroSplash.prototype._toggleLog = function () {
     this._logOpen = !this._logOpen;
     if (this._logOpen) {
@@ -811,32 +801,26 @@
     }
   };
 
-  /* ── Continue — uses #transition-overlay same as page switches ── */
+  /* ── Continue — unchanged ── */
   RoroSplash.prototype._finish = function () {
     var self    = this;
     var overlay = document.getElementById('transition-overlay');
 
-    /* Unblock music */
     window._roroActive = false;
 
     if (overlay) {
-      /* EXACT same animation as main.js doTransition() */
       overlay.style.transition      = 'transform 0.4s cubic-bezier(0.76,0,0.24,1)';
       overlay.style.transformOrigin = 'bottom';
-      overlay.style.transform       = 'scaleY(1)'; /* cream/theme slides up */
+      overlay.style.transform       = 'scaleY(1)';
 
       setTimeout(function () {
-        /* Overlay covers screen — safe to remove splash */
         self._cleanup();
 
-        /* Play music */
         var bgm = document.getElementById('bg-music');
         if (bgm) bgm.play().catch(function () {});
 
-        /* Fire hero animations */
         if (typeof window._roroRunHero === 'function') window._roroRunHero();
 
-        /* Slide overlay back up — reveals homepage with hero animating in */
         setTimeout(function () {
           overlay.style.transition      = 'transform 0.5s cubic-bezier(0.76,0,0.24,1)';
           overlay.style.transformOrigin = 'top';
@@ -845,7 +829,6 @@
       }, 420);
 
     } else {
-      /* Fallback: simple fade */
       self._root.style.transition = 'opacity 0.6s ease';
       self._root.style.opacity    = '0';
       setTimeout(function () {
@@ -856,13 +839,12 @@
       }, 650);
     }
 
-    /* Restore native play after transition */
     setTimeout(function () {
       HTMLMediaElement.prototype.play = _origPlay;
     }, 500);
   };
 
-  /* ── Cleanup ── */
+  /* ── Cleanup — unchanged ── */
   RoroSplash.prototype._cleanup = function () {
     clearInterval(this._clockInt);
     clearInterval(this._factTimer);
@@ -872,23 +854,32 @@
     if (css) css.remove();
   };
 
-  /* ── Live clock update ── */
+  /* ── Live clock update ──
+     CHANGE: Now updates the ghost sub-elements (ghostTime + ghostMeta)
+             instead of the removed visible clock elements.
+             ghostTime → "2:57"  (huge ghost)
+             ghostMeta → "PM · TUESDAY · MAY 12"  (small ghost below)
+  ── */
   RoroSplash.prototype._tick = function () {
     var now  = new Date();
     var h    = now.getHours();
     var m    = String(now.getMinutes()).padStart(2, '0');
     var ap   = h >= 12 ? 'PM' : 'AM';
     h = h % 12 || 12;
-    var DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    var MON  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    this._digits.textContent = h + ':' + m;
-    this._ampm.textContent   = ap;
-    this._day.textContent    = DAYS[now.getDay()];
-    this._date.textContent   = MON[now.getMonth()] + ' ' + now.getDate();
-    this._ghost.textContent  = h + ':' + m;
+    var DAYS = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+    var MON  = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+    /* Big ghost numerals — just the time, clean */
+    this._ghostTime.textContent = h + ':' + m;
+
+    /* Ghost meta line — AM/PM · DAY · MONTH DATE */
+    this._ghostMeta.textContent =
+      ap + '\u00a0\u00b7\u00a0' +
+      DAYS[now.getDay()] + '\u00a0\u00b7\u00a0' +
+      MON[now.getMonth()] + '\u00a0' + now.getDate();
   };
 
-  /* ── Content generators ── */
+  /* ── Content generators — unchanged ── */
   RoroSplash.prototype._getWelcome = function () {
     if (this._user && this._user.name) {
       return RETURN_LINES[Math.floor(Math.random() * RETURN_LINES.length)]
@@ -909,9 +900,7 @@
   };
 
   /* ════════════════════════════════════════════════════════════════
-     § BOOT — DOMContentLoaded fires after all scripts run.
-       At this point main.js has already defined startHeroAnimations
-       so we can safely wrap it to defer it until Continue is clicked.
+     § BOOT — unchanged
   ════════════════════════════════════════════════════════════════ */
   document.addEventListener('DOMContentLoaded', function () {
     var _oh = window.startHeroAnimations;
@@ -930,28 +919,22 @@
 })();
 
 /* ═══════════════════════════════════════════════════════════════
-   WHAT TO CHANGE IN OTHER FILES:
-   ─────────────────────────────────────────────────────────────
-   index.html — THREE changes:
+   YOUR index.html NEEDS THESE — verify all 4 are present:
 
-   ① In <head>, add before </head>:
+   ① In <head>, before </head>:
        <style>body{visibility:hidden}</style>
 
-   ② As VERY FIRST child of <body> (before anything else):
+   ② VERY FIRST child of <body> (before cursor divs, before nav, before everything):
        <div id="roro-cover" style="position:fixed;inset:0;z-index:9999999;background:var(--bg,#080808)"></div>
 
-   ③ DELETE the old loading screen:
-       <div id="loading-screen">...</div>
+   ③ DELETE the old loading screen div entirely:
+       <div id="loading-screen">...</div>  ← remove this
 
-   ④ Add before <script src="js/main.js">:
+   ④ Script tag order — roro-intro.js MUST come before main.js:
        <script src="js/roro-intro.js"></script>
+       <script src="js/main.js"></script>
 
-   WHY THIS FIXES THE HOMEPAGE FLASH:
-   ─────────────────────────────────────────────────────────────
-   #roro-cover is a raw HTML div — no JS needed for it to exist.
-   It's in the browser's VERY FIRST PAINT before any script runs.
-   body{visibility:hidden} in <head> is also applied pre-script.
-   Together they guarantee the homepage is never exposed.
-   My JS removes both once the splash is visible.
-   ═══════════════════════════════════════════════════════════════
-*/
+   Looking at your current index.html — all 4 are already done correctly.
+   The homepage flash fix is handled by removing #roro-cover AFTER the
+   splash opacity transition finishes (460ms), not simultaneously.
+   ═══════════════════════════════════════════════════════════════ */
