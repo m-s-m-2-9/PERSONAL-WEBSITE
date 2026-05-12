@@ -44,156 +44,491 @@
     #roro-splash.rs-show { opacity: 1; }
 
     /* ════════════════════════════════════════
-       PHASE 1 — Movie Intro
-    ════════════════════════════════════════ */
+   PHASE 1 — CINEMATIC NAME REVEAL
+════════════════════════════════════════ */
 
-    #rs-intro {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      z-index: 10;
-      opacity: 0;
-      transition: opacity 0.7s ease;
-    }
-    #rs-intro.rs-show { opacity: 1; }
-    #rs-intro.rs-out  { opacity: 0; pointer-events: none; }
+const introStyles = `
+<style>
 
-    /* Subtle grid behind intro */
-    .rs-intro-grid {
-      position: absolute; inset: 0;
-      background-image:
-        linear-gradient(var(--border) 1px, transparent 1px),
-        linear-gradient(90deg, var(--border) 1px, transparent 1px);
-      background-size: 60px 60px;
-      -webkit-mask-image: radial-gradient(ellipse 85% 70% at 50% 50%, black 10%, transparent 100%);
-      mask-image: radial-gradient(ellipse 85% 70% at 50% 50%, black 10%, transparent 100%);
-      opacity: 0; pointer-events: none;
-      transition: opacity 1.4s ease 0.3s;
-    }
-    #rs-intro.rs-show .rs-intro-grid { opacity: 1; }
+/* MAIN INTRO */
 
-    /* Film grain */
-    .rs-intro-grain {
-      position: absolute; inset: 0; pointer-events: none;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.018'/%3E%3C/svg%3E");
-      opacity: 0.45;
-    }
+#rs-intro{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:10;
+  opacity:0;
+  transition:opacity .7s ease;
+}
 
-    /* The centered stage that holds all intro elements */
-    .rs-intro-stage {
-      position: relative; z-index: 2;
-      display: flex; flex-direction: column; align-items: center;
-      gap: 0;
-    }
+#rs-intro.rs-show{
+  opacity:1;
+}
 
-    /* ── Opening accent line — draws horizontally from center ── */
-    #rs-intro-line {
-      width: 0; height: 1px;
-      background: var(--accent);
-      box-shadow: 0 0 14px var(--accent), 0 0 35px rgba(200,169,110,0.28);
-      margin-bottom: 2.8rem;
-      opacity: 0;
-      transition: width 0.65s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease;
-    }
-    #rs-intro-line.rs-draw  { width: clamp(48px, 9vw, 96px); opacity: 1; }
-    #rs-intro-line.rs-erase { width: 0; opacity: 0; transition: width 0.38s ease, opacity 0.32s ease; }
+#rs-intro.rs-out{
+  opacity:0;
+  pointer-events:none;
+}
 
-    /* ── Name zone: CSS Grid so initials + fullname can share the same cell ── */
-    .rs-intro-name-zone {
-      display: grid;
-      place-items: center;
-      width: 100%;
-    }
-    /* Both elements share grid-area 1/1 — they overlap but only one is visible at a time */
-    #rs-intro-initials, #rs-intro-fullname { grid-area: 1 / 1; }
+/* GRID */
 
-    /* ── M · S · M initials ── */
-    #rs-intro-initials {
-      display: flex; align-items: center;
-      gap: clamp(0.8rem, 2.8vw, 2.2rem);
-      opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.75s ease, transform 0.75s cubic-bezier(0.16,1,0.3,1);
-    }
-    #rs-intro-initials.rs-on {
-      opacity: 1; transform: translateY(0);
-    }
-    #rs-intro-initials.rs-off {
-      opacity: 0; transform: translateY(-15px);
-      transition: opacity 0.38s ease, transform 0.38s ease;
-    }
+.rs-intro-grid{
+  position:absolute;
+  inset:0;
 
-    /* Each large italic letter */
-    .rs-intro-letter {
-      font-family: var(--ff-display);
-      font-size: clamp(5.5rem, 13vw, 11rem);
-      font-weight: 300;
-      font-style: italic;
-      color: var(--accent);
-      line-height: 1;
-      display: block;
-    }
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
 
-    /* The · separator between letters */
-    .rs-intro-dot {
-      font-family: var(--ff-display);
-      font-size: clamp(2.2rem, 5.5vw, 5rem);
-      color: var(--text3);
-      opacity: 0.28;
-      line-height: 1;
-      align-self: center;
-      margin-bottom: 0.06em;
-    }
+  background-size:60px 60px;
 
-    /* ── Full name: Manomay Shailendra Misra ── */
-    #rs-intro-fullname {
-      display: flex; flex-direction: column; align-items: center;
-      gap: 0;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.01s; /* instant — controlled by class */
-    }
-    #rs-intro-fullname.rs-on { opacity: 1; }
+  -webkit-mask-image:radial-gradient(
+    ellipse 85% 70% at 50% 50%,
+    black 10%,
+    transparent 100%
+  );
 
-    /* Each word row — overflow hidden clips the slide-up animation */
-    .rs-intro-word-row {
-      overflow: hidden;
-      line-height: 1.12;
-    }
+  mask-image:radial-gradient(
+    ellipse 85% 70% at 50% 50%,
+    black 10%,
+    transparent 100%
+  );
 
-    /* The inner div that slides up from below */
-    .rs-intro-word-inner {
-      display: block;
-      font-family: var(--ff-display);
-      font-size: clamp(3rem, 8vw, 7.5rem);
-      font-weight: 300;
-      font-style: italic;
-      color: var(--text);
-      letter-spacing: 0.018em;
-      white-space: nowrap;
-      transform: translateY(108%);
-      transition: transform 0.78s cubic-bezier(0.16,1,0.3,1);
-    }
-    .rs-intro-word-row.rs-reveal .rs-intro-word-inner {
-      transform: translateY(0);
-    }
+  opacity:0;
+  transition:opacity 1.4s ease .3s;
+}
 
-    /* Initial letter in each name word — accent color */
-    .rs-intro-acc { color: var(--accent); }
+#rs-intro.rs-show .rs-intro-grid{
+  opacity:1;
+}
 
-    /* ── Accent underline — draws below full name ── */
-    #rs-intro-underline {
-      height: 1px; width: 0;
-      background: var(--accent);
-      box-shadow: 0 0 8px var(--accent);
-      margin-top: 1rem;
-      opacity: 0;
-      transition: width 0.55s cubic-bezier(0.4,0,0.2,1) 0.08s, opacity 0.3s ease;
-    }
-    #rs-intro-underline.rs-draw {
-      width: clamp(120px, 28vw, 280px);
-      opacity: 0.55;
-    }
+/* GRAIN */
 
+.rs-intro-grain{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.018'/%3E%3C/svg%3E");
+
+  opacity:.45;
+}
+
+/* STAGE */
+
+.rs-intro-stage{
+  position:relative;
+  z-index:2;
+
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+/* TOP LINE */
+
+#rs-intro-line{
+  width:0;
+  height:1px;
+
+  background:var(--accent);
+
+  box-shadow:
+    0 0 14px var(--accent),
+    0 0 35px rgba(200,169,110,.28);
+
+  margin-bottom:2.8rem;
+
+  opacity:0;
+
+  transition:
+    width .7s cubic-bezier(.4,0,.2,1),
+    opacity .3s ease;
+}
+
+#rs-intro-line.rs-draw{
+  width:clamp(60px,11vw,110px);
+  opacity:1;
+}
+
+/* NAME WRAP */
+
+.rs-intro-name-wrap{
+  position:relative;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  min-height:clamp(110px,14vw,170px);
+}
+
+/* MSM */
+
+#rs-intro-initials{
+  position:absolute;
+
+  display:flex;
+  align-items:center;
+  gap:clamp(.8rem,2.5vw,1.8rem);
+
+  opacity:0;
+
+  transform:
+    translateY(24px)
+    scale(.94);
+
+  transition:
+    opacity .75s ease,
+    transform .75s cubic-bezier(.16,1,.3,1),
+    gap .8s cubic-bezier(.16,1,.3,1);
+}
+
+#rs-intro-initials.rs-on{
+  opacity:1;
+
+  transform:
+    translateY(0)
+    scale(1);
+}
+
+#rs-intro-initials.rs-expand{
+  gap:0;
+}
+
+/* INITIAL LETTERS */
+
+.rs-intro-letter{
+  position:relative;
+
+  font-family:var(--ff-display);
+  font-size:clamp(5rem,12vw,10rem);
+  font-style:italic;
+  font-weight:300;
+  line-height:1;
+
+  color:var(--accent);
+
+  text-shadow:
+    0 0 10px rgba(200,169,110,.12),
+    0 0 28px rgba(200,169,110,.08);
+
+  transition:all .8s cubic-bezier(.16,1,.3,1);
+}
+
+/* DOTS */
+
+.rs-intro-dot{
+  font-family:var(--ff-display);
+  font-size:clamp(2rem,5vw,4rem);
+
+  color:var(--text3);
+
+  opacity:.24;
+
+  transition:
+    opacity .45s ease,
+    transform .45s ease;
+}
+
+#rs-intro-initials.rs-expand .rs-intro-dot{
+  opacity:0;
+  transform:scale(0);
+}
+
+/* FULL NAME */
+
+#rs-intro-fullname{
+  position:relative;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  flex-wrap:nowrap;
+  white-space:nowrap;
+
+  opacity:0;
+
+  transform:translateY(10px);
+
+  transition:
+    opacity .7s ease,
+    transform .8s cubic-bezier(.16,1,.3,1);
+}
+
+#rs-intro-fullname.rs-on{
+  opacity:1;
+  transform:translateY(0);
+}
+
+/* WORD */
+
+.rs-name-word{
+  font-family:var(--ff-display);
+  font-size:clamp(3rem,7vw,7rem);
+  font-style:italic;
+  font-weight:300;
+
+  line-height:1;
+
+  color:var(--text);
+
+  display:flex;
+  align-items:center;
+}
+
+/* GOLD INITIAL */
+
+.rs-name-initial{
+  color:var(--accent);
+
+  text-shadow:
+    0 0 12px rgba(200,169,110,.24),
+    0 0 28px rgba(200,169,110,.14);
+
+  animation:rsGlow 3.5s ease-in-out infinite;
+}
+
+/* REST LETTERS */
+
+.rs-name-rest{
+  display:inline-flex;
+}
+
+/* LETTER ANIMATION */
+
+.rs-char{
+  display:inline-block;
+
+  opacity:0;
+
+  transform:
+    translateY(34px)
+    scale(.88);
+
+  filter:blur(8px);
+
+  animation:rsCharReveal .7s cubic-bezier(.16,1,.3,1) forwards;
+}
+
+/* DELAYS */
+
+.rs-char:nth-child(1){animation-delay:.03s;}
+.rs-char:nth-child(2){animation-delay:.06s;}
+.rs-char:nth-child(3){animation-delay:.09s;}
+.rs-char:nth-child(4){animation-delay:.12s;}
+.rs-char:nth-child(5){animation-delay:.15s;}
+.rs-char:nth-child(6){animation-delay:.18s;}
+.rs-char:nth-child(7){animation-delay:.21s;}
+.rs-char:nth-child(8){animation-delay:.24s;}
+.rs-char:nth-child(9){animation-delay:.27s;}
+.rs-char:nth-child(10){animation-delay:.30s;}
+
+/* UNDERLINE */
+
+#rs-intro-underline{
+  width:0;
+  height:1px;
+
+  margin-top:1.3rem;
+
+  background:var(--accent);
+
+  box-shadow:
+    0 0 10px var(--accent),
+    0 0 24px rgba(200,169,110,.18);
+
+  opacity:0;
+
+  transition:
+    width .7s cubic-bezier(.4,0,.2,1),
+    opacity .4s ease;
+}
+
+#rs-intro-underline.rs-draw{
+  width:clamp(180px,36vw,420px);
+  opacity:.65;
+}
+
+/* KEYFRAMES */
+
+@keyframes rsCharReveal{
+  0%{
+    opacity:0;
+
+    transform:
+      translateY(34px)
+      scale(.88);
+
+    filter:blur(8px);
+  }
+
+  100%{
+    opacity:1;
+
+    transform:
+      translateY(0)
+      scale(1);
+
+    filter:blur(0);
+  }
+}
+
+@keyframes rsGlow{
+  0%,100%{
+    text-shadow:
+      0 0 10px rgba(200,169,110,.14),
+      0 0 22px rgba(200,169,110,.08);
+  }
+
+  50%{
+    text-shadow:
+      0 0 18px rgba(200,169,110,.28),
+      0 0 34px rgba(200,169,110,.18);
+  }
+}
+
+</style>
+`;
+
+document.head.insertAdjacentHTML("beforeend", introStyles);
+
+/* ════════════════════════════════════════
+   HTML
+════════════════════════════════════════ */
+
+const introHTML = `
+<div id="rs-intro" class="rs-show">
+
+  <div class="rs-intro-grid"></div>
+  <div class="rs-intro-grain"></div>
+
+  <div class="rs-intro-stage">
+
+    <div id="rs-intro-line"></div>
+
+    <div class="rs-intro-name-wrap">
+
+      <!-- MSM -->
+
+      <div id="rs-intro-initials">
+
+        <span class="rs-intro-letter">M</span>
+        <span class="rs-intro-dot">·</span>
+
+        <span class="rs-intro-letter">S</span>
+        <span class="rs-intro-dot">·</span>
+
+        <span class="rs-intro-letter">M</span>
+
+      </div>
+
+      <!-- FULL NAME -->
+
+      <div id="rs-intro-fullname">
+
+        <div class="rs-name-word">
+
+          <span class="rs-name-initial">M</span>
+
+          <span class="rs-name-rest">
+            <span class="rs-char">a</span>
+            <span class="rs-char">n</span>
+            <span class="rs-char">o</span>
+            <span class="rs-char">m</span>
+            <span class="rs-char">a</span>
+            <span class="rs-char">y</span>
+          </span>
+
+        </div>
+
+        &nbsp;
+
+        <div class="rs-name-word">
+
+          <span class="rs-name-initial">S</span>
+
+          <span class="rs-name-rest">
+            <span class="rs-char">h</span>
+            <span class="rs-char">a</span>
+            <span class="rs-char">i</span>
+            <span class="rs-char">l</span>
+            <span class="rs-char">e</span>
+            <span class="rs-char">n</span>
+            <span class="rs-char">d</span>
+            <span class="rs-char">r</span>
+            <span class="rs-char">a</span>
+          </span>
+
+        </div>
+
+        &nbsp;
+
+        <div class="rs-name-word">
+
+          <span class="rs-name-initial">M</span>
+
+          <span class="rs-name-rest">
+            <span class="rs-char">i</span>
+            <span class="rs-char">s</span>
+            <span class="rs-char">r</span>
+            <span class="rs-char">a</span>
+          </span>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div id="rs-intro-underline"></div>
+
+  </div>
+
+</div>
+`;
+
+document.body.insertAdjacentHTML("afterbegin", introHTML);
+
+/* ════════════════════════════════════════
+   TIMELINE
+════════════════════════════════════════ */
+
+const rsInitials  = document.getElementById("rs-intro-initials");
+const rsFullname  = document.getElementById("rs-intro-fullname");
+const rsLine      = document.getElementById("rs-intro-line");
+const rsUnderline = document.getElementById("rs-intro-underline");
+
+/* LINE */
+
+setTimeout(() => {
+  rsLine.classList.add("rs-draw");
+}, 250);
+
+/* MSM SHOW */
+
+setTimeout(() => {
+  rsInitials.classList.add("rs-on");
+}, 700);
+
+/* MSM TRANSFORMS INTO FULL NAME */
+
+setTimeout(() => {
+
+  rsInitials.classList.add("rs-expand");
+
+  rsFullname.classList.add("rs-on");
+
+}, 2100);
+
+/* UNDERLINE */
+
+setTimeout(() => {
+  rsUnderline.classList.add("rs-draw");
+}, 3200);
     /* ════════════════════════════════════════
        PHASE 2 — Loading Screen
     ════════════════════════════════════════ */
