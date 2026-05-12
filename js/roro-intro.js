@@ -27,23 +27,6 @@
   };
 
   /* ════════════════════════════════════════════════════════════════
-     § CSS — all styles injected here, zero external files needed
-  ════════════════════════════════════════════════════════════════ */
-  var CSS = `
-    /* ── Cursor always on top of everything ── */
-    #cursor-dot, #cursor-ring { z-index: 9999999 !important; }
-
-    /* ── Root splash wrapper ── */
-    #roro-splash {
-      position: fixed; inset: 0; z-index: 999998;
-      background: var(--bg);
-      overflow: hidden;
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
-    #roro-splash.rs-show { opacity: 1; }
-
-    /* ════════════════════════════════════════
    PHASE 1 — CINEMATIC NAME REVEAL
 ════════════════════════════════════════ */
 
@@ -240,23 +223,25 @@ const introStyles = `
 
 /* FULL NAME */
 
-#rs-intro-fullname{
-  position:relative;
+/* ── FULL NAME INLINE CINEMATIC REVEAL ── */
 
+#rs-intro-fullname {
   display:flex;
   align-items:center;
   justify-content:center;
 
-  flex-wrap:nowrap;
-  white-space:nowrap;
+  gap:0.18em;
 
   opacity:0;
+  pointer-events:none;
 
-  transform:translateY(10px);
+  white-space:nowrap;
 
   transition:
-    opacity .7s ease,
+    opacity .4s ease,
     transform .8s cubic-bezier(.16,1,.3,1);
+
+  transform:translateY(8px);
 }
 
 #rs-intro-fullname.rs-on{
@@ -264,20 +249,19 @@ const introStyles = `
   transform:translateY(0);
 }
 
-/* WORD */
-
 .rs-name-word{
+  display:flex;
+  align-items:center;
+
   font-family:var(--ff-display);
-  font-size:clamp(3rem,7vw,7rem);
+  font-size:clamp(3.2rem,8vw,7.8rem);
   font-style:italic;
   font-weight:300;
 
   line-height:1;
+  letter-spacing:.012em;
 
   color:var(--text);
-
-  display:flex;
-  align-items:center;
 }
 
 /* GOLD INITIAL */
@@ -286,19 +270,15 @@ const introStyles = `
   color:var(--accent);
 
   text-shadow:
-    0 0 12px rgba(200,169,110,.24),
-    0 0 28px rgba(200,169,110,.14);
-
-  animation:rsGlow 3.5s ease-in-out infinite;
+    0 0 10px rgba(200,169,110,.14),
+    0 0 28px rgba(200,169,110,.08);
 }
 
-/* REST LETTERS */
+/* TYPED LETTERS */
 
 .rs-name-rest{
   display:inline-flex;
 }
-
-/* LETTER ANIMATION */
 
 .rs-char{
   display:inline-block;
@@ -306,56 +286,29 @@ const introStyles = `
   opacity:0;
 
   transform:
-    translateY(34px)
-    scale(.88);
+    translateY(30px)
+    scale(.92);
 
-  filter:blur(8px);
+  filter:blur(6px);
 
-  animation:rsCharReveal .7s cubic-bezier(.16,1,.3,1) forwards;
+  animation:
+    rsTypeReveal .7s cubic-bezier(.16,1,.3,1) forwards;
 }
 
-/* DELAYS */
+/* Stagger delays */
 
-.rs-char:nth-child(1){animation-delay:.03s;}
-.rs-char:nth-child(2){animation-delay:.06s;}
-.rs-char:nth-child(3){animation-delay:.09s;}
-.rs-char:nth-child(4){animation-delay:.12s;}
-.rs-char:nth-child(5){animation-delay:.15s;}
-.rs-char:nth-child(6){animation-delay:.18s;}
-.rs-char:nth-child(7){animation-delay:.21s;}
-.rs-char:nth-child(8){animation-delay:.24s;}
-.rs-char:nth-child(9){animation-delay:.27s;}
-.rs-char:nth-child(10){animation-delay:.30s;}
+.rs-char:nth-child(1){ animation-delay:.03s; }
+.rs-char:nth-child(2){ animation-delay:.06s; }
+.rs-char:nth-child(3){ animation-delay:.09s; }
+.rs-char:nth-child(4){ animation-delay:.12s; }
+.rs-char:nth-child(5){ animation-delay:.15s; }
+.rs-char:nth-child(6){ animation-delay:.18s; }
+.rs-char:nth-child(7){ animation-delay:.21s; }
+.rs-char:nth-child(8){ animation-delay:.24s; }
+.rs-char:nth-child(9){ animation-delay:.27s; }
 
-/* UNDERLINE */
+@keyframes rsTypeReveal {
 
-#rs-intro-underline{
-  width:0;
-  height:1px;
-
-  margin-top:1.3rem;
-
-  background:var(--accent);
-
-  box-shadow:
-    0 0 10px var(--accent),
-    0 0 24px rgba(200,169,110,.18);
-
-  opacity:0;
-
-  transition:
-    width .7s cubic-bezier(.4,0,.2,1),
-    opacity .4s ease;
-}
-
-#rs-intro-underline.rs-draw{
-  width:clamp(180px,36vw,420px);
-  opacity:.65;
-}
-
-/* KEYFRAMES */
-
-@keyframes rsCharReveal{
   0%{
     opacity:0;
 
@@ -377,18 +330,34 @@ const introStyles = `
   }
 }
 
-@keyframes rsGlow{
-  0%,100%{
-    text-shadow:
-      0 0 10px rgba(200,169,110,.14),
-      0 0 22px rgba(200,169,110,.08);
-  }
+/* UNDERLINE */
 
-  50%{
-    text-shadow:
-      0 0 18px rgba(200,169,110,.28),
-      0 0 34px rgba(200,169,110,.18);
-  }
+#rs-intro-underline{
+  width:0;
+  height:1px;
+
+  margin-top:2.6rem;
+
+  background:linear-gradient(
+    90deg,
+    transparent,
+    var(--accent),
+    transparent
+  );
+
+  opacity:0;
+
+  box-shadow:
+    0 0 18px rgba(200,169,110,.22);
+
+  transition:
+    width 1s cubic-bezier(.16,1,.3,1),
+    opacity .5s ease;
+}
+
+#rs-intro-underline.rs-draw{
+  width:min(72vw,620px);
+  opacity:1;
 }
 
 </style>
@@ -529,7 +498,9 @@ setTimeout(() => {
 setTimeout(() => {
   rsUnderline.classList.add("rs-draw");
 }, 3200);
-    /* ════════════════════════════════════════
+   
+   
+   /* ════════════════════════════════════════
        PHASE 2 — Loading Screen
     ════════════════════════════════════════ */
 
@@ -810,7 +781,6 @@ setTimeout(() => {
       .rs-inner { padding: 0 1.4rem; }
       .rs-film--l, .rs-film--r { display: none; }
       .rs-intro-letter   { font-size: clamp(4.5rem, 18vw, 6rem); }
-      .rs-intro-word-inner { font-size: clamp(2.8rem, 11vw, 5rem); }
       .rs-ghost-time  { font-size: clamp(16vw, 22vw, 28vw); }
       .rs-ghost-ampm  { font-size: clamp(8vw, 11vw, 14vw); }
       .rs-ghost-meta  { font-size: clamp(2vw, 3.5vw, 4.5vw); }
@@ -1018,15 +988,48 @@ setTimeout(() => {
     var fullname = document.createElement('div');
     fullname.id = 'rs-intro-fullname';
     fullname.innerHTML =
-      '<div class="rs-intro-word-row">' +
-        '<div class="rs-intro-word-inner"><span class="rs-intro-acc">M</span>anomay</div>' +
-      '</div>' +
-      '<div class="rs-intro-word-row">' +
-        '<div class="rs-intro-word-inner"><span class="rs-intro-acc">S</span>hailendra</div>' +
-      '</div>' +
-      '<div class="rs-intro-word-row">' +
-        '<div class="rs-intro-word-inner"><span class="rs-intro-acc">M</span>isra</div>' +
-      '</div>';
+
+  '<div class="rs-intro-name">' +
+
+    '<span class="rs-intro-acc">M</span>' +
+
+    '<span class="rs-intro-rest">' +
+      '<span class="rs-intro-char">a</span>' +
+      '<span class="rs-intro-char">n</span>' +
+      '<span class="rs-intro-char">o</span>' +
+      '<span class="rs-intro-char">m</span>' +
+      '<span class="rs-intro-char">a</span>' +
+      '<span class="rs-intro-char">y</span>' +
+    '</span>' +
+
+    '&nbsp;' +
+
+    '<span class="rs-intro-acc">S</span>' +
+
+    '<span class="rs-intro-rest">' +
+      '<span class="rs-intro-char">h</span>' +
+      '<span class="rs-intro-char">a</span>' +
+      '<span class="rs-intro-char">i</span>' +
+      '<span class="rs-intro-char">l</span>' +
+      '<span class="rs-intro-char">e</span>' +
+      '<span class="rs-intro-char">n</span>' +
+      '<span class="rs-intro-char">d</span>' +
+      '<span class="rs-intro-char">r</span>' +
+      '<span class="rs-intro-char">a</span>' +
+    '</span>' +
+
+    '&nbsp;' +
+
+    '<span class="rs-intro-acc">M</span>' +
+
+    '<span class="rs-intro-rest">' +
+      '<span class="rs-intro-char">i</span>' +
+      '<span class="rs-intro-char">s</span>' +
+      '<span class="rs-intro-char">r</span>' +
+      '<span class="rs-intro-char">a</span>' +
+    '</span>' +
+
+  '</div>';
     nameZone.appendChild(fullname);
 
     stage.appendChild(nameZone);
@@ -1214,11 +1217,7 @@ setTimeout(() => {
     /* t=1550ms: full name becomes visible, words start revealing */
     setTimeout(function () {
       fullname.classList.add('rs-on');
-      wordRows.forEach(function (row, i) {
-        setTimeout(function () {
-          row.classList.add('rs-reveal');
-        }, i * 210);
-      });
+      /* no stagger needed anymore */
     }, 1550);
 
     /* t=2350ms: underline draws below name */
