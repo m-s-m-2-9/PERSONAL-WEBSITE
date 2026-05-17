@@ -58,10 +58,12 @@
        PHASE 1 — Video
     ════════════════════════════════════════ */
 
-    #rs-video-wrap {
+   #rs-video-wrap {
   position: absolute;
   inset: 0;
   z-index: 4;
+
+  overflow: hidden;
 
   background:
     radial-gradient(circle at center, #111 0%, #000 72%);
@@ -75,20 +77,26 @@
   pointer-events: none;
 }
 
-/* Full video visible without aggressive crop */
+/* Balanced cinematic fit */
 #rs-video {
   position: absolute;
-  inset: 0;
 
-  width: 100%;
-  height: 100%;
+  top: 50%;
+  left: 50%;
 
-  object-fit: contain;
+  width: 100vw;
+  height: 100vh;
+
+  transform: translate(-50%, -50%) scale(1.06);
+
+  object-fit: cover;
   object-position: center center;
 
   display: block;
   background: #000;
 }
+
+
     /* ════════════════════════════════════════
        PHASE 2 — Loader (unchanged)
     ════════════════════════════════════════ */
