@@ -59,30 +59,36 @@
     ════════════════════════════════════════ */
 
     #rs-video-wrap {
-      position: absolute; inset: 0; z-index: 4;
-      background: #000;
-      opacity: 1;
-      transition: opacity 0.9s ease;
-    }
-    #rs-video-wrap.rs-fade-out {
-      opacity: 0;
-      pointer-events: none;
-    }
+  position: absolute;
+  inset: 0;
+  z-index: 4;
 
-    /* Cover the full viewport no matter the video's native ratio */
-    #rs-video {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      min-width: 100%;
-      min-height: 100%;
-      width: auto; height: auto;
-      object-fit: cover;
-      object-position: center center;
-      display: block;
-      background: #000;
-    }
+  background:
+    radial-gradient(circle at center, #111 0%, #000 72%);
 
+  opacity: 1;
+  transition: opacity 0.9s ease;
+}
+
+#rs-video-wrap.rs-fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Full video visible without aggressive crop */
+#rs-video {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+  object-position: center center;
+
+  display: block;
+  background: #000;
+}
     /* ════════════════════════════════════════
        PHASE 2 — Loader (unchanged)
     ════════════════════════════════════════ */
